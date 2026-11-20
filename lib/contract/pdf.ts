@@ -185,9 +185,9 @@ export async function renderContractPdf(
       case "heading":
         ensure(44); // não deixa título sozinho no fim da página
         y -= 10;
-        page.drawRectangle({ x: MARGIN.x, y: y - 12, width: 3.5, height: 13, color: brandAt(0) });
-        page.drawRectangle({ x: MARGIN.x + 3.5, y: y - 12, width: 3.5, height: 13, color: brandAt(1) });
-        page.drawText(sanitize(b.text, fonts.bold), { x: MARGIN.x + 13, y: y - 11, size: 11.5, font: fonts.bold, color: INK });
+        // Marcador: uma bolinha azul da marca
+        page.drawCircle({ x: MARGIN.x + 4, y: y - 7, size: 4, color: brandAt(0) });
+        page.drawText(sanitize(b.text, fonts.bold), { x: MARGIN.x + 14, y: y - 11, size: 11.5, font: fonts.bold, color: INK });
         y -= 19;
         break;
       case "para":
