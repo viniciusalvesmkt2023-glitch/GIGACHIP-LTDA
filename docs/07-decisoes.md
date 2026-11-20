@@ -78,3 +78,31 @@ que os envios passem pela fila com controle de taxa.
 - [ ] O que acontece acima de 50 envios/mês (preço do excedente ou bloqueio)
 
 **Alerta no painel:** mostrar quantos envios do mês já foram usados, para não estourar o limite sem perceber.
+
+## D7 — A Gigachip cobra a mensalidade todo mês (20/11/2026)
+
+**Origem:** contrato atual (cláusula 1) — a linha fica no CNPJ da Gigachip e o cliente paga a
+mensalidade à Gigachip.
+
+**Consequências no sistema:**
+- **Assinatura no Asaas** criada na contratação; a 1ª mensalidade é paga no checkout (PIX) e as
+  seguintes são geradas todo mês pelo Asaas.
+- Nova entidade **`lines`** (linha fornecida): número, ativação e ciclo de vida
+  `ativa → suspensa → cancelada`. Substitui a tabela `activations` do doc 04.
+- Painel ganha a fila de **inadimplentes** e a tarefa manual de **suspender/reativar** a linha na Vivo.
+- Cancelamento calcula a multa de permanência (`lib/domain/early-termination.ts`).
+- A cobrança recorrente entra no MVP.
+
+**A decidir:** dia de vencimento (fixo ou dia da contratação), PIX todo mês ou cartão recorrente,
+prazos de suspensão e cancelamento por atraso, regra de reajuste.
+
+## D8 — Planos iniciais (20/11/2026)
+
+| Plano | Franquia | Total | Mensalidade |
+|-------|----------|-------|-------------|
+| Plano 200GB | 100GB + 100GB bônus | 200GB | R$ 124,99 |
+| Plano 300GB | 200GB + 100GB bônus | 300GB | R$ 149,99 |
+| Plano 400GB | 300GB + 100GB bônus | 400GB | R$ 179,99 |
+
+Cadastrados em `supabase/seed.sql`. **A confirmar:** ligações (ilimitadas?), se o bônus de 100GB é
+permanente ou promocional, e os nomes comerciais.

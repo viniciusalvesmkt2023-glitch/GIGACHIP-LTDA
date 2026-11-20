@@ -1,5 +1,7 @@
 # 04 — Modelo de dados
 
+> A versão executável está em `supabase/migrations/`. Mudanças desde este rascunho: `activations` virou `lines` (linha fornecida com ciclo de vida) e entrou `subscriptions` (mensalidade recorrente) — ver D7 em [07-decisoes.md](07-decisoes.md).
+
 Rascunho para discussão. Será convertido em migrações SQL na fase 1. Convenções: `id uuid`,
 `created_at`/`updated_at timestamptz`, valores em **centavos** (`integer`), enums em Postgres.
 Campos com 🔒 são criptografados na aplicação.
