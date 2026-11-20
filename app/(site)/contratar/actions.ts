@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { parseCheckoutForm, type FieldErrors } from "@/lib/domain/checkout-input";
 import { createCheckout } from "@/lib/server/checkout";
+import { setAccessCookie } from "@/lib/server/customer-access";
 
 export type CheckoutFormState = { errors: FieldErrors; values: Record<string, string> };
 
@@ -39,5 +40,6 @@ export async function submitCheckout(_prev: CheckoutFormState, formData: FormDat
   const result = await createCheckout(parsed.value, { ip, userAgent: h.get("user-agent") });
 
   if (!result.ok) return { errors: { form: MESSAGES[result.code] }, values };
+  await setAccessCookie(result.accessToken);
   redirect(`/pedido/${result.orderId}/pagamento`);
 }

@@ -6,6 +6,7 @@ import { asaas, AsaasError } from "@/lib/integrations/asaas/client";
 import { centsToReais, mapAsaasPaymentStatus } from "@/lib/integrations/asaas/mapping";
 import { cpfHash, encryptField } from "./crypto";
 import { sql, withActor } from "./db";
+import { issueAccessToken } from "./customer-access";
 import { env } from "./env";
 import { getActivePlanBySlug } from "./catalog";
 
@@ -13,7 +14,7 @@ import { getActivePlanBySlug } from "./catalog";
 const PAYMENT_WINDOW_HOURS = 48;
 
 export type CheckoutResult =
-  | { ok: true; orderId: string }
+  | { ok: true; orderId: string; accessToken: string }
   | { ok: false; code: "plano_indisponivel" | "tipo_chip_indisponivel" | "cadastro_divergente" | "falha_cobranca" };
 
 export async function createCheckout(
@@ -29,8 +30,15 @@ export async function createCheckout(
 
   type Step1 =
     | { kind: "divergente" }
-    | { kind: "existente"; orderId: string }
-    | { kind: "novo"; orderId: string; orderCode: string; customerId: string; asaasCustomerId: string | null };
+    | { kind: "existente"; orderId: string; accessToken: string }
+    | {
+        kind: "novo";
+        orderId: string;
+        orderCode: string;
+        customerId: string;
+        asaasCustomerId: string | null;
+        accessToken: string;
+      };
 
   // 1) Cliente + consentimentos + pedido (ou reaproveita pedido aberto idêntico)
   const step1 = await withActor<Step1>({ type: "customer" }, async (tx) => {
@@ -70,7 +78,9 @@ export async function createCheckout(
       where customer_id = ${customerId} and plan_id = ${plan.id} and sim_type = ${input.simType}
         and status = 'aguardando_pagamento' and expires_at > now()
       order by created_at desc limit 1`;
-    if (open) return { kind: "existente" as const, orderId: open.id };
+    if (open) {
+      return { kind: "existente" as const, orderId: open.id, accessToken: await issueAccessToken(tx, open.id, "checkout") };
+    }
 
     const [order] = await tx<{ id: string; code: string }[]>`
       insert into public.orders (customer_id, plan_id, plan_snapshot, monthly_price_cents, sim_type)
@@ -86,11 +96,12 @@ export async function createCheckout(
       orderCode: order.code,
       customerId,
       asaasCustomerId: sub?.provider_customer_id ?? null,
+      accessToken: await issueAccessToken(tx, order.id, "checkout"),
     };
   });
 
   if (step1.kind === "divergente") return { ok: false, code: "cadastro_divergente" };
-  if (step1.kind === "existente") return { ok: true, orderId: step1.orderId };
+  if (step1.kind === "existente") return { ok: true, orderId: step1.orderId, accessToken: step1.accessToken };
 
   // 2) Cobrança no Asaas: assinatura mensal com 1ª mensalidade vencendo hoje (D9)
   const today = todayInSaoPaulo();
@@ -142,7 +153,7 @@ export async function createCheckout(
             expires_at = now() + make_interval(hours => ${PAYMENT_WINDOW_HOURS})
         where id = ${step1.orderId}`;
     });
-    return { ok: true, orderId: step1.orderId };
+    return { ok: true, orderId: step1.orderId, accessToken: step1.accessToken };
   } catch (err) {
     // Não deixar assinatura órfã cobrando todo mês
     if (subscriptionId) {

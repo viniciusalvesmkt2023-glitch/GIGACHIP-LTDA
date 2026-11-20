@@ -172,3 +172,15 @@ pagamento do Asaas (nunca passam pelo nosso servidor).
   orientado a falar no WhatsApp (evita que alguém troque o e-mail de outra pessoa).
 - Pedido não pago expira em 48 h (a rotina que expira e cancela a assinatura no Asaas fica para a
   Fase 3, junto com as demais rotinas agendadas).
+
+## D15 — Acesso do cliente sem senha (Fase 3)
+
+- A "Minha área" não usa senha. Na compra, o navegador recebe um **cookie seguro** (httpOnly) com
+  um token aleatório; de outro aparelho, o cliente entra pelo **link enviado por e-mail**
+  (`/acesso/<token>`, válido por 30 dias). Só o hash do token é guardado
+  (`order_access_tokens`, migração 0003).
+- Dados do aparelho: IMEI sempre; EID para eSIM; ICCID para chip lacrado. IMEI errado bloqueia;
+  EID/ICCID com dígito verificador estranho pede confirmação do cliente e fica registrado
+  (`device_info.checksum_warnings`) para a equipe conferir.
+- Visual: o layout atual é provisório. Depois que tudo funcionar, cada página será lapidada com a
+  identidade visual da Gigachip (logo, cores e referências que os sócios escolherem).

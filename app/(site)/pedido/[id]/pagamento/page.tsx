@@ -55,6 +55,9 @@ function Paid({ view }: { view: PaymentView }) {
         <li>Assinar o contrato digital</li>
         <li>Informar os dados do aparelho/chip (IMEI e EID ou número do chip)</li>
       </ol>
+      <a href="/minha-area" className={`${buttonStyles.primary} mt-5 w-full`}>
+        Continuar na minha área
+      </a>
       <p className="mt-4 text-xs text-muted">Número do pedido: {view.orderCode}</p>
     </div>
   );
