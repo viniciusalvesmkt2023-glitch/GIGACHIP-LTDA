@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   dueDateForCycle,
   formatDate,
+  lineStatusAfterPayment,
+  lineStatusOnOverdue,
   overdueAction,
   parseDate,
   reminderDates,
@@ -41,15 +43,34 @@ describe("inadimplência", () => {
   it("no dia do vencimento ainda não faz nada", () => {
     expect(overdueAction({ due: vencimento, today: d("2026-12-20"), paid: false })).toBe("nenhuma");
   });
-  it("não pagou no dia 20 → cancelar no dia 21", () => {
-    expect(overdueAction({ due: vencimento, today: d("2026-12-21"), paid: false })).toBe("cancelar_linha");
+  it("não pagou no dia 20 → bloquear no dia 21 (não cancela)", () => {
+    expect(overdueAction({ due: vencimento, today: d("2026-12-21"), paid: false })).toBe("suspender_linha");
+    expect(overdueAction({ due: vencimento, today: d("2027-03-01"), paid: false })).toBe("suspender_linha");
   });
-  it("pago nunca cancela", () => {
+  it("pago nunca bloqueia", () => {
     expect(overdueAction({ due: vencimento, today: d("2027-01-30"), paid: true })).toBe("nenhuma");
   });
-  it("prazo configurável", () => {
-    expect(overdueAction({ due: vencimento, today: d("2026-12-22"), paid: false, cancelAfterDays: 3 })).toBe("nenhuma");
-    expect(overdueAction({ due: vencimento, today: d("2026-12-23"), paid: false, cancelAfterDays: 3 })).toBe("cancelar_linha");
+  it("cancelamento só se configurado", () => {
+    const p = { due: vencimento, paid: false, cancelAfterDays: 30 };
+    expect(overdueAction({ ...p, today: d("2027-01-18") })).toBe("suspender_linha");
+    expect(overdueAction({ ...p, today: d("2027-01-19") })).toBe("cancelar_linha");
+  });
+});
+
+describe("ciclo da linha", () => {
+  it("atraso: ativa → suspensão pendente (equipe bloqueia na Vivo)", () => {
+    expect(lineStatusOnOverdue("ativa", "suspender_linha")).toBe("suspensao_pendente");
+    expect(lineStatusOnOverdue("suspensa", "suspender_linha")).toBe("suspensa");
+  });
+  it("pagou antes da equipe bloquear → volta a ativa sozinha", () => {
+    expect(lineStatusAfterPayment("suspensao_pendente")).toBe("ativa");
+  });
+  it("pagou com a linha bloqueada → fila de reativação", () => {
+    expect(lineStatusAfterPayment("suspensa")).toBe("reativacao_pendente");
+  });
+  it("cancelada não volta", () => {
+    expect(lineStatusAfterPayment("cancelada")).toBe("cancelada");
+    expect(lineStatusOnOverdue("cancelada", "cancelar_linha")).toBe("cancelada");
   });
 });
 

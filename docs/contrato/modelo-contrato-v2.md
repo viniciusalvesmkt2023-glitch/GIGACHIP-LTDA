@@ -31,11 +31,14 @@ por **{{forma_pagamento}}** (PIX ou cartão de crédito). A primeira mensalidade
 e cobre os primeiros 30 dias; as seguintes vencem todo dia **{{dia_vencimento}}** (mesmo dia da
 contratação). Nos meses que não tiverem esse dia, o vencimento será no último dia do mês.
 2.2. A CONTRATADA enviará lembretes de pagamento 3 (três) dias antes e no dia do vencimento.
-2.3. **Não havendo pagamento até o fim do dia do vencimento, o contrato será cancelado e a linha
-desativada a partir do dia seguinte**, encerrando a autorização de uso prevista na cláusula 5. O
-CLIENTE declara estar ciente de que, por a linha ser de titularidade da CONTRATADA, o número não
-poderá ser recuperado após o cancelamento.
-2.4. ⚠️ Reajuste: {{regra_reajuste}}, com aviso de no mínimo 30 dias.
+2.3. **Não havendo pagamento até o fim do dia do vencimento, o uso da linha será bloqueado a partir
+do dia seguinte**, até a quitação. Confirmado o pagamento, a linha será desbloqueada em até
+{{prazo_desbloqueio}}.
+2.4. ⚠️ Permanecendo o atraso por mais de **{{dias_para_cancelamento}} dias**, o contrato poderá ser
+cancelado, encerrando a autorização de uso da linha (cláusula 5), sem prejuízo da cobrança dos
+valores devidos. Por a linha ser de titularidade da CONTRATADA, o número não poderá ser recuperado
+após o cancelamento.
+2.5. ⚠️ Reajuste: {{regra_reajuste}}, com aviso de no mínimo 30 dias.
 
 ### 3. Sem fidelidade
 3.1. Não há prazo mínimo de permanência nem multa por cancelamento. O CLIENTE pode cancelar a

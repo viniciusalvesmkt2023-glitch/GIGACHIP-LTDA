@@ -110,16 +110,25 @@ Compra em 20/11 → a 1ª mensalidade é paga na hora e cobre 30 dias; as próxi
 Compras nos dias 29–31: em meses sem esse dia, vence no último dia do mês e volta ao dia original
 no mês seguinte. Implementado em `lib/domain/billing.ts`.
 
-## D10 — Sem fidelidade; inadimplência cancela no dia seguinte (20/11/2026)
+## D10 — Sem fidelidade; atraso BLOQUEIA a linha até pagar (20/11/2026, revisado)
 
 - Linhas **sem fidelidade e sem multa** de cancelamento.
-- Mensalidade não paga até o fim do dia do vencimento → **no dia seguinte** a linha entra na fila
-  **"cancelamento pendente"** do painel e a equipe cancela na Vivo (manual). Prazo configurável
-  (`cancelAfterDays`, padrão 1).
 - Lembretes automáticos 3 dias antes e no dia do vencimento.
-- Se o pagamento cair enquanto a linha ainda está em "cancelamento pendente" (a equipe ainda não
-  cancelou na Vivo), a linha volta para "ativa" automaticamente e sai da fila.
-- O contrato precisa dizer isso de forma explícita (cláusula 2.3 do modelo v2).
+- Mensalidade não paga até o fim do dia do vencimento → **no dia seguinte a linha é bloqueada**
+  (não cancelada) até o cliente pagar. Prazo configurável (`suspendAfterDays`, padrão 1).
+- Bloquear e desbloquear são feitos à mão na Vivo, então o painel tem duas filas:
+
+  | Situação | Status da linha | Fila no painel |
+  |----------|-----------------|----------------|
+  | Venceu e não pagou | `suspensao_pendente` | **"Bloquear na Vivo"** |
+  | Equipe bloqueou | `suspensa` | — |
+  | Cliente pagou a mensalidade atrasada | `reativacao_pendente` | **"Desbloquear na Vivo"** + aviso ao cliente |
+  | Equipe desbloqueou | `ativa` | — |
+
+- Se o cliente pagar **antes** de a equipe bloquear, a linha volta a `ativa` sozinha e sai da fila.
+- **Cancelamento definitivo** por atraso longo: só se configurado (`cancelAfterDays`). ⚠️ A definir
+  com os sócios quantos dias bloqueada até cancelar de vez (ou se nunca cancela automaticamente).
+- Implementado em `lib/domain/billing.ts` e na migração `20261120000002_bloqueio_por_atraso.sql`.
 
 ## D11 — Planos: ligações ilimitadas, bônus permanente (20/11/2026)
 

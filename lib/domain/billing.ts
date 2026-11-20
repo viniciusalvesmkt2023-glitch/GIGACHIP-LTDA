@@ -68,21 +68,64 @@ export function reminderDates(due: CalendarDate): CalendarDate[] {
   return [addDays(due, -3), due];
 }
 
-export const DEFAULT_CANCEL_AFTER_DAYS = 1;
+export const DEFAULT_SUSPEND_AFTER_DAYS = 1;
 
-export type OverdueAction = "nenhuma" | "cancelar_linha";
+export type OverdueAction = "nenhuma" | "suspender_linha" | "cancelar_linha";
 
 /**
- * O que fazer com uma mensalidade em aberto.
- * cancelAfterDays = 1 → não pagou no dia 20, entra na fila de cancelamento no dia 21.
+ * O que fazer com uma mensalidade em aberto (D10).
+ * - suspendAfterDays = 1 → não pagou no dia 20, a linha é BLOQUEADA no dia 21 até pagar.
+ * - cancelAfterDays (opcional) → depois de N dias em atraso, a linha entra na fila de
+ *   cancelamento definitivo. Sem valor = nunca cancela automaticamente.
  */
 export function overdueAction(params: {
   due: CalendarDate;
   today: CalendarDate;
   paid: boolean;
+  suspendAfterDays?: number;
   cancelAfterDays?: number;
 }): OverdueAction {
   if (params.paid) return "nenhuma";
-  const limit = addDays(params.due, params.cancelAfterDays ?? DEFAULT_CANCEL_AFTER_DAYS);
-  return compareDates(params.today, limit) >= 0 ? "cancelar_linha" : "nenhuma";
+  if (params.cancelAfterDays !== undefined && compareDates(params.today, addDays(params.due, params.cancelAfterDays)) >= 0) {
+    return "cancelar_linha";
+  }
+  const suspendAt = addDays(params.due, params.suspendAfterDays ?? DEFAULT_SUSPEND_AFTER_DAYS);
+  return compareDates(params.today, suspendAt) >= 0 ? "suspender_linha" : "nenhuma";
+}
+
+/**
+ * Ciclo de vida da linha. Suspender, reativar e cancelar são feitos À MÃO na Vivo, então o
+ * sistema usa estados "pendente" que viram filas no painel; a equipe confirma quando fizer.
+ */
+export const LINE_STATUSES = [
+  "ativa",
+  "suspensao_pendente",
+  "suspensa",
+  "reativacao_pendente",
+  "cancelamento_pendente",
+  "cancelada",
+] as const;
+export type LineStatus = (typeof LINE_STATUSES)[number];
+
+/** Pagamento em atraso foi quitado: para onde vai a linha. */
+export function lineStatusAfterPayment(status: LineStatus): LineStatus {
+  switch (status) {
+    case "suspensao_pendente": // equipe ainda não bloqueou na Vivo → nada a fazer
+      return "ativa";
+    case "suspensa": // já bloqueada → equipe precisa desbloquear na Vivo
+      return "reativacao_pendente";
+    case "cancelamento_pendente": // ainda não foi cancelada na Vivo (e estava bloqueada) → desbloquear
+      return "reativacao_pendente";
+    default:
+      return status;
+  }
+}
+
+/** Linha entrou em atraso: para onde vai. */
+export function lineStatusOnOverdue(status: LineStatus, action: OverdueAction): LineStatus {
+  if (action === "suspender_linha" && (status === "ativa" || status === "reativacao_pendente")) {
+    return status === "ativa" ? "suspensao_pendente" : "suspensa";
+  }
+  if (action === "cancelar_linha" && status !== "cancelada") return "cancelamento_pendente";
+  return status;
 }
