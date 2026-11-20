@@ -206,3 +206,12 @@ pagamento do Asaas (nunca passam pelo nosso servidor).
   o pedido vai para **pendência**.
 - Guarda provisória de **90 dias** (`delete_after`), a confirmar com o advogado; a rotina que apaga
   entra junto com as demais rotinas agendadas.
+
+## D18 — Identidade visual: logo e cores da Gigachip (20/11/2026)
+
+- Logo em `public/brand/` (PNG 512 e 192 px) e embutida no contrato (`lib/contract/logo.ts`).
+- Cores (amostradas da logo): **ciano `#01BAFE` → verde-água `#34FBA6` → verde-limão `#D8FD0D`**,
+  sobre fundo quase preto `#000105`.
+- Já aplicadas no **contrato em PDF**: faixa escura com a logo no topo, linha em degradê da marca,
+  marcadores nos títulos e rodapé com CNPJ e numeração. O site recebe a identidade na fase de
+  lapidação visual.
