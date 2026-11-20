@@ -13,6 +13,8 @@ const schema = z.object({
   ASAAS_API_KEY: z.string().min(1),
   ASAAS_WEBHOOK_TOKEN: z.string().min(32).max(255).regex(/^\S+$/),
   APP_URL: z.string().url().default("http://localhost:3000"),
+  /** Libera a criação do 1º usuário do painel (só funciona enquanto não houver ninguém na equipe). */
+  ADMIN_SETUP_TOKEN: z.string().min(20).optional(),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

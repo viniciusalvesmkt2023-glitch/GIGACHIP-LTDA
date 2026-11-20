@@ -50,3 +50,21 @@ export function cpfHash(cpfDigits: string, keyBase64: string): string {
   const key = decodeKey(keyBase64, "CPF_HASH_KEY");
   return createHmac("sha256", key).update(cpfDigits).digest("hex");
 }
+
+/** Mesma criptografia para arquivos (fotos de documento/selfie). */
+export function encryptBytes(data: Uint8Array, keySecret: string): Buffer {
+  const key = decodeKey(keySecret, "FIELD_ENCRYPTION_KEY");
+  const iv = randomBytes(IV_LEN);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const ciphertext = Buffer.concat([cipher.update(data), cipher.final()]);
+  return Buffer.concat([Buffer.from([VERSION]), iv, cipher.getAuthTag(), ciphertext]);
+}
+
+export function decryptBytes(blob: Uint8Array, keySecret: string): Buffer {
+  const key = decodeKey(keySecret, "FIELD_ENCRYPTION_KEY");
+  const buf = Buffer.from(blob);
+  if (buf[0] !== VERSION) throw new Error("versão de criptografia desconhecida");
+  const decipher = createDecipheriv("aes-256-gcm", key, buf.subarray(1, 1 + IV_LEN));
+  decipher.setAuthTag(buf.subarray(1 + IV_LEN, 1 + IV_LEN + TAG_LEN));
+  return Buffer.concat([decipher.update(buf.subarray(1 + IV_LEN + TAG_LEN)), decipher.final()]);
+}

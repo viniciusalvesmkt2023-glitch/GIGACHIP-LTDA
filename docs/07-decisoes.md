@@ -184,3 +184,25 @@ pagamento do Asaas (nunca passam pelo nosso servidor).
   (`device_info.checksum_warnings`) para a equipe conferir.
 - Visual: o layout atual é provisório. Depois que tudo funcionar, cada página será lapidada com a
   identidade visual da Gigachip (logo, cores e referências que os sócios escolherem).
+
+## D16 — Login próprio da equipe com 2FA obrigatório (Fase 3)
+
+- O painel (`/painel`) usa **login próprio**: e-mail + senha (scrypt) + **2FA obrigatório** por
+  aplicativo autenticador (TOTP, RFC 6238 — testado com os vetores oficiais). Não usa o Supabase
+  Auth: menos peças, e tudo roda e é testado no Postgres local.
+- Sessões de 12 h em cookie httpOnly/SameSite=Strict; só o hash do token fica no banco.
+- Bloqueio de 15 min após 5 senhas erradas para o mesmo e-mail.
+- Primeiro acesso: `/painel/configurar`, só com o código `ADMIN_SETUP_TOKEN` e só enquanto não
+  existir ninguém na equipe. Depois, o dono adiciona pessoas em `/painel/equipe`.
+- Funções: dono, administrador, ativador (veem documentos e dados completos), atendente e
+  financeiro (veem só dados mascarados). Ver documento e revelar CPF/IMEI/EID/ICCID ficam na auditoria.
+
+## D17 — Fotos de identidade cifradas no próprio banco (Fase 3)
+
+- Documento (frente/verso) e selfie são reduzidos no celular do cliente, conferidos pelo tipo
+  real do arquivo, **cifrados (AES-256-GCM)** e guardados em `identity_file_blobs`, separados dos
+  metadados. Não usamos bucket de arquivos: uma integração a menos e nada fica em link público.
+- Até 3 tentativas; a equipe aprova ou pede novas fotos com um motivo que o cliente vê. Na 3ª recusa
+  o pedido vai para **pendência**.
+- Guarda provisória de **90 dias** (`delete_after`), a confirmar com o advogado; a rotina que apaga
+  entra junto com as demais rotinas agendadas.

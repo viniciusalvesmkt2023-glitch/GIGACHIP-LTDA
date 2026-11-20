@@ -78,7 +78,15 @@ function Checklist({ v }: { v: AreaView }) {
           title="Confirmar identidade"
           text="Envie uma foto do documento (RG ou CNH) e uma selfie. Tudo pela área segura, nunca por e-mail."
           state={paid ? identityState(v.identityStatus) : "bloqueado"}
-          action={paid && v.identityStatus !== "approved" ? <p className="text-sm font-medium text-brand">Disponível em breve.</p> : undefined}
+          action={
+            paid && ["not_started", "pending_documents", "retry_required"].includes(v.identityStatus) ? (
+              <Link href="/minha-area/identidade" className={`${buttonStyles.primary} py-2`}>
+                {v.identityStatus === "retry_required" ? "Enviar novas fotos" : "Enviar fotos"}
+              </Link>
+            ) : v.identityStatus === "in_review" ? (
+              <p className="text-sm text-muted">Recebemos suas fotos. Nossa equipe está analisando.</p>
+            ) : undefined
+          }
         />
         <Step
           n={3}
