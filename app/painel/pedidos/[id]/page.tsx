@@ -54,7 +54,7 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
           <ActivateLineForm
             action={activateLineAction}
             orderId={o.id}
-            numbers={numbers.map((n) => ({ id: n.id, label: `${formatMsisdn(n.msisdn)}${n.plano_pj ? ` · ${n.plano_pj}` : ""}` }))}
+            numbers={numbers.map((n) => ({ id: n.id, label: formatMsisdn(n.msisdn) }))}
             defaults={{
               customer: act.customer,
               iccid: act.iccidSuggestion,
