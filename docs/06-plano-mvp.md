@@ -8,12 +8,12 @@ trabalho de coleta e conferência.
 ### Dentro do MVP
 
 - Site: home, catálogo, página de plano, comparação simples, FAQ, botão WhatsApp, rodapé com CNPJ e aviso de parceiro.
-- Contratação: cadastro básico + escolha eSIM/chip + modelo do aparelho + aceites (termos, privacidade).
+- Contratação: formulário inicial (nome, CPF, nascimento, e-mail, WhatsApp, eSIM ou chip lacrado) + aceites (termos, privacidade), seguido do pagamento (D1, D2).
 - Pagamento **PIX** pelo Asaas, com webhook, consulta de confirmação, expiração e reconciliação.
 - Área do cliente (login por código no e-mail) com checklist do pedido.
-- Identidade: **modo conforme resposta da Vivo** (provedor externo, ou modo manual assistido com upload seguro e aprovação no painel).
-- Contrato D4Sign (plano A ou B) com webhook de assinatura.
-- Coleta de IMEI/EID com instruções por tipo de aparelho e validação de dígito verificador.
+- Identidade: **obrigatória** — upload seguro de documento + selfie, aprovação no painel, exclusão programada dos arquivos (D3).
+- Contrato: PDF gerado pelo sistema a partir do modelo, enviado pela API do provedor de assinatura escolhido (D5), com webhook.
+- Coleta de IMEI + EID (eSIM) ou IMEI + ICCID (chip lacrado), com instruções e validação de dígito verificador (D4).
 - Marcação automática de "pronto para ativação".
 - Painel: dashboard com contadores, fila de ativação, lista/busca/filtro de pedidos, detalhe do pedido com histórico, clientes, planos (CRUD), equipe com funções e MFA, auditoria.
 - E-mails de todas as etapas + lembretes.
@@ -34,7 +34,7 @@ Cada fase termina com **demonstração em staging** e só segue com seu OK.
 - Domínio, e-mail do domínio, número de WhatsApp comercial.
 - Advogado: contrato para venda online, termos, privacidade, reembolso.
 - Lista inicial de planos.
-- **Spike técnico**: script que cria documento na D4Sign sandbox, cadastra signatário, envia e recebe webhook — prova o plano A ou B antes de construir em cima.
+- **Spike técnico**: script que gera o PDF do contrato, envia pelo sandbox do Autentique e da D4Sign (e ZapSign, se quiser comparar), e recebe o webhook de assinatura — decide o provedor (D5).
 
 ### Fase 1 — Fundação
 - Repositório Next.js + TypeScript + Tailwind; Supabase local, staging e produção.

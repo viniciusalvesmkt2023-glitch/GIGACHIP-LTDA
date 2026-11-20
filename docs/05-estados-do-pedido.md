@@ -63,8 +63,9 @@ stateDiagram-v2
    ```
 2. **Pagamento só muda pelo backend** após webhook autenticado **e** consulta à API do Asaas.
 3. **Contrato só é criado** quando `identity_status = approved` (o contrato usa dados validados).
-4. **Dados do aparelho** podem ser enviados a qualquer momento depois do pagamento; IMEI precisa
-   passar no Luhn; EID obrigatório só se `sim_type = esim`.
+4. **Dados do aparelho/chip** podem ser enviados a qualquer momento depois do pagamento; IMEI
+   precisa passar no Luhn; **EID** obrigatório se `sim_type = esim`; **ICCID** obrigatório se
+   `sim_type = physical` (chip lacrado comprado pelo cliente).
 5. **Pendência automática**:
    - `identity_status = rejected` após o limite de tentativas (ex.: 3);
    - `contract_status = error` após o limite de tentativas da fila;
@@ -74,7 +75,7 @@ stateDiagram-v2
    (a linha já existe — decisão humana).
 7. **`em_ativacao`** guarda `assigned_to`. Só quem assumiu (ou admin) conclui. Se ficar mais de X
    horas parado, volta para a fila com alerta.
-8. **`ativado`** exige: número da linha (MSISDN); para eSIM, o QR Code; para chip físico, o ICCID.
+8. **`ativado`** exige: número da linha (MSISDN); para eSIM, o QR Code ou a confirmação de que a Vivo o entregou.
    Ao salvar, dispara a notificação ao cliente.
 9. **Toda transição** grava `order_events` (de → para, quem, motivo). Transições não listadas acima
    são rejeitadas pelo código de domínio.

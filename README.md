@@ -19,3 +19,4 @@ de exceções.
 | 04 | [Modelo de dados](docs/04-modelo-de-dados.md) | Tabelas, relacionamentos e regras de acesso |
 | 05 | [Estados do pedido](docs/05-estados-do-pedido.md) | Máquina de estados e regras de transição |
 | 06 | [Plano do MVP](docs/06-plano-mvp.md) | Escopo do MVP, fases, testes e critérios para ir a produção |
+| 07 | [Registro de decisões](docs/07-decisoes.md) | Decisões dos sócios — **prevalece sobre os demais documentos** |

@@ -69,7 +69,7 @@ erDiagram
 | customer_id, plan_id | fk | |
 | plan_snapshot | jsonb | Cópia do plano/preço no momento da compra (preço pode mudar depois) |
 | amount_cents | int | |
-| sim_type | enum `esim` \| `physical` | |
+| sim_type | enum `esim` \| `physical` | `physical` = chip lacrado comprado pelo cliente |
 | device_brand, device_model | text | Para checar compatibilidade eSIM |
 | is_portability | bool | Futuro |
 | status | enum (doc 05) | Status principal |
@@ -105,7 +105,7 @@ erDiagram
 **identity_checks** — `order_id, provider (manual|<provedor>), provider_reference, status, attempts, rejection_reason, reviewed_by, decided_at`
 Status: `not_started`, `pending_documents`, `in_review`, `approved`, `rejected`, `retry_required`.
 
-**identity_files** (só no modo manual, se necessário) — `identity_check_id, kind (selfie|doc_front|doc_back), storage_path, sha256, delete_after`
+**identity_files** (modo manual — usado no MVP, ver D3) — `identity_check_id, kind (selfie|doc_front|doc_back), storage_path, sha256, delete_after`
 
 **contracts**
 | Campo | Nota |
@@ -125,6 +125,7 @@ Status: `not_started`, `pending_documents`, `in_review`, `approved`, `rejected`,
 | order_id | |
 | imei_encrypted 🔒 | 15 dígitos, Luhn válido |
 | eid_encrypted 🔒 | 32 dígitos, só eSIM |
+| iccid_encrypted 🔒 | 19–20 dígitos, só chip físico lacrado (D4) |
 | imei_last4 | Para exibir/conferir sem descriptografar |
 | screenshot_path | Opcional, com `delete_after` |
 | source | `typed` \| `ocr_confirmed` |
@@ -136,7 +137,7 @@ Status: `not_started`, `pending_documents`, `in_review`, `approved`, `rejected`,
 | order_id | |
 | performed_by | fk staff |
 | msisdn | Número da linha ativada |
-| iccid | Chip físico, se aplicável |
+| iccid | Copiado de `device_info` (chip físico) |
 | esim_qr_path | Storage privado, apagado após confirmação de instalação |
 | vivo_protocol | Protocolo do portal Vivo |
 | notes | |

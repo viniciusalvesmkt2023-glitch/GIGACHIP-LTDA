@@ -1,5 +1,7 @@
 # 01 — Análise estratégica
 
+> **Atualizado pelas decisões D1–D5 ([07-decisoes.md](07-decisoes.md)):** pagamento logo após o cadastro básico; validação de identidade sempre obrigatória (linhas no CNPJ da empresa); chip físico é comprado lacrado pelo cliente (pedimos ICCID); plataforma de assinatura trocável.
+
 ## 1. Diagnóstico da ideia
 
 A ideia é boa e o recorte está certo: **automatizar tudo em volta da ativação e manter a ativação
@@ -39,21 +41,19 @@ pós-pagamento independentes aconteçam em qualquer ordem.
 
 ```mermaid
 flowchart TD
-    A[Escolhe o plano] --> B[Cadastro básico<br/>nome, CPF, nascimento, e-mail, celular<br/>+ tipo de chip: eSIM ou físico<br/>+ modelo do aparelho<br/>+ aceite de termos e privacidade]
-    B --> C{Validações rápidas<br/>CPF válido? e-mail confirmado por código?<br/>aparelho compatível com eSIM?}
-    C -- não --> B
-    C -- ok --> D[Pagamento PIX<br/>QR Code na tela]
+    A[Escolhe o plano] --> B[Formulário inicial<br/>nome, CPF, nascimento, e-mail, WhatsApp<br/>tipo: eSIM ou chip lacrado comprado em loja<br/>+ aceite de termos e privacidade]
+    B --> D[Pagamento PIX<br/>QR Code na tela]
     D --> E[Webhook Asaas confirma<br/>+ backend consulta a cobrança]
-    E --> F[E-mail: pagamento confirmado<br/>link para a área do cliente]
+    E --> F[E-mail automático: pagamento confirmado<br/>link para a área do cliente com o passo a passo]
     F --> G[Área do cliente: checklist]
-    G --> H[1. Verificar identidade]
-    G --> J[2. Dados do aparelho<br/>IMEI / EID]
-    H --> I[3. Assinar contrato<br/>D4Sign — gerado só após identidade ok]
+    G --> H[1. Validar identidade<br/>documento + selfie]
+    G --> J[2. Dados do aparelho/chip<br/>IMEI + EID ou ICCID]
+    H --> I[3. Assinar contrato<br/>gerado após identidade aprovada]
     I --> K{Tudo concluído?}
     J --> K
-    K -- sim --> L[PRONTO PARA ATIVAÇÃO<br/>cliente vê botão do WhatsApp<br/>com o código do pedido]
+    K -- sim --> L[PRONTO PARA ATIVAÇÃO<br/>e-mail + botão do WhatsApp<br/>com o código do pedido]
     L --> M[Equipe ativa no portal Vivo]
-    M --> N[Marca ATIVADO no painel<br/>informa número da linha / QR eSIM]
+    M --> N[Marca ATIVADO no painel]
     N --> O[E-mail + área do cliente:<br/>linha ativa e orientações]
 ```
 
