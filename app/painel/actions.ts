@@ -1,5 +1,6 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { headers } from "next/headers";
 import { processQueuedContracts, retryContract, syncContractByDocument } from "@/lib/server/contracts";
 import { changeCustomerEmail } from "@/lib/server/customer-admin";
@@ -64,6 +65,7 @@ export async function decideIdentityAction(_p: FormState, fd: FormData): Promise
   const reason = str(fd, "reason").trim();
   if (!approve && reason.length < 5) return { message: "Explique o motivo para o cliente (ex.: foto do documento ilegível)." };
   const r = await decideIdentity(orderId, me.id, approve ? { approve: true } : { approve: false, reason });
+  refresh();
   return r.ok
     ? { ok: true, message: approve ? "Identidade aprovada." : "Cliente será orientado a enviar novas fotos." }
     : { message: r.message };
@@ -82,6 +84,7 @@ export async function retryContractAction(_p: FormState, fd: FormData): Promise<
   const me = await requireStaff(["owner", "admin", "ativador"]);
   await retryContract(str(fd, "orderId"), me.id);
   const r = await processQueuedContracts(1);
+  refresh();
   if (r.skipped) return { message: `Contrato na fila (${r.skipped}). Será enviado automaticamente.` };
   return r.sent ? { ok: true, message: "Contrato enviado ao cliente." } : { message: "Não foi possível enviar agora. Veja o erro abaixo; o sistema tenta de novo sozinho." };
 }
@@ -93,6 +96,7 @@ export async function syncContractAction(_p: FormState, fd: FormData): Promise<F
   if (!c?.uuid) return { message: "O contrato ainda não foi enviado." };
   try {
     const r = await syncContractByDocument(c.uuid, "staff", me.id);
+    refresh();
     return { ok: true, message: `Status na D4Sign: ${r.ok ? r.status : r.reason}.` };
   } catch (e) {
     return { message: `Não foi possível consultar a D4Sign: ${e instanceof Error ? e.message : String(e)}` };
@@ -113,6 +117,7 @@ export async function listSafesAction(): Promise<FormState> {
 export async function changeEmailAction(_p: FormState, fd: FormData): Promise<FormState> {
   const me = await requireStaff(["owner", "admin", "ativador"]);
   const r = await changeCustomerEmail(me, str(fd, "orderId"), str(fd, "email"));
+  refresh();
   return { ok: r.ok, message: r.messages.join(" ") };
 }
 
@@ -129,6 +134,7 @@ export async function activateLineAction(_p: FormState, fd: FormData): Promise<F
     salePriceCents: sale,
     costCents: cost,
   });
+  refresh();
   return { ok: r.ok, message: r.message };
 }
 
@@ -137,6 +143,7 @@ export async function addNumbersAction(_p: FormState, fd: FormData): Promise<For
   const { rows, invalid } = parseNumbersPaste(str(fd, "numbers"), str(fd, "vivoLogin").trim() || null);
   if (!rows.length) return { message: "Nenhum número válido encontrado." + (invalid.length ? ` Linhas ignoradas: ${invalid.length}.` : "") };
   const r = await addAvailableNumbers(me, rows);
+  refresh();
   const parts = [`${r.added} número(s) adicionado(s) como disponível.`];
   if (r.duplicated.length) parts.push(`${r.duplicated.length} já estava(m) cadastrado(s).`);
   if (invalid.length) parts.push(`${invalid.length} linha(s) ignorada(s) por número inválido.`);
@@ -148,5 +155,6 @@ export async function setCostAction(_p: FormState, fd: FormData): Promise<FormSt
   const cents = parseMoneyToCents(str(fd, "cost"));
   if (cents === null) return { message: "Valor inválido. Use, por exemplo, 30,00." };
   await setLineCostCents(me, cents);
+  refresh();
   return { ok: true, message: "Valor do gestor atualizado. Vale para as próximas ativações." };
 }
