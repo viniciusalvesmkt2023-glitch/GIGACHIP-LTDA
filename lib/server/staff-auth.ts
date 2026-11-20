@@ -115,12 +115,14 @@ export async function logout(): Promise<void> {
 /** Gera (ou reaproveita) o segredo pendente para cadastrar o autenticador. */
 export async function startTotpEnrollment(staffId: string): Promise<string> {
   const key = env().FIELD_ENCRYPTION_KEY;
-  const [row] = await sql()<{ pending: Uint8Array | null }[]>`
-    select totp_pending_encrypted as pending from public.staff where id = ${staffId}`;
-  if (row?.pending) return decryptField(row.pending, key);
-  const secret = generateTotpSecret();
-  await sql()`update public.staff set totp_pending_encrypted = ${encryptField(secret, key)} where id = ${staffId}`;
-  return secret;
+  // Atômico: se a página for carregada duas vezes ao mesmo tempo, as duas recebem o MESMO
+  // segredo (o primeiro gravado). Antes, a 2ª carga podia sobrescrever o QR que estava na tela.
+  const [row] = await sql()<{ pending: Uint8Array }[]>`
+    update public.staff
+    set totp_pending_encrypted = coalesce(totp_pending_encrypted, ${encryptField(generateTotpSecret(), key)})
+    where id = ${staffId}
+    returning totp_pending_encrypted as pending`;
+  return decryptField(row.pending, key);
 }
 
 export async function verifySecondFactor(code: string): Promise<LoginResult> {
