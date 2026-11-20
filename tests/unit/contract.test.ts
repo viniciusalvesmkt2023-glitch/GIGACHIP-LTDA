@@ -15,11 +15,11 @@ const settings: ContractSettings = {
   version: CONTRACT_TEMPLATE_VERSION,
   isTest: true,
   whatsapp: null,
+  supportEmail: "suporte@gigachip.com.br",
   privacyUrl: "https://gigachip-ltda.vercel.app/privacidade",
-  dpoEmail: null,
-  unblockTime: null,
-  cancelAfterDays: null,
-  adjustmentRule: null,
+  dpoEmail: "suporte@gigachip.com.br",
+  unblockTime: "24 (vinte e quatro) horas",
+  blockedDaysBeforeCancel: 5,
 };
 
 describe("contrato", () => {
@@ -38,16 +38,25 @@ describe("contrato", () => {
   });
 
   it("é feito para assinatura eletrônica (sem linha de assinatura nem 'local e data')", () => {
-    expect(text).toContain("assinado **eletronicamente** pela plataforma D4Sign");
+    expect(text).toContain("assinado **eletronicamente** pelo CLIENTE na plataforma D4Sign");
     expect(text).not.toMatch(/_{5,}/);
     expect(text).not.toMatch(/local e data/i);
   });
 
-  it("marca o que ainda precisa ser decidido", () => {
-    expect(text).toContain("[A DEFINIR: prazo de desbloqueio]");
-    const done = buildContract(data, { ...settings, whatsapp: "(88) 90000-0000", unblockTime: "24 (vinte e quatro) horas", cancelAfterDays: 30, adjustmentRule: "anualmente, pelo IPCA", dpoEmail: "privacidade@gigachip.com.br" })
-      .map((b) => b.text).join("\n");
-    expect(done).not.toContain("[A DEFINIR");
+  it("aplica as decisões dos sócios (D10, D19)", () => {
+    expect(text).not.toContain("[A DEFINIR");
+    expect(text).toContain("desbloqueada em até 24 (vinte e quatro) horas");
+    expect(text).toContain("bloqueada por 5 (cinco) dias sem pagamento, o contrato será cancelado");
+    expect(text).toContain("IPCA/IBGE");
+    expect(text).toContain("poderá cancelar sem multa");
+    expect(text).toContain("suporte@gigachip.com.br");
+    expect(text).toContain("assinado **eletronicamente** pelo CLIENTE");
+  });
+
+  it("sem WhatsApp usa só o e-mail; com WhatsApp mostra os dois", () => {
+    expect(text).toContain("Atendimento: e-mail suporte@gigachip.com.br.");
+    const comWa = buildContract(data, { ...settings, whatsapp: "(88) 90000-0000" }).map((b) => b.text).join("\n");
+    expect(comWa).toContain("e-mail suporte@gigachip.com.br e WhatsApp (88) 90000-0000");
   });
 
   it("chip físico e cartão mudam o texto", () => {

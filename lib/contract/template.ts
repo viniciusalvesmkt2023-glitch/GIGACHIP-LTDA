@@ -8,21 +8,22 @@
  */
 import { formatBRL } from "@/lib/domain/money";
 
-export const CONTRACT_TEMPLATE_VERSION = "v2-teste-2026-11";
+export const CONTRACT_TEMPLATE_VERSION = "v3-teste-2026-11";
 
 export type ContractSettings = {
   version: string;
   /** Versão de teste: o PDF sai com aviso "não válido" em todas as páginas. */
   isTest: boolean;
+  /** WhatsApp de atendimento já formatado. null = ainda não existe (o contrato usa só o e-mail). */
   whatsapp: string | null;
+  supportEmail: string;
   privacyUrl: string;
-  dpoEmail: string | null;
-  /** Ex.: "24 (vinte e quatro) horas". null = a definir. */
-  unblockTime: string | null;
-  /** Dias de atraso até o cancelamento definitivo. null = a definir. */
-  cancelAfterDays: number | null;
-  /** Ex.: "anualmente, pelo IPCA". null = a definir. */
-  adjustmentRule: string | null;
+  /** E-mail para assuntos de dados pessoais (LGPD). */
+  dpoEmail: string;
+  /** Ex.: "24 (vinte e quatro) horas". */
+  unblockTime: string;
+  /** Dias com a linha bloqueada até o cancelamento definitivo (D10). */
+  blockedDaysBeforeCancel: number;
 };
 
 export type ContractData = {
@@ -40,7 +41,8 @@ export type Block =
   | { type: "heading"; text: string }
   | { type: "para"; text: string };
 
-const PENDING = (what: string) => `[A DEFINIR: ${what}]`;
+const NUMBER_WORDS: Record<number, string> = { 1: "um", 2: "dois", 3: "três", 4: "quatro", 5: "cinco", 7: "sete", 10: "dez", 15: "quinze", 30: "trinta" };
+const days = (n: number) => `${n} (${NUMBER_WORDS[n] ?? n}) dia${n === 1 ? "" : "s"}`;
 
 function formatCpf(digits: string) {
   const d = digits.replace(/\D/g, "");
@@ -59,7 +61,7 @@ function formatPhone(e164: string) {
 
 export function buildContract(data: ContractData, s: ContractSettings): Block[] {
   const c = data.customer;
-  const wa = s.whatsapp ?? PENDING("WhatsApp de atendimento");
+  const contact = s.whatsapp ? `e-mail ${s.supportEmail} e WhatsApp ${s.whatsapp}` : `e-mail ${s.supportEmail}`;
   const sim = data.simType === "esim" ? "eSIM" : "chip físico lacrado adquirido pelo CLIENTE";
   const pay = data.billingType === "pix" ? "PIX" : "cartão de crédito";
 
@@ -68,7 +70,7 @@ export function buildContract(data: ContractData, s: ContractSettings): Block[] 
     { type: "meta", text: `Pedido nº **${data.orderCode}** · Modelo ${s.version}` },
     {
       type: "para",
-      text: `**CONTRATADA:** Gigachip Ltda., CNPJ 51.968.628/0001-16. Atendimento: WhatsApp ${wa}.`,
+      text: `**CONTRATADA:** Gigachip Ltda., CNPJ 51.968.628/0001-16. Atendimento: ${contact}.`,
     },
     {
       type: "para",
@@ -98,15 +100,15 @@ export function buildContract(data: ContractData, s: ContractSettings): Block[] 
     { type: "para", text: "2.2. A CONTRATADA enviará lembretes de pagamento 3 (três) dias antes e no dia do vencimento." },
     {
       type: "para",
-      text: `2.3. **Não havendo pagamento até o fim do dia do vencimento, o uso da linha será bloqueado a partir do dia seguinte**, até a quitação. Confirmado o pagamento, a linha será desbloqueada em até ${s.unblockTime ?? PENDING("prazo de desbloqueio")}.`,
+      text: `2.3. **Não havendo pagamento até o fim do dia do vencimento, o uso da linha será bloqueado a partir do dia seguinte**, até a quitação. Confirmado o pagamento, a linha será desbloqueada em até ${s.unblockTime}.`,
     },
     {
       type: "para",
-      text: `2.4. Permanecendo o atraso por mais de ${s.cancelAfterDays ? `**${s.cancelAfterDays} dias**` : PENDING("dias até o cancelamento")}, o contrato poderá ser cancelado, encerrando a autorização de uso da linha (cláusula 5), sem prejuízo da cobrança dos valores devidos. Por a linha ser de titularidade da CONTRATADA, o número não poderá ser recuperado após o cancelamento.`,
+      text: `2.4. **Permanecendo a linha bloqueada por ${days(s.blockedDaysBeforeCancel)} sem pagamento, o contrato será cancelado** e a autorização de uso da linha encerrada (cláusula 5), sem prejuízo da cobrança dos valores devidos. Por a linha ser de titularidade da CONTRATADA, o número não poderá ser recuperado após o cancelamento.`,
     },
     {
       type: "para",
-      text: `2.5. Reajuste: ${s.adjustmentRule ?? PENDING("regra de reajuste")}, com aviso de no mínimo 30 (trinta) dias.`,
+      text: "2.5. A mensalidade poderá ser reajustada (a) a cada 12 (doze) meses, pela variação do IPCA/IBGE; ou (b) a qualquer tempo, quando a operadora aumentar o custo do plano, limitado ao valor desse aumento. O CLIENTE será avisado com no mínimo 30 (trinta) dias de antecedência e, se não concordar, poderá cancelar sem multa.",
     },
 
     { type: "heading", text: "3. Sem fidelidade" },
@@ -152,10 +154,10 @@ export function buildContract(data: ContractData, s: ContractSettings): Block[] 
       text: `7.1. A CONTRATADA trata os dados do CLIENTE (cadastro, documento, selfie, dados do aparelho e do chip, pagamentos) para executar este contrato, prevenir fraudes e cumprir obrigações legais e regulatórias, conforme a **Política de Privacidade** (${s.privacyUrl}).`,
     },
     { type: "para", text: "7.2. Imagens de documento e selfie são mantidas apenas pelo prazo necessário e depois excluídas." },
-    { type: "para", text: `7.3. Pedidos sobre dados pessoais: ${s.dpoEmail ?? PENDING("e-mail do encarregado de dados")}.` },
+    { type: "para", text: `7.3. Pedidos sobre dados pessoais (acesso, correção, exclusão e demais direitos da LGPD): ${s.dpoEmail}.` },
 
     { type: "heading", text: "8. Atendimento, arrependimento e cancelamento" },
-    { type: "para", text: `8.1. Suporte e cancelamento: WhatsApp ${wa}, com registro e protocolo.` },
+    { type: "para", text: `8.1. Suporte e cancelamento: ${contact}, com registro e protocolo.` },
     {
       type: "para",
       text: "8.2. Por ser contratação fora do estabelecimento, o CLIENTE pode desistir em até **7 (sete) dias** contados da contratação ou da ativação, sem multa e com devolução dos valores pagos (art. 49 do Código de Defesa do Consumidor).",
@@ -164,7 +166,7 @@ export function buildContract(data: ContractData, s: ContractSettings): Block[] 
     { type: "heading", text: "9. Assinatura eletrônica e disposições finais" },
     {
       type: "para",
-      text: "9.1. Este contrato é assinado **eletronicamente** pela plataforma D4Sign, nos termos da MP 2.200-2/2001 (art. 10, §2º) e da Lei 14.063/2020. Os dados de identificação de quem assinou, a data, a hora e o endereço IP constam do **relatório de assinaturas** que a plataforma anexa ao final deste documento, dispensando assinatura à mão.",
+      text: "9.1. Este contrato é assinado **eletronicamente** pelo CLIENTE na plataforma D4Sign, nos termos da MP 2.200-2/2001 (art. 10, §2º) e da Lei 14.063/2020. Os dados de identificação de quem assinou, a data, a hora e o endereço IP constam do **relatório de assinaturas** que a plataforma anexa ao final deste documento, dispensando assinatura à mão.",
     },
     { type: "para", text: "9.2. Fica eleito o foro do domicílio do CLIENTE." },
   ];

@@ -1,6 +1,10 @@
 "use server";
 
 import { headers } from "next/headers";
+import { after } from "next/server";
+import { processQueuedContracts, retryContract, syncContractByDocument } from "@/lib/server/contracts";
+import { sql } from "@/lib/server/db";
+import { d4sign } from "@/lib/integrations/d4sign/client";
 import { redirect } from "next/navigation";
 import { revealSensitive, type SensitiveField } from "@/lib/server/admin";
 import { decideIdentity } from "@/lib/server/identity";
@@ -58,7 +62,13 @@ export async function decideIdentityAction(_p: FormState, fd: FormData): Promise
   const reason = str(fd, "reason").trim();
   if (!approve && reason.length < 5) return { message: "Explique o motivo para o cliente (ex.: foto do documento ilegível)." };
   const r = await decideIdentity(orderId, me.id, approve ? { approve: true } : { approve: false, reason });
-  return r.ok ? { ok: true, message: approve ? "Identidade aprovada." : "Cliente será orientado a enviar novas fotos." } : { message: r.message };
+  if (r.ok && approve) {
+    // Envia o contrato logo depois de responder (sem deixar a tela esperando a D4Sign)
+    after(() => processQueuedContracts(1).then(() => undefined).catch((e) => console.error(`[contratos] ${e}`)));
+  }
+  return r.ok
+    ? { ok: true, message: approve ? "Identidade aprovada. O contrato será enviado ao cliente pela D4Sign." : "Cliente será orientado a enviar novas fotos." }
+    : { message: r.message };
 }
 
 export async function revealAction(_p: FormState, fd: FormData): Promise<FormState> {
@@ -68,4 +78,36 @@ export async function revealAction(_p: FormState, fd: FormData): Promise<FormSta
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || null;
   const value = await revealSensitive(me, str(fd, "orderId"), field, ip);
   return value ? { ok: true, value } : { message: "Não informado." };
+}
+
+export async function retryContractAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner", "admin", "ativador"]);
+  await retryContract(str(fd, "orderId"), me.id);
+  const r = await processQueuedContracts(1);
+  if (r.skipped) return { message: `Contrato na fila (${r.skipped}). Será enviado automaticamente.` };
+  return r.sent ? { ok: true, message: "Contrato enviado ao cliente." } : { message: "Não foi possível enviar agora. Veja o erro abaixo; o sistema tenta de novo sozinho." };
+}
+
+export async function syncContractAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner", "admin", "ativador"]);
+  const [c] = await sql()<{ uuid: string | null }[]>`
+    select provider_document_uuid as uuid from public.contracts where order_id = ${str(fd, "orderId")}`;
+  if (!c?.uuid) return { message: "O contrato ainda não foi enviado." };
+  try {
+    const r = await syncContractByDocument(c.uuid, "staff", me.id);
+    return { ok: true, message: `Status na D4Sign: ${r.ok ? r.status : r.reason}.` };
+  } catch (e) {
+    return { message: `Não foi possível consultar a D4Sign: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+export async function listSafesAction(): Promise<FormState> {
+  await requireStaff(["owner"]);
+  try {
+    const safes = await d4sign.listSafes();
+    const list = safes.map((s) => `${s["name-safe"] ?? s.name_safe ?? "(sem nome)"}: ${s.uuid_safe}`).join("\n");
+    return { ok: true, value: list || "Nenhum cofre encontrado." };
+  } catch (e) {
+    return { message: `Falha ao falar com a D4Sign: ${e instanceof Error ? e.message : String(e)}` };
+  }
 }

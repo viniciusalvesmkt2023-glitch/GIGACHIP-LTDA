@@ -4,10 +4,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { formatBRL } from "@/lib/domain/money";
 import { getOrderDetail, STATUS_LABEL } from "@/lib/server/admin";
+import { getContractInfo } from "@/lib/server/contracts";
 import { getIdentityReview } from "@/lib/server/identity";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { decideIdentityAction, revealAction } from "../../actions";
-import { IdentityDecisionForm, RevealButton } from "../../forms";
+import { decideIdentityAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
+import { ActionButton, IdentityDecisionForm, RevealButton } from "../../forms";
 import { Card, PanelShell } from "../../shell";
 
 export const metadata: Metadata = { title: "Pedido" };
@@ -26,6 +27,7 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
   const o = await getOrderDetail(staff, id);
   if (!o) notFound();
   const identity = await getIdentityReview(id);
+  const contract = await getContractInfo(id);
   const canSee = ["owner", "admin", "ativador"].includes(staff.role);
 
   return (
@@ -97,6 +99,31 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
           </div>
         ) : (
           <p className="text-sm text-muted">O cliente ainda não enviou as fotos.</p>
+        )}
+      </Card>
+
+      <Card title={`Contrato — ${SUB[o.contract_status] ?? o.contract_status}`} className="mt-4">
+        {contract ? (
+          <div className="space-y-3 text-sm">
+            <p>
+              Enviado: {fmt(contract.sent_at)} · Assinado: {fmt(contract.signed_at)}
+              {contract.status === "queued" && <> · Etapa: {contract.step} · tentativas: {contract.attempts}</>}
+            </p>
+            {contract.last_error && <p className="rounded-lg bg-red-50 p-2 text-xs text-danger">Último erro: {contract.last_error}</p>}
+            <div className="flex flex-wrap items-start gap-3">
+              {contract.has_file && canSee && (
+                <a href={`/painel/contratos/${o.id}`} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-brand px-4 py-2 font-semibold text-white">
+                  Baixar contrato assinado
+                </a>
+              )}
+              {canSee && ["queued", "error", "refused", "cancelled"].includes(contract.status) && (
+                <ActionButton action={retryContractAction} orderId={o.id} label={contract.status === "queued" ? "Enviar agora" : "Enviar de novo"} />
+              )}
+              {canSee && contract.status === "sent" && <ActionButton action={syncContractAction} orderId={o.id} label="Conferir assinatura na D4Sign" />}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted">O contrato é gerado e enviado automaticamente quando a identidade é aprovada.</p>
         )}
       </Card>
 

@@ -126,8 +126,8 @@ no mês seguinte. Implementado em `lib/domain/billing.ts`.
   | Equipe desbloqueou | `ativa` | — |
 
 - Se o cliente pagar **antes** de a equipe bloquear, a linha volta a `ativa` sozinha e sai da fila.
-- **Cancelamento definitivo** por atraso longo: só se configurado (`cancelAfterDays`). ⚠️ A definir
-  com os sócios quantos dias bloqueada até cancelar de vez (ou se nunca cancela automaticamente).
+- **Cancelamento definitivo:** depois de **5 dias bloqueada** sem pagar (vencimento dia 20 →
+  bloqueio dia 21 → cancelamento dia 26). Decidido em 20/11/2026 (D19).
 - Implementado em `lib/domain/billing.ts` e na migração `20261120000002_bloqueio_por_atraso.sql`.
 
 ## D11 — Planos: ligações ilimitadas, bônus permanente (20/11/2026)
@@ -215,3 +215,30 @@ pagamento do Asaas (nunca passam pelo nosso servidor).
 - Já aplicadas no **contrato em PDF**: faixa escura com a logo no topo, linha em degradê da marca,
   marcadores nos títulos e rodapé com CNPJ e numeração. O site recebe a identidade na fase de
   lapidação visual.
+
+## D19 — Condições finais do contrato (20/11/2026)
+
+- **Desbloqueio:** até 24 horas depois da confirmação do pagamento.
+- **Cancelamento por atraso:** após 5 dias com a linha bloqueada (`DEFAULT_CANCEL_AFTER_DAYS = 6`
+  contados do vencimento).
+- **Reajuste:** como o preço depende do custo cobrado pela operadora, o contrato prevê reajuste
+  (a) a cada 12 meses pelo IPCA ou (b) a qualquer tempo quando a operadora aumentar o custo,
+  limitado a esse aumento — sempre com aviso de 30 dias e direito de cancelar sem multa.
+- **Dados pessoais (LGPD) e atendimento:** suporte@gigachip.com.br (o e-mail precisa ser criado
+  quando o domínio for configurado).
+- **WhatsApp:** ainda não existe. Quando a variável `NEXT_PUBLIC_WHATSAPP_NUMBER` for cadastrada, o
+  número aparece no site e nos contratos novos automaticamente.
+- **Quem assina:** só o cliente.
+
+## D20 — Integração com a D4Sign (20/11/2026)
+
+- Endpoints conferidos no **conector oficial da D4Sign** (`@d4sign/n8n-nodes-d4sign` 1.0.11), já que
+  o site da documentação não abre a partir do ambiente de desenvolvimento.
+- Fluxo: identidade aprovada → PDF gerado → `uploadbinary` no cofre → `createlist` (cliente, "assinar",
+  aviso por e-mail) → `webhooks` (URL com senha) → `sendtosigner`. A D4Sign manda o e-mail ao
+  cliente (não depende do nosso domínio).
+- O aviso de assinatura é só um "toque": o sistema consulta `GET /documents/{uuid}` e, se
+  finalizado, baixa o PDF assinado e guarda **cifrado** (`contract_files`).
+- Respeita o limite de **10 chamadas/hora** (`api_call_log`); acima disso o contrato espera na fila.
+- Rotina diária (Vercel Cron, plano gratuito) reenvia o que ficou na fila e confere assinaturas.
+- **A confirmar no 1º teste real:** códigos de status do documento (4 = finalizado, 6 = cancelado).

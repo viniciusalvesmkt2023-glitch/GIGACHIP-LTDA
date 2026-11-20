@@ -69,24 +69,31 @@ export function reminderDates(due: CalendarDate): CalendarDate[] {
 }
 
 export const DEFAULT_SUSPEND_AFTER_DAYS = 1;
+/**
+ * D10: bloqueia no dia seguinte ao vencimento e cancela depois de 5 dias bloqueada.
+ * Vencimento dia 20 → bloqueio dia 21 → cancelamento dia 26 (20 + 1 + 5).
+ */
+export const DEFAULT_CANCEL_AFTER_DAYS = DEFAULT_SUSPEND_AFTER_DAYS + 5;
 
 export type OverdueAction = "nenhuma" | "suspender_linha" | "cancelar_linha";
 
 /**
  * O que fazer com uma mensalidade em aberto (D10).
  * - suspendAfterDays = 1 → não pagou no dia 20, a linha é BLOQUEADA no dia 21 até pagar.
- * - cancelAfterDays (opcional) → depois de N dias em atraso, a linha entra na fila de
- *   cancelamento definitivo. Sem valor = nunca cancela automaticamente.
+ * - cancelAfterDays → depois de N dias do vencimento, a linha entra na fila de cancelamento
+ *   definitivo (padrão: 6 = 1 dia até o bloqueio + 5 dias bloqueada).
  */
 export function overdueAction(params: {
   due: CalendarDate;
   today: CalendarDate;
   paid: boolean;
   suspendAfterDays?: number;
-  cancelAfterDays?: number;
+  /** null = nunca cancela automaticamente. Padrão: DEFAULT_CANCEL_AFTER_DAYS. */
+  cancelAfterDays?: number | null;
 }): OverdueAction {
   if (params.paid) return "nenhuma";
-  if (params.cancelAfterDays !== undefined && compareDates(params.today, addDays(params.due, params.cancelAfterDays)) >= 0) {
+  const cancelAfter = params.cancelAfterDays === undefined ? DEFAULT_CANCEL_AFTER_DAYS : params.cancelAfterDays;
+  if (cancelAfter !== null && compareDates(params.today, addDays(params.due, cancelAfter)) >= 0) {
     return "cancelar_linha";
   }
   const suspendAt = addDays(params.due, params.suspendAfterDays ?? DEFAULT_SUSPEND_AFTER_DAYS);

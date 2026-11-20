@@ -11,7 +11,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "db:check": "bash scripts/check-migrations.sh",
     "dev:asaas-mock": "node scripts/dev/asaas-mock.mjs 4010",
-    "dev:db": "bash scripts/dev/db.sh start"
+    "dev:db": "bash scripts/dev/db.sh start",
+    "dev:d4sign-mock": "node scripts/dev/d4sign-mock.mjs 4020"
   },
   "dependencies": {
     "next": "16.4.6",

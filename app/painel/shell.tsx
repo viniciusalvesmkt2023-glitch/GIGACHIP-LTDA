@@ -15,6 +15,7 @@ export function PanelShell({ staff, children }: { staff: Staff; children: ReactN
             <Link href="/painel" className="hover:text-brand">Visão geral</Link>
             <Link href="/painel/pedidos" className="hover:text-brand">Pedidos</Link>
             {staff.role === "owner" && <Link href="/painel/equipe" className="hover:text-brand">Equipe</Link>}
+            {staff.role === "owner" && <Link href="/painel/integracoes" className="hover:text-brand">Integrações</Link>}
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">
             <span className="text-muted">{staff.name} · {ROLE_LABEL[staff.role]}</span>

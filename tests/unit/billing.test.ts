@@ -38,22 +38,26 @@ describe("lembretes", () => {
   });
 });
 
-describe("inadimplência", () => {
+describe("inadimplência (D10)", () => {
   const vencimento = d("2026-12-20");
+  const at = (day: string) => overdueAction({ due: vencimento, today: d(day), paid: false });
   it("no dia do vencimento ainda não faz nada", () => {
-    expect(overdueAction({ due: vencimento, today: d("2026-12-20"), paid: false })).toBe("nenhuma");
+    expect(at("2026-12-20")).toBe("nenhuma");
   });
-  it("não pagou no dia 20 → bloquear no dia 21 (não cancela)", () => {
-    expect(overdueAction({ due: vencimento, today: d("2026-12-21"), paid: false })).toBe("suspender_linha");
-    expect(overdueAction({ due: vencimento, today: d("2027-03-01"), paid: false })).toBe("suspender_linha");
+  it("não pagou no dia 20 → bloqueia no dia 21 e segue bloqueada até o dia 25", () => {
+    expect(at("2026-12-21")).toBe("suspender_linha");
+    expect(at("2026-12-25")).toBe("suspender_linha");
+  });
+  it("5 dias bloqueada sem pagar → cancela no dia 26", () => {
+    expect(at("2026-12-26")).toBe("cancelar_linha");
   });
   it("pago nunca bloqueia", () => {
     expect(overdueAction({ due: vencimento, today: d("2027-01-30"), paid: true })).toBe("nenhuma");
   });
-  it("cancelamento só se configurado", () => {
-    const p = { due: vencimento, paid: false, cancelAfterDays: 30 };
-    expect(overdueAction({ ...p, today: d("2027-01-18") })).toBe("suspender_linha");
-    expect(overdueAction({ ...p, today: d("2027-01-19") })).toBe("cancelar_linha");
+  it("prazo configurável e opção de nunca cancelar", () => {
+    expect(overdueAction({ due: vencimento, paid: false, today: d("2027-01-18"), cancelAfterDays: 30 })).toBe("suspender_linha");
+    expect(overdueAction({ due: vencimento, paid: false, today: d("2027-01-19"), cancelAfterDays: 30 })).toBe("cancelar_linha");
+    expect(overdueAction({ due: vencimento, paid: false, today: d("2027-06-01"), cancelAfterDays: null })).toBe("suspender_linha");
   });
 });
 

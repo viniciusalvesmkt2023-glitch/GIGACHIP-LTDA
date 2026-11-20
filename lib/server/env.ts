@@ -15,6 +15,14 @@ const schema = z.object({
   APP_URL: z.string().url().default("http://localhost:3000"),
   /** Libera a criação do 1º usuário do painel (só funciona enquanto não houver ninguém na equipe). */
   ADMIN_SETUP_TOKEN: z.string().min(20).optional(),
+  // D4Sign (opcional: sem estas variáveis o envio de contratos fica desligado)
+  D4SIGN_API_URL: z.string().url().default("https://secure.d4sign.com.br/api/v1"),
+  D4SIGN_TOKEN_API: z.string().min(1).optional(),
+  D4SIGN_CRYPT_KEY: z.string().min(1).optional(),
+  D4SIGN_SAFE_UUID: z.string().regex(/^[0-9a-f-]{36}$/i).optional(),
+  /** Senha que vai na URL do aviso da D4Sign (o sistema só aceita avisos com ela). 32+ caracteres. */
+  D4SIGN_WEBHOOK_SECRET: z.string().min(32).regex(/^[A-Za-z0-9_-]+$/).optional(),
+  D4SIGN_RATE_LIMIT_PER_HOUR: z.coerce.number().int().positive().default(10),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

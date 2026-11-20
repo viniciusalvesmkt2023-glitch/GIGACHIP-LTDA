@@ -108,3 +108,16 @@ export function IdentityDecisionForm({ action, orderId }: { action: Action; orde
     </form>
   );
 }
+
+/** Botão simples que chama uma ação do painel e mostra o resultado. */
+export function ActionButton({ action, orderId, label, variant = "secondary" }: { action: Action; orderId?: string; label: string; variant?: "primary" | "secondary" }) {
+  const [s, a, pending] = useActionState(action, {});
+  return (
+    <form action={a} className="space-y-2">
+      {orderId && <input type="hidden" name="orderId" value={orderId} />}
+      <button disabled={pending} className={`${buttonStyles[variant]} py-2`}>{pending ? "Aguarde..." : label}</button>
+      <Msg s={s} />
+      {s.value && <pre className="whitespace-pre-wrap rounded-xl bg-surface p-3 text-xs">{s.value}</pre>}
+    </form>
+  );
+}

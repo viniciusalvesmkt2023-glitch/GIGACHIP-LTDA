@@ -91,7 +91,15 @@ function Checklist({ v }: { v: AreaView }) {
         <Step
           n={3}
           title="Assinar o contrato"
-          text="Depois da identidade confirmada, enviamos o contrato digital (D4Sign) para o seu e-mail."
+          text={
+            v.contractStatus === "signed"
+              ? "Contrato assinado. Obrigado!"
+              : v.contractStatus === "sent"
+                ? "Enviamos o contrato para o seu e-mail pela D4Sign, nossa plataforma de assinatura digital. Procure o e-mail da D4Sign (confira também o spam/lixo eletrônico) e assine."
+                : v.contractStatus === "queued"
+                  ? "Estamos preparando o seu contrato. Em instantes ele chega no seu e-mail pela D4Sign."
+                  : "Depois da identidade confirmada, enviamos o contrato digital (D4Sign) para o seu e-mail."
+          }
           state={v.contractStatus === "signed" ? "feito" : v.identityStatus === "approved" ? "pendente" : "bloqueado"}
         />
         <Step
