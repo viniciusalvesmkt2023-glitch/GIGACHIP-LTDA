@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import { asaas } from "@/lib/integrations/asaas/client";
 import { d4sign, d4signConfigured } from "@/lib/integrations/d4sign/client";
 import { processQueuedContracts } from "./contracts";
@@ -82,14 +83,22 @@ export async function changeCustomerEmail(staff: Staff, orderId: string, rawEmai
     messages.push("⚠️ O contrato já estava assinado com o e-mail antigo; ele não foi refeito.");
   }
   if (plan.resendContract && d4signConfigured()) {
-    if (plan.oldDoc) {
-      await d4sign
-        .cancelDocument(plan.oldDoc, "E-mail do cliente corrigido; novo contrato enviado.")
-        .then(() => messages.push("Contrato antigo cancelado na D4Sign."))
-        .catch(() => messages.push("⚠️ Não foi possível cancelar o contrato antigo na D4Sign — cancele lá manualmente."));
-    }
-    const r = await processQueuedContracts(1).catch(() => null);
-    messages.push(r?.sent ? "Novo contrato enviado para o e-mail correto." : "Novo contrato na fila; será enviado em instantes.");
+    // Parte lenta (várias chamadas à D4Sign) roda DEPOIS de responder, para a tela não travar
+    // nem estourar o tempo máximo da hospedagem.
+    const oldDoc = plan.oldDoc;
+    after(async () => {
+      if (oldDoc) {
+        await d4sign
+          .cancelDocument(oldDoc, "E-mail do cliente corrigido; novo contrato enviado.")
+          .catch((e) => console.error(`[corrigir e-mail] cancelar contrato antigo ${oldDoc}: ${e}`));
+      }
+      await processQueuedContracts(1).catch((e) => console.error(`[corrigir e-mail] reenviar contrato: ${e}`));
+    });
+    messages.push(
+      oldDoc
+        ? "O contrato antigo será cancelado na D4Sign e o novo enviado para o e-mail correto em instantes. Atualize a página em 1 minuto para conferir."
+        : "O contrato será enviado para o e-mail correto em instantes.",
+    );
   }
   return { ok: true, messages };
 }
