@@ -151,9 +151,11 @@ async function advance(contractId: string): Promise<void> {
   }
   if (!docUuid) throw new Error("documento sem uuid na D4Sign");
   if (step === "cadastrar_signatario") {
-    await d4sign.addSigner(docUuid, r.email, { docAndSelfie: identityMode() === "d4sign" });
+    const docAndSelfie = identityMode() === "d4sign";
+    await d4sign.addSigner(docUuid, r.email, { docAndSelfie });
     step = "registrar_webhook";
     await save({ step });
+    await sql()`update public.contracts set signer_auth = ${docAndSelfie ? "doc_selfie" : "email"} where id = ${contractId}`;
   }
   if (step === "registrar_webhook") {
     const url = webhookUrl();
@@ -224,8 +226,8 @@ export async function processQueuedContracts(limit = 2): Promise<{ sent: number;
 
 /** Consulta o status na D4Sign e atualiza o contrato. Idempotente. */
 export async function syncContractByDocument(documentUuid: string, actor: "webhook" | "system" | "staff" = "webhook", staffId?: string) {
-  const [c] = await sql()<{ id: string; order_id: string; status: string }[]>`
-    select id, order_id, status::text from public.contracts where provider_document_uuid = ${documentUuid}`;
+  const [c] = await sql()<{ id: string; order_id: string; status: string; signer_auth: string | null }[]>`
+    select id, order_id, status::text, signer_auth from public.contracts where provider_document_uuid = ${documentUuid}`;
   if (!c) return { ok: false as const, reason: "contrato não encontrado" };
   if (c.status === "signed") return { ok: true as const, status: "signed" };
 
@@ -240,7 +242,7 @@ export async function syncContractByDocument(documentUuid: string, actor: "webho
         on conflict (contract_id) do update set content_encrypted = excluded.content_encrypted, sha256 = excluded.sha256`;
       await tx`update public.contracts set status = 'signed', signed_at = now(), signed_file_path = 'db:contract_files' where id = ${c.id}`;
       await tx`update public.orders set contract_status = 'signed' where id = ${c.order_id}`;
-      if (identityMode() === "d4sign") {
+      if (c.signer_auth === "doc_selfie") {
         // A D4Sign exigiu documento + selfie com reconhecimento facial para assinar (D25)
         await tx`
           insert into public.identity_checks (order_id, provider, provider_reference, status, attempts, decided_at)
@@ -250,6 +252,18 @@ export async function syncContractByDocument(documentUuid: string, actor: "webho
         await tx`
           update public.orders set identity_status = 'approved'
           where id = ${c.order_id} and identity_status <> 'approved'`;
+      } else if (identityMode() === "d4sign") {
+        // Contrato assinado SEM a exigência de selfie (ex.: enviado antes da mudança):
+        // não aprova sozinho — fica para a equipe conferir no painel.
+        await tx`
+          insert into public.identity_checks (order_id, provider, provider_reference, status, attempts)
+          values (${c.order_id}, 'd4sign_sem_selfie', ${documentUuid}, 'in_review', 1)
+          on conflict (order_id) do update
+            set provider = 'd4sign_sem_selfie', provider_reference = excluded.provider_reference, status = 'in_review'
+            where public.identity_checks.status <> 'approved'`;
+        await tx`
+          update public.orders set identity_status = 'in_review'
+          where id = ${c.order_id} and identity_status not in ('approved', 'in_review')`;
       }
     });
     return { ok: true as const, status: "signed" };

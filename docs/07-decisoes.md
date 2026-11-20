@@ -340,3 +340,12 @@ print do *#06# → contrato assinado + aparelho informado → **pronto para ativ
   mesmo formato (CSV com ; e acentos para o Excel, protegido contra fórmulas).
 - A planilha antiga tem dados pessoais de clientes: compartilhar só com quem precisa. Importar os
   clientes antigos (com `legacy_customer_name`) fica para quando os sócios enviarem o arquivo.
+
+## D27 — Teste real do contrato confirmado; identidade só aprova com selfie exigida (20/11/2026)
+
+- **Confirmado com a D4Sign real:** contrato enviado sozinho após o pagamento, assinado pelo
+  cliente, aviso (webhook) recebido e pedido atualizado para "Assinado" automaticamente.
+- Ajuste: o contrato agora registra como o signatário foi autenticado (`contracts.signer_auth`,
+  migração 0009). A identidade só é aprovada sozinha se o contrato exigiu **documento + selfie**
+  (`doc_selfie`). Contratos assinados sem essa exigência (ex.: enviados antes de D25) ficam
+  "em análise" para a equipe aprovar no painel.

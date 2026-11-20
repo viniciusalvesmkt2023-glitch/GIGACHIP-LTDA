@@ -120,6 +120,14 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
             ✅ Validada automaticamente na assinatura do contrato: a D4Sign exigiu <strong>foto do documento + selfie com
             reconhecimento facial</strong>. As imagens e o resultado ficam no relatório do documento, na D4Sign.
           </p>
+        ) : identity?.provider === "d4sign_sem_selfie" ? (
+          <div className="space-y-3 text-sm">
+            <p>
+              ⚠️ O contrato foi assinado <strong>sem</strong> a exigência de documento + selfie (enviado antes dessa opção ser
+              ligada). Confira os dados do cliente e, se estiver tudo certo, aprove.
+            </p>
+            {o.identity_status === "in_review" && canSee && <IdentityDecisionForm action={decideIdentityAction} orderId={o.id} />}
+          </div>
         ) : identity && identity.files.length > 0 ? (
           <div className="space-y-4">
             {canSee ? (
