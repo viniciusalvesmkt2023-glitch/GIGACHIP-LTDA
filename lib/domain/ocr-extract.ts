@@ -8,21 +8,32 @@ import { checkEid, checkIccid, isValidImei, luhnIsValid } from "./validators";
  */
 export type OcrFound = { imeis: string[]; eid: string | null; iccid: string | null };
 
-function digitRuns(text: string): string[] {
-  // Junta dígitos separados por espaço/hífen/ponto dentro da mesma linha
+/** Grupos de dígitos de cada linha (letra O confundida com zero vira 0). */
+function lineGroups(text: string): string[][] {
   return text
     .split(/\r?\n/)
-    .map((line) => line.replace(/[Oo](?=\d)|(?<=\d)[Oo]/g, "0").replace(/(?<=\d)[\s.\-/]+(?=\d)/g, ""))
-    .flatMap((line) => line.match(/\d{4,}/g) ?? []);
+    .map((line) => line.replace(/[Oo](?=\d)|(?<=\d)[Oo]/g, "0").match(/\d+/g) ?? [])
+    .filter((g) => g.length > 0);
 }
 
 export function extractDeviceNumbers(text: string): OcrFound {
-  const runs = digitRuns(text);
-  // Candidatos: cada sequência e a junção de sequências vizinhas (número quebrado em 2 linhas)
+  const lines = lineGroups(text);
+  // Candidatos, na ordem em que aparecem na tela:
+  // - toda junção de grupos VIZINHOS da mesma linha ("35 731272 515730 7" → 15 dígitos;
+  //   "357312725157307 / 01" → o IMEI sozinho, sem o "/ 01" da versão de software);
+  // - a junção de duas linhas seguidas (EID quebrado em 2 linhas).
   const candidates = new Set<string>();
-  runs.forEach((r, i) => {
-    candidates.add(r);
-    if (runs[i + 1]) candidates.add(r + runs[i + 1]);
+  lines.forEach((groups, li) => {
+    for (let i = 0; i < groups.length; i++) {
+      let acc = "";
+      for (let j = i; j < groups.length; j++) {
+        acc += groups[j];
+        if (acc.length > 32) break;
+        if (acc.length >= 14) candidates.add(acc);
+      }
+    }
+    const next = lines[li + 1];
+    if (next) candidates.add(groups.join("") + next.join(""));
   });
 
   const imeis: string[] = [];

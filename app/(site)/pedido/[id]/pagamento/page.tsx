@@ -45,20 +45,17 @@ async function PixBox({ paymentId, invoiceUrl }: { paymentId: string; invoiceUrl
 
 function Paid({ view }: { view: PaymentView }) {
   return (
-    <div className="rounded-2xl border border-success bg-green-50 p-6">
-      <p className="text-xl font-bold text-success">Pagamento confirmado!</p>
-      <p className="mt-2 text-sm">
-        Agora é só preencher o formulário de ativação (o link também vai para o seu e-mail):
+    <div className="rounded-2xl border border-success bg-green-50 p-6 text-center">
+      <p className="text-4xl" aria-hidden>🎉</p>
+      <p className="mt-2 text-2xl font-bold text-success">Parabéns! Sua linha foi contratada.</p>
+      <p className="mt-3 text-sm leading-relaxed">
+        Pagamento confirmado. Falta só um passo para ativarmos sua linha: preencher o formulário de ativação.
+        Leva poucos minutos.
       </p>
-      <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm">
-        <li>Enviar o print do <strong>*#06#</strong> (nós lemos os números do celular)</li>
-        <li>Enviar foto do documento e uma selfie</li>
-        <li>Assinar o contrato que chega no seu e-mail pela D4Sign</li>
-      </ol>
-      <a href="/ativacao" className={`${buttonStyles.primary} mt-5 w-full`}>
-        Preencher formulário de ativação
+      <a href="/ativacao" className={`${buttonStyles.primary} mt-6 w-full py-4 text-base`}>
+        Próximo passo: formulário de ativação
       </a>
-      <p className="mt-4 text-xs text-muted">Número do pedido: {view.orderCode}</p>
+      <p className="mt-4 text-xs text-muted">Pedido {view.orderCode}. O link do formulário também chega no seu e-mail.</p>
     </div>
   );
 }

@@ -111,15 +111,16 @@ export function DeviceActivationForm({ simType }: { simType: "esim" | "physical"
     <div className="space-y-5">
       <ol className="space-y-3 text-sm">
         <li className="rounded-xl bg-surface p-4">
-          <p className="font-semibold">1. Abra o discador e digite <span className="font-mono">*#06#</span></p>
+          <p className="font-semibold">1. Abra o app de ligação e digite <span className="font-mono">*#06#</span></p>
           <p className="mt-1 text-muted">
-            Use o celular onde a linha vai funcionar. Os números aparecem na hora, sem precisar ligar.
+            Use o celular onde a linha vai funcionar. Os números aparecem <strong>sozinhos assim que você termina de
+            digitar</strong> — <strong>não aperte o botão de ligar</strong>.
           </p>
-          <a href="tel:*%2306%23" className={`${buttonStyles.secondary} mt-3 py-2`}>
-            📞 Abrir o discador com *#06#
+          <a href="tel:" className={`${buttonStyles.secondary} mt-3 py-2`}>
+            📞 Abrir o app de ligação
           </a>
           <p className="mt-2 text-xs text-muted">
-            Funciona na maioria dos Android. No iPhone, abra o app Telefone e digite *#06# (ou vá em Ajustes → Geral → Sobre).
+            Se não abrir, saia do site, abra o app Telefone e digite *#06#. No iPhone também dá para ver em Ajustes → Geral → Sobre.
           </p>
         </li>
         <li className="rounded-xl bg-surface p-4">

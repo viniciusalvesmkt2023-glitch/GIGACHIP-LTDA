@@ -22,6 +22,19 @@ describe("leitura dos números no print", () => {
     expect(r.eid).toBe(EID);
   });
 
+  it("Samsung: 'IMEI1 / 01' e 'IMEI2 / 01' → pega o IMEI 1 primeiro, sem o '/ 01'", () => {
+    const text = `IMEI(MEID) and S/N\nIMEI1\n${IMEI1} / 01\nIMEI2\n${IMEI2} / 01\nEID\n${EID}\nSN\nRXGL6038XVH\nOK`;
+    const r = extractDeviceNumbers(text);
+    expect(r.imeis).toEqual([IMEI1, IMEI2]);
+    expect(r.imeis[0]).toBe(IMEI1);
+    expect(r.eid).toBe(EID);
+  });
+
+  it("OCR que lê o '/' como espaço ou junta tudo na linha", () => {
+    expect(extractDeviceNumbers(`IMEI1 ${IMEI1} 01`).imeis).toEqual([IMEI1]);
+    expect(extractDeviceNumbers(`IMEI1 ${IMEI1}/01`).imeis).toEqual([IMEI1]);
+  });
+
   it("confusão de O com 0 e hífens", () => {
     const withO = IMEI1.replace(/0/g, "O");
     expect(extractDeviceNumbers(`IMEI ${withO.slice(0, 8)}-${withO.slice(8)}`).imeis).toEqual([IMEI1]);
