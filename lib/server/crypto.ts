@@ -1,5 +1,5 @@
 import "server-only";
-import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from "node:crypto";
 
 /**
  * Criptografia de campos sensíveis (CPF, IMEI, EID, ICCID) — AES-256-GCM.
@@ -11,10 +11,18 @@ const VERSION = 1;
 const IV_LEN = 12;
 const TAG_LEN = 16;
 
-function decodeKey(base64: string, name: string): Buffer {
-  const key = Buffer.from(base64, "base64");
-  if (key.length !== 32) throw new Error(`${name} deve ter 32 bytes em base64`);
-  return key;
+/**
+ * Aceita (a) 32 bytes em base64 ou (b) qualquer senha forte com 32+ caracteres, da qual a
+ * chave de 32 bytes é derivada por SHA-256. A opção (b) permite usar um gerador de senhas comum.
+ * ATENÇÃO: trocar o valor depois torna ilegíveis os dados já cifrados.
+ */
+export function decodeKey(secret: string, name: string): Buffer {
+  if (/^[A-Za-z0-9+/]{43}=$/.test(secret)) {
+    const key = Buffer.from(secret, "base64");
+    if (key.length === 32) return key;
+  }
+  if (secret.length >= 32) return createHash("sha256").update(secret, "utf8").digest();
+  throw new Error(`${name} deve ter pelo menos 32 caracteres`);
 }
 
 export function encryptField(plain: string, keyBase64: string): Buffer {
