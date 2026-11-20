@@ -26,7 +26,7 @@ async function shrink(file: File, maxSide = 1600, quality = 0.82): Promise<Blob>
   return blob;
 }
 
-export function IdentityForm() {
+export function IdentityForm({ redirectTo = "/minha-area" }: { redirectTo?: string }) {
   const router = useRouter();
   const [files, setFiles] = useState<Partial<Record<IdentityKind, File>>>({});
   const [previews, setPreviews] = useState<Partial<Record<IdentityKind, string>>>({});
@@ -54,7 +54,10 @@ export function IdentityForm() {
         for (const f of FIELDS) fd.append(f.kind, await shrink(files[f.kind]!), `${f.kind}.jpg`);
         const r = await uploadIdentity(fd);
         setState(r);
-        if (r.ok) router.push("/minha-area");
+        if (r.ok) {
+          router.push(redirectTo);
+          router.refresh();
+        }
       } catch {
         setState({ message: "Não conseguimos processar as fotos. Tente tirar de novo." });
       }

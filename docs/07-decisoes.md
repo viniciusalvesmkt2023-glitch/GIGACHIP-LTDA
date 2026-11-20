@@ -256,3 +256,26 @@ aprovada, contrato assinado e dados do aparelho).
   com reembolso integral.
 - Cada pedido pago gasta 1 envio da D4Sign, mesmo que a identidade venha a ser recusada.
 - Substitui a regra 3 do doc 05 ("contrato só após identidade aprovada").
+
+## D22 — Formulário de ativação por link no e-mail, com leitura do print (20/11/2026)
+
+**Decisão:** o cliente não precisa "entrar numa área". Depois do pagamento ele recebe um **link
+para o Formulário de ativação** (`/acesso/<token>` → `/ativacao`), uma página única com:
+1. **Dados do celular:** botão "Abrir o discador com *#06#" (Android; o iPhone não permite), o
+   cliente tira o **print** e envia; o site **lê os números do print no próprio celular** (OCR,
+   tesseract.js) e preenche IMEI/EID (ou ICCID). O cliente confere e envia. O print é guardado
+   cifrado (`device_screenshots`, 90 dias provisórios) e a equipe vê no painel.
+2. **Documento e selfie.**
+3. **Contrato:** aviso de que chegou pela D4Sign.
+
+**Limite técnico importante:** nenhum site consegue ler o IMEI/EID direto do celular (Android e
+iOS bloqueiam). Por isso o caminho é o print + leitura automática.
+
+**Onde o link chega:**
+- botão na tela de pagamento confirmado;
+- **mensagem do contrato na D4Sign** (já funciona, sem domínio próprio);
+- **e-mail "Pagamento confirmado"** (Resend) — fica na fila e é enviado quando `RESEND_API_KEY` e
+  `EMAIL_FROM` forem configurados (depende do domínio gigachip.com.br).
+
+Os arquivos do leitor (motor + idioma, ~15 MB) são servidos pelo próprio site (`public/ocr`,
+copiados de `node_modules` antes do build), sem depender de CDN externo.

@@ -5,6 +5,7 @@ import { contractSettings } from "@/lib/contract/settings";
 import { buildContract, CONTRACT_TEMPLATE_VERSION, type ContractData } from "@/lib/contract/template";
 import { d4sign, d4signBudget, d4signConfigured, D4SignRateLimited } from "@/lib/integrations/d4sign/client";
 import { CALLS_PER_CONTRACT, mapDocumentStatus, MAX_CONTRACT_ATTEMPTS, retryDelayMinutes } from "@/lib/integrations/d4sign/mapping";
+import { issueAccessToken } from "./customer-access";
 import { decryptBytes, decryptField, encryptBytes } from "./crypto";
 import { sql, withActor, type Tx } from "./db";
 import { env } from "./env";
@@ -147,9 +148,12 @@ async function advance(contractId: string): Promise<void> {
     await save({ step });
   }
   if (step === "enviar") {
+    const token = await sql().begin((tx) => issueAccessToken(tx, r.order_id, "d4sign"));
+    const formLink = `${e.APP_URL.replace(/\/$/, "")}/acesso/${token}`;
     await d4sign.sendToSigner(
       docUuid,
-      `Olá, ${r.full_name.split(/\s+/)[0]}! Este é o contrato da sua linha Gigachip (pedido ${r.code}). Leia e assine para seguirmos com a ativação.`,
+      `Olá, ${r.full_name.split(/\s+/)[0]}! Este é o contrato da sua linha Gigachip (pedido ${r.code}). Leia e assine. ` +
+        `Depois, envie os dados do celular e seus documentos no formulário de ativação: ${formLink}`,
     );
     await withActor({ type: "system", reason: "contrato enviado para assinatura (D4Sign)" }, async (tx) => {
       await tx`

@@ -67,6 +67,14 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
               ) : (
                 <div><dt className="inline text-muted">ICCID: </dt>{canSee ? <RevealButton action={revealAction} orderId={o.id} field="iccid" label="ver" /> : "•••"}</div>
               )}
+              {o.has_print && canSee && (
+                <div className="pt-2">
+                  <a href={`/painel/prints/${o.id}`} target="_blank" rel="noopener noreferrer" className="font-medium text-brand underline">
+                    Ver print do *#06#
+                  </a>
+                  {o.device_source === "ocr_confirmed" && <span className="ml-2 text-xs text-muted">(números lidos do print e confirmados pelo cliente)</span>}
+                </div>
+              )}
               {o.checksum_warnings && o.checksum_warnings.length > 0 && (
                 <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs">⚠️ O cliente confirmou um número com dígito verificador suspeito. Confira antes de ativar.</p>
               )}

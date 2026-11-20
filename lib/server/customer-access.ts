@@ -15,7 +15,7 @@ const TOKEN_DAYS = 30;
 
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 
-export async function issueAccessToken(tx: Tx, orderId: string, via: "checkout" | "email"): Promise<string> {
+export async function issueAccessToken(tx: Tx, orderId: string, via: "checkout" | "email" | "d4sign"): Promise<string> {
   const token = randomBytes(32).toString("base64url");
   await tx`
     insert into public.order_access_tokens (order_id, token_hash, created_via, expires_at)

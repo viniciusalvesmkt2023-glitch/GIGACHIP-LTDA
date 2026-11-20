@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import { isValidWebhookToken } from "@/lib/integrations/asaas/mapping";
 import { processQueuedContracts } from "@/lib/server/contracts";
+import { processEmails } from "@/lib/server/email";
 import { env } from "@/lib/server/env";
 import { processAsaasEvent, recordAsaasEvent } from "@/lib/server/payments";
 
@@ -30,7 +31,10 @@ export async function POST(request: Request) {
   try {
     await processAsaasEvent(pendingId);
     // Envia contratos recém-colocados na fila depois de responder ao Asaas (resposta rápida)
-    after(() => processQueuedContracts(1).then(() => undefined).catch((e) => console.error(`[contratos] ${e}`)));
+    after(async () => {
+      await processEmails(2).catch((e) => console.error(`[e-mails] ${e}`));
+      await processQueuedContracts(1).catch((e) => console.error(`[contratos] ${e}`));
+    });
   } catch (err) {
     console.error(`[webhook asaas] falha ao processar evento ${pendingId}: ${String(err)}`);
     return new Response("processing error", { status: 500 });

@@ -87,14 +87,15 @@ export async function getOrderDetail(staff: Staff, orderId: string) {
       contract_status: string; device_status: string; problem_reason: string | null; sim_type: string;
       plan_name: string; monthly_price_cents: number; created_at: Date; paid_at: Date | null; ready_at: Date | null;
       full_name: string; email: string; phone_e164: string; birth_date: string; cpf_last_digits: string;
-      imei_last4: string | null; checksum_warnings: string[] | null; has_device: boolean;
+      imei_last4: string | null; checksum_warnings: string[] | null; has_device: boolean; has_print: boolean; device_source: string | null;
     }[]
   >`
     select o.id, o.code, o.status::text, o.payment_status::text, o.identity_status::text, o.contract_status::text,
            o.device_status::text, o.problem_reason, o.sim_type::text, o.plan_snapshot->>'name' as plan_name,
            o.monthly_price_cents, o.created_at, o.paid_at, o.ready_at,
            c.full_name, c.email::text as email, c.phone_e164, c.birth_date::text as birth_date, c.cpf_last_digits,
-           d.imei_last4, d.checksum_warnings, (d.id is not null) as has_device
+           d.imei_last4, d.checksum_warnings, (d.id is not null) as has_device, d.source as device_source,
+           exists (select 1 from public.device_screenshots ds where ds.order_id = o.id) as has_print
     from public.orders o
     join public.customers c on c.id = o.customer_id
     left join public.device_info d on d.order_id = o.id

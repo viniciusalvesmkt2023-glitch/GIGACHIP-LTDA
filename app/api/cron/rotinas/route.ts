@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { processQueuedContracts, syncPendingSignatures } from "@/lib/server/contracts";
+import { processEmails } from "@/lib/server/email";
 
 /**
  * Rotina agendada (Vercel Cron). A Vercel envia "Authorization: Bearer <CRON_SECRET>".
@@ -14,5 +15,6 @@ export async function GET(request: Request) {
   }
   const contracts = await processQueuedContracts(2);
   const synced = await syncPendingSignatures(2);
-  return Response.json({ contracts, synced });
+  const emails = await processEmails(20);
+  return Response.json({ contracts, synced, emails });
 }

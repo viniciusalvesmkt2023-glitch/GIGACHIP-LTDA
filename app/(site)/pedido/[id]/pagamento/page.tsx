@@ -48,15 +48,15 @@ function Paid({ view }: { view: PaymentView }) {
     <div className="rounded-2xl border border-success bg-green-50 p-6">
       <p className="text-xl font-bold text-success">Pagamento confirmado!</p>
       <p className="mt-2 text-sm">
-        Vamos enviar para o seu e-mail o link da sua área segura, onde você vai concluir a ativação:
+        Agora é só preencher o formulário de ativação (o link também vai para o seu e-mail):
       </p>
       <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm">
-        <li>Confirmar sua identidade (documento + selfie)</li>
-        <li>Assinar o contrato digital</li>
-        <li>Informar os dados do aparelho/chip (IMEI e EID ou número do chip)</li>
+        <li>Enviar o print do <strong>*#06#</strong> (nós lemos os números do celular)</li>
+        <li>Enviar foto do documento e uma selfie</li>
+        <li>Assinar o contrato que chega no seu e-mail pela D4Sign</li>
       </ol>
-      <a href="/minha-area" className={`${buttonStyles.primary} mt-5 w-full`}>
-        Continuar na minha área
+      <a href="/ativacao" className={`${buttonStyles.primary} mt-5 w-full`}>
+        Preencher formulário de ativação
       </a>
       <p className="mt-4 text-xs text-muted">Número do pedido: {view.orderCode}</p>
     </div>
