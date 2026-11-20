@@ -72,8 +72,8 @@ contratos/mês), o limite padrão da API (10 requisições/hora, ~4 por contrato
 que os envios passem pela fila com controle de taxa.
 
 **A confirmar:**
-- [ ] O plano Advanced libera a API (menu **Dev API** na conta, para gerar `tokenAPI`/`cryptKey`)
-- [ ] Acesso ao sandbox para testes
+- [x] O plano Advanced libera a API — confirmado: menu **Dev (API)** ativo, chaves geradas pelo sócio (guardadas fora do repositório). A conta também tem menu **Webhooks**.
+- [ ] Sandbox: não encontrado no painel. Plano: testar em produção com poucos envios reais (volume atual ~20/mês, sobra cota), usando o e-mail dos próprios sócios como signatário
 - [ ] Se dá para enviar o link de assinatura por WhatsApp pela API, e se isso consome os 50 envios de WhatsApp
 - [ ] O que acontece acima de 50 envios/mês (preço do excedente ou bloqueio)
 
