@@ -62,7 +62,7 @@ stateDiagram-v2
    ENTÃO status := pronto_para_ativacao, ready_at := now()
    ```
 2. **Pagamento só muda pelo backend** após webhook autenticado **e** consulta à API do Asaas.
-3. **Contrato só é criado** quando `identity_status = approved` (o contrato usa dados validados).
+3. **Contrato é enviado assim que o pagamento é confirmado** (D21), em paralelo à validação de identidade.
 4. **Dados do aparelho/chip** podem ser enviados a qualquer momento depois do pagamento; IMEI
    precisa passar no Luhn; **EID** obrigatório se `sim_type = esim`; **ICCID** obrigatório se
    `sim_type = physical` (chip lacrado comprado pelo cliente).

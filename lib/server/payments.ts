@@ -2,6 +2,7 @@ import "server-only";
 import { connection } from "next/server";
 import { asaas } from "@/lib/integrations/asaas/client";
 import { isPaymentEvent, reaisToCents, statusFromEvent } from "@/lib/integrations/asaas/mapping";
+import { queueContract } from "./contracts";
 import { sql, withActor } from "./db";
 
 type WebhookBody = { id?: string; event?: string; dateCreated?: string; payment?: { id?: string } };
@@ -81,6 +82,8 @@ export async function processAsaasEvent(eventRowId: bigint): Promise<void> {
       // (pago → em andamento, estorno → pendência, histórico).
       if (payment.is_first_payment) {
         await tx`update public.orders set payment_status = ${newStatus} where id = ${payment.order_id}`;
+        // D21: pagou → contrato já vai para assinatura (em paralelo à validação de identidade)
+        if (newStatus === "confirmed" || newStatus === "received") await queueContract(tx, payment.order_id);
       }
     });
     await finish(null);

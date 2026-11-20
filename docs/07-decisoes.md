@@ -234,7 +234,7 @@ pagamento do Asaas (nunca passam pelo nosso servidor).
 
 - Endpoints conferidos no **conector oficial da D4Sign** (`@d4sign/n8n-nodes-d4sign` 1.0.11), já que
   o site da documentação não abre a partir do ambiente de desenvolvimento.
-- Fluxo: identidade aprovada → PDF gerado → `uploadbinary` no cofre → `createlist` (cliente, "assinar",
+- Fluxo (ver D21): pagamento confirmado → PDF gerado → `uploadbinary` no cofre → `createlist` (cliente, "assinar",
   aviso por e-mail) → `webhooks` (URL com senha) → `sendtosigner`. A D4Sign manda o e-mail ao
   cliente (não depende do nosso domínio).
 - O aviso de assinatura é só um "toque": o sistema consulta `GET /documents/{uuid}` e, se
@@ -242,3 +242,17 @@ pagamento do Asaas (nunca passam pelo nosso servidor).
 - Respeita o limite de **10 chamadas/hora** (`api_call_log`); acima disso o contrato espera na fila.
 - Rotina diária (Vercel Cron, plano gratuito) reenvia o que ficou na fila e confere assinaturas.
 - **A confirmar no 1º teste real:** códigos de status do documento (4 = finalizado, 6 = cancelado).
+
+## D21 — Contrato enviado assim que o cliente paga (20/11/2026)
+
+**Decisão:** o contrato vai para assinatura **automaticamente quando o pagamento é confirmado**, sem
+aprovação manual antes. A validação de identidade acontece **em paralelo** e continua obrigatória
+para **ativar a linha** (o pedido só fica "pronto para ativação" com pagamento, identidade
+aprovada, contrato assinado e dados do aparelho).
+
+**Consequências:**
+- O contrato usa os dados do cadastro inicial (nome, CPF, nascimento, e-mail, celular).
+- Se a identidade for reprovada depois da assinatura, vale a cláusula 6.2: a ativação é recusada
+  com reembolso integral.
+- Cada pedido pago gasta 1 envio da D4Sign, mesmo que a identidade venha a ser recusada.
+- Substitui a regra 3 do doc 05 ("contrato só após identidade aprovada").

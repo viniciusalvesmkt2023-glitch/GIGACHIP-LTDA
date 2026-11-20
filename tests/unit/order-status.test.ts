@@ -31,10 +31,10 @@ describe("checklist / pronto para ativação", () => {
 });
 
 describe("contrato", () => {
-  it("só é criado após pagamento e identidade aprovada", () => {
+  it("é enviado logo após o pagamento, sem esperar a identidade (D21)", () => {
     const base: Checklist = { ...complete, contractStatus: "not_created", deviceStatus: "pending" };
     expect(canCreateContract(base)).toBe(true);
-    expect(canCreateContract({ ...base, identityStatus: "in_review" })).toBe(false);
+    expect(canCreateContract({ ...base, identityStatus: "not_started" })).toBe(true);
     expect(canCreateContract({ ...base, paymentStatus: "pending" })).toBe(false);
     expect(canCreateContract({ ...base, contractStatus: "sent" })).toBe(false);
   });

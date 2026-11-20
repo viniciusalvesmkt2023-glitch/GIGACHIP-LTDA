@@ -11,7 +11,7 @@ import { env } from "./env";
 
 /**
  * Contrato pela D4Sign (D19, D20).
- * 1. Identidade aprovada → contrato entra na fila (status "queued").
+ * 1. Pagamento confirmado → contrato entra na fila (status "queued") — D21.
  * 2. O envio roda em etapas (PDF → signatário → aviso → enviar). Se falhar no meio, a próxima
  *    tentativa continua da etapa onde parou, sem repetir chamadas (o plano tem limite por hora).
  * 3. O aviso da D4Sign (ou a rotina diária) consulta o status; assinado → baixa o PDF assinado,
@@ -21,15 +21,21 @@ import { env } from "./env";
 const STEPS = ["gerar_pdf", "cadastrar_signatario", "registrar_webhook", "enviar", "concluido"] as const;
 type Step = (typeof STEPS)[number];
 
-/** Chamado dentro da transação que aprova a identidade. */
-export async function queueContract(tx: Tx, orderId: string): Promise<void> {
-  await tx`
+/**
+ * Coloca o contrato na fila. Chamado na mesma transação que confirma o PAGAMENTO (D21).
+ * Idempotente: se o contrato já foi enviado/assinado, não mexe em nada.
+ */
+export async function queueContract(tx: Tx, orderId: string): Promise<boolean> {
+  const queued = await tx`
     insert into public.contracts (order_id, template_version, status, step, next_attempt_at)
     values (${orderId}, ${CONTRACT_TEMPLATE_VERSION}, 'queued', 'gerar_pdf', now())
     on conflict (order_id) do update
       set status = 'queued', attempts = 0, last_error = null, next_attempt_at = now()
-      where public.contracts.status in ('not_created', 'error', 'cancelled', 'refused')`;
+      where public.contracts.status in ('not_created', 'error', 'cancelled', 'refused')
+    returning id`;
+  if (queued.length === 0) return false;
   await tx`update public.orders set contract_status = 'queued' where id = ${orderId}`;
+  return true;
 }
 
 type ContractRow = {

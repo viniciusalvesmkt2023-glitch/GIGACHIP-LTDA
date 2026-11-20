@@ -1,7 +1,6 @@
 "use server";
 
 import { headers } from "next/headers";
-import { after } from "next/server";
 import { processQueuedContracts, retryContract, syncContractByDocument } from "@/lib/server/contracts";
 import { sql } from "@/lib/server/db";
 import { d4sign } from "@/lib/integrations/d4sign/client";
@@ -62,12 +61,8 @@ export async function decideIdentityAction(_p: FormState, fd: FormData): Promise
   const reason = str(fd, "reason").trim();
   if (!approve && reason.length < 5) return { message: "Explique o motivo para o cliente (ex.: foto do documento ilegível)." };
   const r = await decideIdentity(orderId, me.id, approve ? { approve: true } : { approve: false, reason });
-  if (r.ok && approve) {
-    // Envia o contrato logo depois de responder (sem deixar a tela esperando a D4Sign)
-    after(() => processQueuedContracts(1).then(() => undefined).catch((e) => console.error(`[contratos] ${e}`)));
-  }
   return r.ok
-    ? { ok: true, message: approve ? "Identidade aprovada. O contrato será enviado ao cliente pela D4Sign." : "Cliente será orientado a enviar novas fotos." }
+    ? { ok: true, message: approve ? "Identidade aprovada." : "Cliente será orientado a enviar novas fotos." }
     : { message: r.message };
 }
 

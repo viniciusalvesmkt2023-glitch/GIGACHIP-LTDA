@@ -8,7 +8,6 @@ import {
   type IdentityKind,
 } from "@/lib/domain/image-check";
 import { decryptBytes, encryptBytes } from "./crypto";
-import { queueContract } from "./contracts";
 import { sql, withActor } from "./db";
 import { env } from "./env";
 
@@ -126,8 +125,6 @@ export async function decideIdentity(
     if (decision.approve) {
       await tx`update public.identity_checks set status = 'approved', reviewed_by = ${staffId}, decided_at = now() where id = ${check.id}`;
       await tx`update public.orders set identity_status = 'approved' where id = ${orderId}`;
-      // Identidade aprovada → contrato entra na fila de envio pela D4Sign (doc 05, regra 3)
-      await queueContract(tx, orderId);
       return { ok: true };
     }
 

@@ -118,9 +118,9 @@ export function isChecklistComplete(c: Checklist): boolean {
   );
 }
 
-/** O contrato só pode ser gerado depois da identidade aprovada (doc 05, regra 3). */
+/** D21: o contrato é enviado assim que o pagamento é confirmado (a identidade é conferida em paralelo). */
 export function canCreateContract(c: Checklist): boolean {
-  return isPaid(c.paymentStatus) && c.identityStatus === "approved" && c.contractStatus === "not_created";
+  return isPaid(c.paymentStatus) && c.contractStatus === "not_created";
 }
 
 export type PendingReason =
