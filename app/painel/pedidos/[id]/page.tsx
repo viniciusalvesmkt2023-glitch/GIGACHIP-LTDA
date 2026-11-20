@@ -6,6 +6,7 @@ import { formatBRL } from "@/lib/domain/money";
 import { getOrderDetail, STATUS_LABEL } from "@/lib/server/admin";
 import { getContractInfo } from "@/lib/server/contracts";
 import { getIdentityReview } from "@/lib/server/identity";
+import { identityMode } from "@/lib/server/identity-mode";
 import { requireStaff } from "@/lib/server/staff-auth";
 import { changeEmailAction, decideIdentityAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
 import { ActionButton, ChangeEmailForm, IdentityDecisionForm, RevealButton } from "../../forms";
@@ -28,6 +29,7 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
   if (!o) notFound();
   const identity = await getIdentityReview(id);
   const contract = await getContractInfo(id);
+  const identityModeLabel = identityMode();
   const canSee = ["owner", "admin", "ativador"].includes(staff.role);
 
   return (
@@ -87,7 +89,12 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
       </div>
 
       <Card title={`Identidade — ${SUB[o.identity_status] ?? o.identity_status}`} className="mt-4">
-        {identity && identity.files.length > 0 ? (
+        {identity?.provider === "d4sign" ? (
+          <p className="text-sm">
+            ✅ Validada automaticamente na assinatura do contrato: a D4Sign exigiu <strong>foto do documento + selfie com
+            reconhecimento facial</strong>. As imagens e o resultado ficam no relatório do documento, na D4Sign.
+          </p>
+        ) : identity && identity.files.length > 0 ? (
           <div className="space-y-4">
             {canSee ? (
               <div className="grid gap-3 sm:grid-cols-3">
@@ -107,7 +114,11 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
             {identity.rejectionReason && <p className="text-sm">Último motivo: {identity.rejectionReason}</p>}
           </div>
         ) : (
-          <p className="text-sm text-muted">O cliente ainda não enviou as fotos.</p>
+          <p className="text-sm text-muted">
+            {identityModeLabel === "d4sign"
+              ? "Será validada automaticamente quando o cliente assinar o contrato (documento + selfie na D4Sign)."
+              : "O cliente ainda não enviou as fotos."}
+          </p>
         )}
       </Card>
 

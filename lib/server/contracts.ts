@@ -9,6 +9,7 @@ import { issueAccessToken } from "./customer-access";
 import { decryptBytes, decryptField, encryptBytes } from "./crypto";
 import { sql, withActor, type Tx } from "./db";
 import { env } from "./env";
+import { identityMode } from "./identity-mode";
 
 /**
  * Contrato pela D4Sign (D19, D20).
@@ -150,7 +151,7 @@ async function advance(contractId: string): Promise<void> {
   }
   if (!docUuid) throw new Error("documento sem uuid na D4Sign");
   if (step === "cadastrar_signatario") {
-    await d4sign.addSigner(docUuid, r.email);
+    await d4sign.addSigner(docUuid, r.email, { docAndSelfie: identityMode() === "d4sign" });
     step = "registrar_webhook";
     await save({ step });
   }
@@ -239,6 +240,17 @@ export async function syncContractByDocument(documentUuid: string, actor: "webho
         on conflict (contract_id) do update set content_encrypted = excluded.content_encrypted, sha256 = excluded.sha256`;
       await tx`update public.contracts set status = 'signed', signed_at = now(), signed_file_path = 'db:contract_files' where id = ${c.id}`;
       await tx`update public.orders set contract_status = 'signed' where id = ${c.order_id}`;
+      if (identityMode() === "d4sign") {
+        // A D4Sign exigiu documento + selfie com reconhecimento facial para assinar (D25)
+        await tx`
+          insert into public.identity_checks (order_id, provider, provider_reference, status, attempts, decided_at)
+          values (${c.order_id}, 'd4sign', ${documentUuid}, 'approved', 1, now())
+          on conflict (order_id) do update
+            set provider = 'd4sign', provider_reference = excluded.provider_reference, status = 'approved', decided_at = now()`;
+        await tx`
+          update public.orders set identity_status = 'approved'
+          where id = ${c.order_id} and identity_status <> 'approved'`;
+      }
     });
     return { ok: true as const, status: "signed" };
   }

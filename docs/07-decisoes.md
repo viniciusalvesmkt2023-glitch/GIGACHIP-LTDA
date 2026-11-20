@@ -305,3 +305,21 @@ alguém pedindo para trocar o e-mail de outra pessoa).
   processa a fila de contratos, confere assinaturas e envia e-mails — a rotina da Vercel no plano
   gratuito só roda 1 vez por dia.
 - Ações do painel que falam com a D4Sign respondem na hora e fazem o trabalho logo depois (`after`).
+
+## D25 — Identidade validada automaticamente pela D4Sign na assinatura (20/11/2026)
+
+**Decisão:** os sócios não querem aprovar identidade à mão. A conta D4Sign oferece, na assinatura,
+**"Exigir documento com foto + selfie com reconhecimento facial"** (campo `docauthandselfie` da API,
+confirmado no conector oficial). O sistema passa a cadastrar o signatário com essa exigência e,
+quando o contrato é assinado, marca a identidade como **aprovada (provedor d4sign)**.
+
+**Fluxo final:** pagou → contrato da D4Sign (assinatura com documento + selfie) + formulário só com o
+print do *#06# → contrato assinado + aparelho informado → **pronto para ativação**. A equipe só ativa.
+
+- Configuração `IDENTITY_MODE` (padrão `d4sign`); `manual` volta ao envio de fotos + aprovação no painel.
+- As imagens e o resultado do reconhecimento facial ficam no relatório do documento na D4Sign
+  (nada de selfie/documento guardado no nosso banco neste modo — menos dado sensível conosco).
+- **A confirmar no 1º teste real:** custo por uso (se consome créditos do plano) e se a D4Sign
+  bloqueia a assinatura quando o rosto não confere ou só registra o resultado no relatório.
+- Alternativa futura, se precisar de checagem contra base oficial: validador externo (ver pesquisa
+  de preços: Validra, Serpro Datavalid, ZapSign ID, unico/CAF/idwall).

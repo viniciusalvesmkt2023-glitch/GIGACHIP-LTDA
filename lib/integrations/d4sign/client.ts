@@ -77,8 +77,11 @@ export const d4sign = {
     return r.uuid;
   },
 
-  /** Cadastra o cliente como signatário ("act" 1 = assinar), com aviso por e-mail. */
-  addSigner(documentUuid: string, email: string) {
+  /**
+   * Cadastra o cliente como signatário ("act" 1 = assinar), com aviso por e-mail.
+   * `docAndSelfie`: exige foto do documento + selfie com reconhecimento facial na assinatura.
+   */
+  addSigner(documentUuid: string, email: string, opts: { docAndSelfie: boolean }) {
     return request("POST", `/documents/${documentUuid}/createlist`, {
       signers: [
         {
@@ -88,7 +91,7 @@ export const d4sign = {
           certificadoicpbr: "0",
           assinatura_presencial: "0",
           docauth: "0",
-          docauthandselfie: "0",
+          docauthandselfie: opts.docAndSelfie ? "1" : "0",
           embed_methodauth: "email",
         },
       ],

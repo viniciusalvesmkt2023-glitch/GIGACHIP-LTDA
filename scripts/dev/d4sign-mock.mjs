@@ -26,6 +26,10 @@ createServer(async (req, res) => {
     return d ? send(res, 200, d.pdf, "application/pdf") : send(res, 404, {});
   }
   if (path === "/_test/calls") return send(res, 200, calls);
+  if ((m = path.match(/^\/_test\/documents\/([^/]+)$/))) {
+    const d = docs.get(m[1]);
+    return d ? send(res, 200, { statusId: d.statusId, signers: d.signers, webhook: d.webhook }) : send(res, 404, {});
+  }
   if ((m = path.match(/^\/_test\/documents\/([^/]+)\/status$/))) {
     const d = docs.get(m[1]);
     if (!d) return send(res, 404, {});

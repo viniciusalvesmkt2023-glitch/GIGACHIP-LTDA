@@ -74,6 +74,7 @@ export async function submitIdentityFiles(orderId: string, files: Record<Identit
 
 export type IdentityReview = {
   checkId: string;
+  provider: string;
   status: string;
   attempts: number;
   rejectionReason: string | null;
@@ -81,14 +82,15 @@ export type IdentityReview = {
 };
 
 export async function getIdentityReview(orderId: string): Promise<IdentityReview | null> {
-  const [check] = await sql()<{ id: string; status: string; attempts: number; rejection_reason: string | null }[]>`
-    select id, status, attempts, rejection_reason from public.identity_checks where order_id = ${orderId}`;
+  const [check] = await sql()<{ id: string; provider: string; status: string; attempts: number; rejection_reason: string | null }[]>`
+    select id, provider, status, attempts, rejection_reason from public.identity_checks where order_id = ${orderId}`;
   if (!check) return null;
   const files = await sql()<{ id: string; kind: IdentityKind; created_at: Date }[]>`
     select id, kind, created_at from public.identity_files
     where identity_check_id = ${check.id} and deleted_at is null order by kind`;
   return {
     checkId: check.id,
+    provider: check.provider,
     status: check.status,
     attempts: check.attempts,
     rejectionReason: check.rejection_reason,

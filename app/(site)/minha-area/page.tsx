@@ -5,6 +5,7 @@ import { Container, buttonStyles } from "@/components/ui";
 import { whatsappLink } from "@/components/whatsapp";
 import { currentOrderId } from "@/lib/server/customer-access";
 import { getAreaView, type AreaView } from "@/lib/server/customer-area";
+import { identityMode } from "@/lib/server/identity-mode";
 
 export const metadata: Metadata = { title: "Minha área", robots: { index: false } };
 
@@ -43,7 +44,7 @@ function identityState(s: string): StepState {
   return "pendente";
 }
 
-function Checklist({ v }: { v: AreaView }) {
+function Checklist({ v, identityByD4Sign }: { v: AreaView; identityByD4Sign: boolean }) {
   const paid = v.paymentStatus === "confirmed" || v.paymentStatus === "received";
   const deviceLabel = v.simType === "esim" ? "IMEI e EID" : "IMEI e número do chip (ICCID)";
   const ready = ["pronto_para_ativacao", "em_ativacao"].includes(v.status);
@@ -76,10 +77,14 @@ function Checklist({ v }: { v: AreaView }) {
         <Step
           n={2}
           title="Confirmar identidade"
-          text="Envie uma foto do documento (RG ou CNH) e uma selfie. Tudo pela área segura, nunca por e-mail."
+          text={
+            identityByD4Sign
+              ? "Feita na assinatura do contrato: a D4Sign pede uma foto do documento (RG ou CNH) e uma selfie."
+              : "Envie uma foto do documento (RG ou CNH) e uma selfie. Tudo pela área segura, nunca por e-mail."
+          }
           state={paid ? identityState(v.identityStatus) : "bloqueado"}
           action={
-            paid && ["not_started", "pending_documents", "retry_required"].includes(v.identityStatus) ? (
+            !identityByD4Sign && paid && ["not_started", "pending_documents", "retry_required"].includes(v.identityStatus) ? (
               <Link href="/minha-area/identidade" className={`${buttonStyles.primary} py-2`}>
                 {v.identityStatus === "retry_required" ? "Enviar novas fotos" : "Enviar fotos"}
               </Link>
@@ -143,7 +148,7 @@ async function Area({ searchParams }: { searchParams: PageProps<"/minha-area">["
         <h1 className="text-3xl font-bold">Olá, {view.firstName}!</h1>
         <p className="mt-1 text-muted">Acompanhe aqui as etapas para ativar sua linha.</p>
       </div>
-      <Checklist v={view} />
+      <Checklist v={view} identityByD4Sign={identityMode() === "d4sign"} />
     </div>
   );
 }

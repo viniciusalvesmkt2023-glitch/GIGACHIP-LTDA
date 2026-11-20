@@ -5,6 +5,7 @@ import { whatsappLink } from "@/components/whatsapp";
 import { currentOrderId } from "@/lib/server/customer-access";
 import { getAreaView } from "@/lib/server/customer-area";
 import { getIdentityReview } from "@/lib/server/identity";
+import { identityMode } from "@/lib/server/identity-mode";
 import { IdentityForm } from "../minha-area/identidade/identity-form";
 import { DeviceActivationForm } from "./device-activation-form";
 
@@ -44,7 +45,8 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ativacao">[
   const identityDone = ["in_review", "approved"].includes(v.identityStatus);
   const canSendIdentity = v.status === "em_andamento" && ["not_started", "pending_documents", "retry_required"].includes(v.identityStatus);
   const review = v.identityStatus === "retry_required" ? await getIdentityReview(orderId) : null;
-  const allSent = deviceDone && identityDone;
+  const manualIdentity = identityMode() === "manual";
+  const allSent = deviceDone && (manualIdentity ? identityDone : true);
   const wa = whatsappLink(`Olá! Enviei o formulário de ativação do pedido ${v.code}.`);
 
   return (
@@ -81,6 +83,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ativacao">[
             )}
           </Section>
 
+          {manualIdentity && (
           <Section n={2} title="Documento e selfie" done={identityDone}>
             {review?.rejectionReason && (
               <p className="mb-4 rounded-xl border border-accent bg-amber-50 p-3 text-sm"><strong>Precisamos de novas fotos:</strong> {review.rejectionReason}</p>
@@ -93,8 +96,9 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ativacao">[
               <p className="text-sm text-muted">Esta etapa não está disponível agora.</p>
             )}
           </Section>
+          )}
 
-          <Section n={3} title="Assinar o contrato" done={v.contractStatus === "signed"}>
+          <Section n={manualIdentity ? 3 : 2} title="Assinar o contrato" done={v.contractStatus === "signed"}>
             <p className="text-sm text-muted">
               {v.contractStatus === "signed"
                 ? "Contrato assinado. Obrigado!"
@@ -102,6 +106,12 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ativacao">[
                   ? "Enviamos o contrato para o seu e-mail pela D4Sign. Procure o e-mail da D4Sign (confira também o spam) e assine."
                   : "Estamos preparando o seu contrato. Ele chega no seu e-mail pela D4Sign em instantes."}
             </p>
+            {!manualIdentity && v.contractStatus !== "signed" && (
+              <p className="mt-2 rounded-xl bg-surface p-3 text-sm">
+                🪪 Na assinatura, a D4Sign vai pedir uma <strong>foto do seu documento (RG ou CNH)</strong> e uma{" "}
+                <strong>selfie</strong> para confirmar sua identidade. Tenha o documento em mãos.
+              </p>
+            )}
           </Section>
         </>
       )}
