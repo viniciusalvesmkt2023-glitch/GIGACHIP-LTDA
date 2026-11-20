@@ -60,3 +60,21 @@ resto.
 Pontos a confirmar em cada uma antes de decidir: webhooks de assinatura, download do PDF assinado
 com trilha de auditoria, limite de requisições, preço real no volume esperado, e se a autenticação
 por selfie/documento pode substituir a nossa etapa de identidade (D3).
+
+## D6 — Usar a D4Sign que já é paga (20/11/2026)
+
+**Decisão:** usar a conta D4Sign atual — **Plano Advanced, R$ 99/mês: 50 envios/mês, 50 envios por
+WhatsApp, 400 créditos D4Sign AI**. Os outros provedores ficam como plano B (a arquitetura de D5
+permite trocar).
+
+**Por que faz sentido:** já está pago e o modelo de contrato já existe. No volume previsto (até 50
+contratos/mês), o limite padrão da API (10 requisições/hora, ~4 por contrato) é suficiente, desde
+que os envios passem pela fila com controle de taxa.
+
+**A confirmar:**
+- [ ] O plano Advanced libera a API (menu **Dev API** na conta, para gerar `tokenAPI`/`cryptKey`)
+- [ ] Acesso ao sandbox para testes
+- [ ] Se dá para enviar o link de assinatura por WhatsApp pela API, e se isso consome os 50 envios de WhatsApp
+- [ ] O que acontece acima de 50 envios/mês (preço do excedente ou bloqueio)
+
+**Alerta no painel:** mostrar quantos envios do mês já foram usados, para não estourar o limite sem perceber.
