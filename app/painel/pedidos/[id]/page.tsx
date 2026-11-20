@@ -22,6 +22,7 @@ const SUB: Record<string, string> = {
   not_created: "Não criado", queued: "Na fila", sent: "Enviado", signed: "Assinado", refused: "Recusado", error: "Erro", submitted: "Enviado", invalid: "Inválido",
 };
 const KIND: Record<string, string> = { doc_front: "Documento (frente)", doc_back: "Documento (verso)", selfie: "Selfie" };
+const fmtTime = (d: Date) => d.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 const fmt = (d: Date | null) => (d ? d.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—");
 
 async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["params"] }) {
@@ -163,6 +164,14 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
               Enviado: {fmt(contract.sent_at)} · Assinado: {fmt(contract.signed_at)}
               {contract.status === "queued" && <> · Etapa: {contract.step} · tentativas: {contract.attempts}</>}
             </p>
+            {contract.d4sign && (
+              <p className="rounded-lg bg-surface p-2 text-xs text-muted">
+                Chamadas livres na D4Sign agora: {contract.d4sign.free} de {contract.d4sign.limit} por hora · este envio precisa de {contract.d4sign.needed}.
+                {contract.d4sign.freesAt
+                  ? <> Aguardando o limite: libera por volta de {fmtTime(contract.d4sign.freesAt)} e a rotina (a cada 10 min) envia sozinha.</>
+                  : <> Próxima tentativa automática: {contract.next_attempt_at && contract.next_attempt_at > new Date() ? fmtTime(contract.next_attempt_at) : "na próxima rodada da rotina"}.</>}
+              </p>
+            )}
             {contract.last_error && <p className="rounded-lg bg-red-50 p-2 text-xs text-danger">Último erro: {contract.last_error}</p>}
             <div className="flex flex-wrap items-start gap-3">
               {contract.has_file && canSee && (

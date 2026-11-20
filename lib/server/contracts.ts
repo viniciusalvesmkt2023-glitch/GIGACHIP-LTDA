@@ -319,9 +319,27 @@ export async function readSignedContract(orderId: string, staffId: string, ip: s
 }
 
 export async function getContractInfo(orderId: string) {
-  const [c] = await sql()<{ id: string; status: string; step: string; attempts: number; last_error: string | null; sent_at: Date | null; signed_at: Date | null; has_file: boolean }[]>`
-    select c.id, c.status::text, c.step, c.attempts, c.last_error, c.sent_at, c.signed_at,
+  const [c] = await sql()<{
+    id: string; status: string; step: string; attempts: number; last_error: string | null; sent_at: Date | null;
+    signed_at: Date | null; has_file: boolean; next_attempt_at: Date | null; docs_to_cancel: string[];
+  }[]>`
+    select c.id, c.status::text, c.step, c.attempts, c.last_error, c.sent_at, c.signed_at, c.next_attempt_at, c.docs_to_cancel,
            exists (select 1 from public.contract_files f where f.contract_id = c.id) as has_file
     from public.contracts c where c.order_id = ${orderId}`;
-  return c ?? null;
+  if (!c) return null;
+  if (c.status !== "queued" || !d4signConfigured()) return { ...c, d4sign: null };
+
+  // Quantas chamadas este envio ainda precisa e quando o limite por hora libera essa quantidade
+  const idx = STEPS.indexOf(c.step as Step);
+  const needed = Math.min(STEPS.length - 1 - (idx < 0 ? 0 : idx), CALLS_PER_CONTRACT) + c.docs_to_cancel.length;
+  const free = await d4signBudget();
+  let freesAt: Date | null = null;
+  if (free < needed) {
+    const [row] = await sql()<{ at: Date | null }[]>`
+      select created_at + interval '1 hour' as at from public.api_call_log
+      where provider = 'd4sign' and created_at > now() - interval '1 hour'
+      order by created_at offset ${needed - free - 1} limit 1`;
+    freesAt = row?.at ?? null;
+  }
+  return { ...c, d4sign: { free: Math.max(free, 0), limit: env().D4SIGN_RATE_LIMIT_PER_HOUR, needed, freesAt } };
 }
