@@ -15,8 +15,9 @@ export async function GET(request: Request) {
   if (got.length !== expected.length || !timingSafeEqual(Buffer.from(got), Buffer.from(expected))) {
     return new Response("senha_diferente_da_vercel", { status: 401 });
   }
-  const contracts = await processQueuedContracts(2);
+  // Primeiro confere assinaturas já avisadas pela D4Sign (libera o cliente), depois envia contratos da fila
   const synced = await syncPendingSignatures(2);
+  const contracts = await processQueuedContracts(2);
   const emails = await processEmails(20);
   return Response.json({ contracts, synced, emails });
 }

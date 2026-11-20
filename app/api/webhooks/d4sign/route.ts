@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { documentUuidFromWebhook } from "@/lib/integrations/d4sign/mapping";
+import { D4SignRateLimited } from "@/lib/integrations/d4sign/client";
 import { syncContractByDocument } from "@/lib/server/contracts";
 import { sql } from "@/lib/server/db";
 import { env } from "@/lib/server/env";
@@ -36,6 +37,8 @@ export async function POST(request: Request) {
     const r = await syncContractByDocument(uuid, "webhook");
     return Response.json({ received: true, ...r });
   } catch (err) {
+    // Limite por hora da D4Sign: o aviso já ficou registrado e a rotina (a cada 10 min) confere assim que liberar
+    if (err instanceof D4SignRateLimited) return Response.json({ received: true, pending: "limite da D4Sign" }, { status: 202 });
     console.error(`[webhook d4sign] ${uuid}: ${String(err)}`);
     return new Response("processing error", { status: 500 });
   }

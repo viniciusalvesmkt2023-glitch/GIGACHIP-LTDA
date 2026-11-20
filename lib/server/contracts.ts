@@ -282,9 +282,18 @@ export async function syncContractByDocument(documentUuid: string, actor: "webho
 export async function syncPendingSignatures(limit = 2) {
   if (!d4signConfigured()) return 0;
   const rows = await sql()<{ provider_document_uuid: string }[]>`
-    select provider_document_uuid from public.contracts
-    where status = 'sent' and provider_document_uuid is not null and sent_at < now() - interval '1 hour'
-    order by sent_at limit ${limit}`;
+    select c.provider_document_uuid from public.contracts c
+    cross join lateral (
+      -- A D4Sign já avisou (webhook) depois do envio, mas o aviso não pôde ser conferido
+      -- (ex.: limite de chamadas por hora): esses vêm primeiro e não esperam 1 hora.
+      select exists (
+        select 1 from public.webhook_events w
+        where w.provider = 'd4sign' and w.payload->>'uuid' = c.provider_document_uuid and w.received_at > c.sent_at
+      ) as notified
+    ) n
+    where c.status = 'sent' and c.provider_document_uuid is not null
+      and (n.notified or c.sent_at < now() - interval '1 hour')
+    order by n.notified desc, c.sent_at limit ${limit}`;
   let n = 0;
   for (const r of rows) {
     if ((await d4signBudget()) < 2) break;
