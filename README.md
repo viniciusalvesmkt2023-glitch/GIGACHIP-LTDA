@@ -5,7 +5,7 @@ automatizar cadastro, pagamento, validação de identidade, contrato eletrônico
 aparelho, deixando para a equipe apenas a **ativação manual** no canal autorizado e o tratamento
 de exceções.
 
-> Status: **Fase 1 (fundação)** em andamento. Nada aqui deve ir para produção antes de resolver as
+> Status: **Fase 2 (site, contratação e pagamento)** implementada e testada localmente. Nada aqui deve ir para produção antes de resolver as
 > perguntas bloqueantes em [`docs/00-perguntas-em-aberto.md`](docs/00-perguntas-em-aberto.md).
 
 ## Desenvolvimento
@@ -14,7 +14,9 @@ Requisitos: Node 22, Postgres 16 local (para os testes de banco).
 
 ```bash
 npm install
-npm run dev          # site em http://localhost:3000
+cp .env.example .env.local   # preencha (para testes locais: banco local + Asaas falso)
+npm run dev:asaas-mock       # Asaas falso em http://127.0.0.1:4010/v3 (opcional)
+npm run dev                  # site em http://localhost:3000
 npm test             # regras de negócio (validadores, estados, multa)
 npm run db:check     # aplica as migrações num Postgres temporário e testa as regras do banco
 npm run lint && npm run typecheck && npm run build

@@ -9,12 +9,15 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "next typegen && tsc --noEmit",
-    "db:check": "bash scripts/check-migrations.sh"
+    "db:check": "bash scripts/check-migrations.sh",
+    "dev:asaas-mock": "node scripts/dev/asaas-mock.mjs 4010"
   },
   "dependencies": {
     "next": "16.4.6",
+    "postgres": "^4.1.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {

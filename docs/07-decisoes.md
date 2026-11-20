@@ -152,3 +152,23 @@ pagamento do Asaas (nunca passam pelo nosso servidor).
 - [ ] Assinatura com PIX: o Asaas gera a cobrança PIX de cada mês e avisa o cliente
 - [ ] Se a conta tem **Pix Automático** (débito recorrente via PIX), que evitaria o cliente ter de pagar manualmente todo mês
 - [ ] Como o Asaas trata vencimento em dia 29–31 nas assinaturas (o sistema já calcula pela regra D9)
+
+## D13 — Acesso ao banco direto pelo servidor; visual provisório (20/11/2026)
+
+- O site acessa o Postgres do Supabase **direto do servidor** (driver `postgres`, URL do
+  *Transaction pooler*), nunca do navegador. O Supabase continua sendo usado para banco, Auth
+  (Fase 3) e Storage. Vantagem: as mesmas consultas rodam no Postgres local dos testes.
+- Visual **provisório e neutro** (azul petróleo), definido só em variáveis de `app/globals.css`,
+  até a Gigachip ter logo e cores. O roxo da Vivo foi evitado de propósito.
+
+## D14 — Fluxo de pagamento implementado (Fase 2)
+
+- Na contratação, o sistema cria no Asaas o cliente e uma **assinatura mensal** com a 1ª
+  mensalidade vencendo no dia (PIX ou cartão). Se algo falhar depois de criar a assinatura, ela é
+  apagada para não ficar cobrando.
+- O pedido só vira "pago" pelo webhook **depois de consultar a cobrança na API do Asaas**
+  (testado: webhook dizendo "pago" com a API ainda "pendente" não confirma nada).
+- CPF já cadastrado com e-mail ou nascimento diferentes **não sobrescreve** o cadastro: o cliente é
+  orientado a falar no WhatsApp (evita que alguém troque o e-mail de outra pessoa).
+- Pedido não pago expira em 48 h (a rotina que expira e cancela a assinatura no Asaas fica para a
+  Fase 3, junto com as demais rotinas agendadas).
