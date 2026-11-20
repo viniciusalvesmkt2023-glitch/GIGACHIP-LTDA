@@ -48,7 +48,7 @@ function Paid({ view }: { view: PaymentView }) {
     <div className="rounded-2xl border border-success bg-green-50 p-6">
       <p className="text-xl font-bold text-success">Pagamento confirmado!</p>
       <p className="mt-2 text-sm">
-        Enviamos para o seu e-mail o link da sua área segura, onde você vai concluir a ativação:
+        Vamos enviar para o seu e-mail o link da sua área segura, onde você vai concluir a ativação:
       </p>
       <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm">
         <li>Confirmar sua identidade (documento + selfie)</li>
