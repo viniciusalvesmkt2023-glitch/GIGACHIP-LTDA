@@ -1,6 +1,8 @@
 "use server";
 
+import { after } from "next/server";
 import { parseDeviceForm, type DeviceErrors } from "@/lib/domain/device-input";
+import { processQueuedContracts } from "@/lib/server/contracts";
 import { currentOrderId } from "@/lib/server/customer-access";
 import { getAreaView, saveDevice } from "@/lib/server/customer-area";
 
@@ -40,5 +42,7 @@ export async function submitActivationDevice(formData: FormData): Promise<Activa
         : { form: "Este pedido já está em ativação. Para corrigir, fale com a gente." },
     };
   }
+  // Envia o contrato logo depois de responder (a tela não espera a D4Sign)
+  after(() => processQueuedContracts(1).then(() => undefined).catch((e) => console.error(`[contratos] ${e}`)));
   return { ok: true, errors: {} };
 }

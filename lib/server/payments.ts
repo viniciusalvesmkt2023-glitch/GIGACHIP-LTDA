@@ -2,7 +2,6 @@ import "server-only";
 import { connection } from "next/server";
 import { asaas } from "@/lib/integrations/asaas/client";
 import { isPaymentEvent, reaisToCents, statusFromEvent } from "@/lib/integrations/asaas/mapping";
-import { queueContract } from "./contracts";
 import { enqueueEmail } from "./email";
 import { sql, withActor } from "./db";
 
@@ -83,9 +82,8 @@ export async function processAsaasEvent(eventRowId: bigint): Promise<void> {
       // (pago → em andamento, estorno → pendência, histórico).
       if (payment.is_first_payment) {
         await tx`update public.orders set payment_status = ${newStatus} where id = ${payment.order_id}`;
-        // D21: pagou → contrato já vai para assinatura (em paralelo à validação de identidade)
+        // D28: pagou → e-mail com o formulário de ativação (o contrato vai depois do ID do celular)
         if (newStatus === "confirmed" || newStatus === "received") {
-          await queueContract(tx, payment.order_id);
           // D22: e-mail com o link do formulário de ativação
           await enqueueEmail(tx, payment.order_id, "formulario_ativacao");
         }

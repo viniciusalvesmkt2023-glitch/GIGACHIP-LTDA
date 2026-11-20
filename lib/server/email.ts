@@ -44,15 +44,16 @@ export function renderActivationEmail(p: { firstName: string; code: string; plan
   const html = layout(
     `Pagamento confirmado, ${p.firstName}! 🎉`,
     `<p style="line-height:1.6">Recebemos o pagamento do <strong>${p.planName}</strong> (pedido <strong>${p.code}</strong>).</p>
-<p style="line-height:1.6">Para ativarmos sua linha, preencha o <strong>formulário de ativação</strong>. Leva poucos minutos:</p>
+<p style="line-height:1.6">Para ativarmos sua linha, abra o <strong>formulário de ativação</strong> e siga os passos:</p>
 <ol style="line-height:1.8;padding-left:20px">
-<li>Digite <strong>*#06#</strong> no discador do celular e tire um <strong>print</strong> da tela — o formulário lê ${deviceHint} sozinho;</li>
-<li>Assine o <strong>contrato</strong> que chega em outro e-mail, enviado pela <strong>D4Sign</strong> — ela vai pedir uma foto do seu <strong>documento</strong> e uma <strong>selfie</strong> para confirmar sua identidade.</li>
+<li>Digite <strong>*#06#</strong> no discador do celular, tire um <strong>print</strong> e envie no formulário — ele lê ${deviceHint} sozinho;</li>
+<li>Assine o <strong>contrato</strong> que chega no seu e-mail pela <strong>D4Sign</strong> (ela pede uma foto do documento e uma selfie);</li>
+<li>Toque em <strong>falar no WhatsApp</strong> para pedir a ativação.</li>
 </ol>
 ${button(p.link, "Abrir formulário de ativação")}
 <p style="font-size:13px;color:#64748b;line-height:1.6">O link é pessoal — não compartilhe. Se o botão não funcionar, copie e cole no navegador:<br>${p.link}</p>`,
   );
-  const text = `Pagamento confirmado, ${p.firstName}!\n\nPedido ${p.code} (${p.planName}).\nPreencha o formulário de ativação: ${p.link}\n\n1) Digite *#06# no discador e tire um print\n2) Assine o contrato que chega pela D4Sign (com foto do documento e selfie)\n\nGigachip Ltda.`;
+  const text = `Pagamento confirmado, ${p.firstName}!\n\nPedido ${p.code} (${p.planName}).\nPreencha o formulário de ativação: ${p.link}\n\n1) Digite *#06# no discador, tire um print e envie no formulário\n2) Assine o contrato que chega pela D4Sign (com foto do documento e selfie)\n3) Fale com a gente no WhatsApp pelo formulário para ativar\n\nGigachip Ltda.`;
   return { subject, html, text };
 }
 

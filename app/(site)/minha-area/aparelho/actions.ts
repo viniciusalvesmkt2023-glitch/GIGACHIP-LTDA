@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { processQueuedContracts } from "@/lib/server/contracts";
 import { parseDeviceForm, type DeviceErrors } from "@/lib/domain/device-input";
 import { currentOrderId } from "@/lib/server/customer-access";
 import { getAreaView, saveDevice } from "@/lib/server/customer-area";
@@ -26,5 +28,6 @@ export async function submitDevice(_prev: DeviceFormState, formData: FormData): 
   if (!saved.ok) {
     return { errors: { form: "Este pedido já está em ativação. Para corrigir os dados, fale com a gente pelo WhatsApp." }, values };
   }
+  after(() => processQueuedContracts(1).then(() => undefined).catch((e) => console.error(`[contratos] ${e}`)));
   redirect("/minha-area");
 }

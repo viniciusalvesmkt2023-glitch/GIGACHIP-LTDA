@@ -169,7 +169,7 @@ async function advance(contractId: string): Promise<void> {
     await d4sign.sendToSigner(
       docUuid,
       `Olá, ${r.full_name.split(/\s+/)[0]}! Este é o contrato da sua linha Gigachip (pedido ${r.code}). Leia e assine. ` +
-        `Depois, envie os dados do celular e seus documentos no formulário de ativação: ${formLink}`,
+        `Depois de assinar, volte ao formulário de ativação para falar com a gente no WhatsApp e ativar sua linha: ${formLink}`,
     );
     await withActor({ type: "system", reason: "contrato enviado para assinatura (D4Sign)" }, async (tx) => {
       await tx`

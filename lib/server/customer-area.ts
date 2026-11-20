@@ -2,6 +2,7 @@ import "server-only";
 import type { DeviceInput } from "@/lib/domain/device-input";
 import { createHash } from "node:crypto";
 import { sniffImage } from "@/lib/domain/image-check";
+import { queueContract } from "./contracts";
 import { encryptBytes, encryptField } from "./crypto";
 import { sql, withActor } from "./db";
 import { env } from "./env";
@@ -19,6 +20,7 @@ export type AreaView = {
   deviceStatus: string;
   imeiLast4: string | null;
   firstName: string;
+  fullName: string;
 };
 
 export async function getAreaView(orderId: string): Promise<AreaView | null> {
@@ -48,6 +50,7 @@ export async function getAreaView(orderId: string): Promise<AreaView | null> {
     deviceStatus: r.device_status,
     imeiLast4: r.imei_last4,
     firstName: r.full_name.split(/\s+/)[0] ?? "",
+    fullName: r.full_name,
   };
 }
 
@@ -105,6 +108,28 @@ export async function saveDevice(
           content_encrypted = excluded.content_encrypted, delete_after = excluded.delete_after, created_at = now()`;
     }
     await tx`update public.orders set device_status = 'confirmed' where id = ${orderId}`;
+    // D28: ID do celular recebido → contrato (com documento + selfie) vai para o e-mail do cliente
+    const [paid] = await tx`
+      select 1 from public.orders where id = ${orderId} and payment_status in ('confirmed', 'received')`;
+    if (paid) await queueContract(tx, orderId);
     return { ok: true } as const;
   });
+}
+
+/**
+ * Dados do aparelho do PRÓPRIO cliente (link/cookie dele), para montar a mensagem do WhatsApp
+ * que ele mesmo envia à equipe pedindo a ativação (D28). Não inclui CPF nem documentos.
+ */
+export async function deviceForWhatsapp(orderId: string) {
+  const [d] = await sql()<{ imei: Uint8Array; eid: Uint8Array | null; iccid: Uint8Array | null }[]>`
+    select imei_encrypted as imei, eid_encrypted as eid, iccid_encrypted as iccid
+    from public.device_info where order_id = ${orderId}`;
+  if (!d) return null;
+  const key = env().FIELD_ENCRYPTION_KEY;
+  const { decryptField } = await import("./crypto");
+  return {
+    imei: decryptField(d.imei, key),
+    eid: d.eid ? decryptField(d.eid, key) : null,
+    iccid: d.iccid ? decryptField(d.iccid, key) : null,
+  };
 }

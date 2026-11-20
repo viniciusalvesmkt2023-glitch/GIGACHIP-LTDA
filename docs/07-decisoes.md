@@ -349,3 +349,25 @@ print do *#06# → contrato assinado + aparelho informado → **pronto para ativ
   migração 0009). A identidade só é aprovada sozinha se o contrato exigiu **documento + selfie**
   (`doc_selfie`). Contratos assinados sem essa exigência (ex.: enviados antes de D25) ficam
   "em análise" para a equipe aprovar no painel.
+
+## D28 — FLUXO OFICIAL DO CLIENTE (definido pelos sócios em 20/11/2026) ⭐
+
+Esta é a referência para qualquer mudança futura. Substitui D21 (contrato no pagamento).
+
+1. **Compra:** o cliente escolhe o plano no site, preenche o cadastro e paga (PIX/cartão — Asaas).
+2. **ID do celular:** na tela de parabéns, o botão leva ao **Formulário de ativação**; o cliente
+   manda o print do `*#06#` (o site lê IMEI/EID ou ICCID) e confirma. *(O link do formulário também
+   vai por e-mail.)*
+3. **Contrato:** só **depois do ID do celular** o contrato é enviado pela D4Sign para o e-mail do
+   cliente, exigindo **foto do documento + selfie com reconhecimento facial** (validação de
+   identidade automática). O formulário mostra o aviso e se atualiza sozinho.
+4. **WhatsApp:** com o contrato assinado, o formulário libera o botão **"Enviar dados e pedir
+   ativação no WhatsApp"**, com mensagem pronta: pedido, nome, plano, tipo (eSIM/chip), IMEI,
+   EID/ICCID e "contrato assinado". **Sem CPF e sem documentos.**
+5. **Ativação — MANUAL, feita pelo dono:** ativa a linha no portal da Vivo, fala com o cliente e
+   registra no painel em **"Ativar linha"** (escolhe o número disponível, digita o ICCID; o sistema
+   preenche as colunas da planilha em Painel → Linhas).
+
+Automático: cobrança, formulário, leitura do print, envio do contrato, validação de identidade
+(D4Sign), acompanhamento da assinatura, liberação do WhatsApp, e-mails e lembretes.
+Manual: ativar na Vivo, escolher o número/ICCID no painel, conversar com o cliente.
