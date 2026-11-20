@@ -103,6 +103,11 @@ export const d4sign = {
     return request("POST", `/documents/${documentUuid}/sendtosigner`, { message, skip_email: "0", workflow: "0" });
   },
 
+  /** Cancela um documento (ex.: e-mail do cliente estava errado e um novo contrato será enviado). */
+  cancelDocument(documentUuid: string, comment: string) {
+    return request("POST", `/documents/${documentUuid}/cancel`, { comment });
+  },
+
   async getDocument(documentUuid: string): Promise<D4SignDocument> {
     return parseDocumentResponse(await request("GET", `/documents/${documentUuid}`));
   },

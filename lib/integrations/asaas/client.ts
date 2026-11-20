@@ -80,6 +80,11 @@ export const asaas = {
     return request<AsaasCustomer>("POST", "/customers", input);
   },
 
+  /** Atualiza o e-mail do cliente no Asaas (avisos de cobrança). */
+  updateCustomerEmail(customerId: string, email: string) {
+    return request<AsaasCustomer>("POST", `/customers/${encodeURIComponent(customerId)}`, { email });
+  },
+
   createSubscription(input: {
     customer: string;
     billingType: AsaasBillingType;

@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { processQueuedContracts, retryContract, syncContractByDocument } from "@/lib/server/contracts";
+import { changeCustomerEmail } from "@/lib/server/customer-admin";
 import { sql } from "@/lib/server/db";
 import { d4sign } from "@/lib/integrations/d4sign/client";
 import { redirect } from "next/navigation";
@@ -105,4 +106,10 @@ export async function listSafesAction(): Promise<FormState> {
   } catch (e) {
     return { message: `Falha ao falar com a D4Sign: ${e instanceof Error ? e.message : String(e)}` };
   }
+}
+
+export async function changeEmailAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner", "admin", "ativador"]);
+  const r = await changeCustomerEmail(me, str(fd, "orderId"), str(fd, "email"));
+  return { ok: r.ok, message: r.messages.join(" ") };
 }

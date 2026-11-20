@@ -52,6 +52,7 @@ createServer(async (req, res) => {
     if (action === "createlist") { d.signers.push(...body.signers); return send(res, 200, { message: [{ success: "1" }] }); }
     if (action === "webhooks") { d.webhook = body.url; return send(res, 200, { message: "success" }); }
     if (action === "sendtosigner") { d.statusId = "3"; return send(res, 200, { message: "File sent to successfully signing" }); }
+    if (action === "cancel") { d.statusId = "6"; d.cancelComment = body.comment; return send(res, 200, { message: "success" }); }
     if (action === "download") return send(res, 200, { url: `http://127.0.0.1:${port}/files/${m[1]}`, name: d.name });
   }
   send(res, 404, { message: `não implementado: ${req.method} ${path}` });

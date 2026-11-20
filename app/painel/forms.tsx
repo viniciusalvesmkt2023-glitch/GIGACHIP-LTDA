@@ -121,3 +121,22 @@ export function ActionButton({ action, orderId, label, variant = "secondary" }: 
     </form>
   );
 }
+
+export function ChangeEmailForm({ action, orderId, current }: { action: Action; orderId: string; current: string }) {
+  const [s, a, pending] = useActionState(action, {});
+  return (
+    <details className="mt-3 rounded-xl border border-border p-3 text-sm">
+      <summary className="cursor-pointer font-medium text-brand">Corrigir e-mail do cliente</summary>
+      <form action={a} className="mt-3 space-y-2">
+        <input type="hidden" name="orderId" value={orderId} />
+        <p className="text-xs text-muted">
+          Antes de trocar, confirme com o cliente pelo celular cadastrado. Se o contrato ainda não foi assinado, o antigo é
+          cancelado e um novo vai para o e-mail correto (usa 1 envio da D4Sign).
+        </p>
+        <input name="email" type="email" required defaultValue={current} className={input} />
+        <button disabled={pending} className={`${buttonStyles.primary} py-2`}>{pending ? "Corrigindo..." : "Salvar e reenviar"}</button>
+        <Msg s={s} />
+      </form>
+    </details>
+  );
+}

@@ -7,8 +7,8 @@ import { getOrderDetail, STATUS_LABEL } from "@/lib/server/admin";
 import { getContractInfo } from "@/lib/server/contracts";
 import { getIdentityReview } from "@/lib/server/identity";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { decideIdentityAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
-import { ActionButton, IdentityDecisionForm, RevealButton } from "../../forms";
+import { changeEmailAction, decideIdentityAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
+import { ActionButton, ChangeEmailForm, IdentityDecisionForm, RevealButton } from "../../forms";
 import { Card, PanelShell } from "../../shell";
 
 export const metadata: Metadata = { title: "Pedido" };
@@ -48,6 +48,7 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
             <div><dt className="inline text-muted">E-mail: </dt><dd className="inline">{o.email}</dd></div>
             <div><dt className="inline text-muted">Celular: </dt><dd className="inline">{o.phone_e164}</dd></div>
           </dl>
+          {canSee && o.status !== "ativado" && <ChangeEmailForm action={changeEmailAction} orderId={o.id} current={o.email} />}
         </Card>
         <Card title="Plano e pagamento">
           <dl className="space-y-1 text-sm">

@@ -279,3 +279,17 @@ iOS bloqueiam). Por isso o caminho é o print + leitura automática.
 
 Os arquivos do leitor (motor + idioma, ~15 MB) são servidos pelo próprio site (`public/ocr`,
 copiados de `node_modules` antes do build), sem depender de CDN externo.
+
+## D23 — Corrigir e-mail digitado errado (20/11/2026)
+
+No painel (detalhe do pedido → "Corrigir e-mail do cliente"), dono/administrador/ativador corrige
+o e-mail. O sistema:
+- atualiza o cadastro e o cliente no Asaas;
+- invalida os links de acesso enviados ao e-mail errado (o do navegador da compra continua valendo);
+- como o e-mail está escrito dentro do contrato, **cancela o contrato antigo na D4Sign e envia um
+  novo** para o e-mail certo (gasta 1 envio a mais) — se ainda não tiver sido assinado;
+- reenvia o e-mail do formulário de ativação;
+- registra na auditoria (e-mails mascarados).
+
+Antes de trocar, a equipe deve confirmar com o cliente pelo celular cadastrado (evita golpe de
+alguém pedindo para trocar o e-mail de outra pessoa).

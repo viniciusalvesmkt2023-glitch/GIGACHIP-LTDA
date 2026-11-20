@@ -29,6 +29,13 @@ createServer(async (req, res) => {
     customers.set(c.id, c);
     return send(res, 200, c);
   }
+  if (req.method === "POST" && (m = path.match(/^\/customers\/([^/]+)$/))) {
+    const c = customers.get(m[1]);
+    if (!c) return send(res, 404, { errors: [{ code: "not_found" }] });
+    Object.assign(c, body);
+    return send(res, 200, c);
+  }
+  if (req.method === "GET" && path === "/_test/customers") return send(res, 200, [...customers.values()]);
   if (req.method === "POST" && path === "/subscriptions") {
     if (!customers.has(body.customer)) return send(res, 400, { errors: [{ code: "invalid_customer" }] });
     const s = { id: `sub_${randomUUID().slice(0, 8)}`, status: "ACTIVE", ...body };

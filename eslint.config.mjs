@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Arquivos do OCR copiados de node_modules (código de terceiros já minificado)
+    "public/ocr/**",
   ]),
 ]);
 
