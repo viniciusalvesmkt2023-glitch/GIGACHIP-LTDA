@@ -6,10 +6,12 @@ import { formatBRL } from "@/lib/domain/money";
 import { getOrderDetail, STATUS_LABEL } from "@/lib/server/admin";
 import { getContractInfo } from "@/lib/server/contracts";
 import { getIdentityReview } from "@/lib/server/identity";
+import { activationDefaults, availableNumbers } from "@/lib/server/lines";
+import { formatMsisdn } from "@/lib/domain/lines";
 import { identityMode } from "@/lib/server/identity-mode";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { changeEmailAction, decideIdentityAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
-import { ActionButton, ChangeEmailForm, IdentityDecisionForm, RevealButton } from "../../forms";
+import { activateLineAction, changeEmailAction, decideIdentityAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
+import { ActionButton, ActivateLineForm, ChangeEmailForm, IdentityDecisionForm, RevealButton } from "../../forms";
 import { Card, PanelShell } from "../../shell";
 
 export const metadata: Metadata = { title: "Pedido" };
@@ -30,6 +32,9 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
   const identity = await getIdentityReview(id);
   const contract = await getContractInfo(id);
   const identityModeLabel = identityMode();
+  const canActivate = ["owner", "admin", "ativador"].includes(staff.role) && ["pronto_para_ativacao", "em_ativacao"].includes(o.status);
+  const [act, numbers] = canActivate ? await Promise.all([activationDefaults(id), availableNumbers()]) : [null, []];
+  const brMoney = (c: number) => (c / 100).toFixed(2).replace(".", ",");
   const canSee = ["owner", "admin", "ativador"].includes(staff.role);
 
   return (
@@ -40,6 +45,27 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
         <span className="rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand">{STATUS_LABEL[o.status] ?? o.status}</span>
         {o.problem_reason && <span className="rounded-full bg-red-100 px-3 py-1 text-sm text-danger">{o.problem_reason}</span>}
       </div>
+
+      {canActivate && act && (
+        <Card title="Ativar linha" className="mt-6 border-success ring-1 ring-success">
+          <p className="mb-4 text-sm text-muted">
+            Depois de ativar no portal da Vivo, escolha o número usado e digite o ICCID. O resto já vem preenchido — confira e confirme.
+          </p>
+          <ActivateLineForm
+            action={activateLineAction}
+            orderId={o.id}
+            numbers={numbers.map((n) => ({ id: n.id, label: `${formatMsisdn(n.msisdn)}${n.plano_pj ? ` · ${n.plano_pj}` : ""}` }))}
+            defaults={{
+              customer: act.customer,
+              iccid: act.iccidSuggestion,
+              smartDados: act.smartDados,
+              salePrice: brMoney(act.salePriceCents),
+              cost: brMoney(act.costCents),
+              nextDue: act.nextDueDate ? act.nextDueDate.split("-").reverse().join("/") : "—",
+            }}
+          />
+        </Card>
+      )}
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <Card title="Cliente">

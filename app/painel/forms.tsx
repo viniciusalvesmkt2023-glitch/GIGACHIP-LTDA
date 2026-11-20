@@ -140,3 +140,83 @@ export function ChangeEmailForm({ action, orderId, current }: { action: Action; 
     </details>
   );
 }
+
+export function ActivateLineForm({
+  action, orderId, numbers, defaults,
+}: {
+  action: Action;
+  orderId: string;
+  numbers: { id: string; label: string }[];
+  defaults: { iccid: string; smartDados: string; salePrice: string; cost: string; nextDue: string; customer: string };
+}) {
+  const [s, a, pending] = useActionState(action, {});
+  if (s.ok) return <Msg s={s} />;
+  return (
+    <form action={a} className="grid gap-3 sm:grid-cols-2">
+      <input type="hidden" name="orderId" value={orderId} />
+      <div className="sm:col-span-2"><Msg s={s} /></div>
+      <p className="text-sm sm:col-span-2">Cliente: <strong>{defaults.customer}</strong></p>
+      <label className="text-sm font-medium sm:col-span-2">Número disponível (estoque)
+        <select name="lineId" required className={input} defaultValue="">
+          <option value="" disabled>{numbers.length ? "Escolha o número que foi ativado" : "Nenhum número disponível — cadastre em Linhas"}</option>
+          {numbers.map((n) => <option key={n.id} value={n.id}>{n.label}</option>)}
+        </select>
+      </label>
+      <label className="text-sm font-medium sm:col-span-2">ICCID atual
+        <input name="iccid" required inputMode="numeric" defaultValue={defaults.iccid} placeholder="Digite o ICCID" className={`${input} font-mono`} />
+      </label>
+      <label className="text-sm font-medium">Smart-Dados
+        <input name="smartDados" required defaultValue={defaults.smartDados} className={input} />
+      </label>
+      <label className="text-sm font-medium">Venda final (R$)
+        <input name="salePrice" required defaultValue={defaults.salePrice} className={input} />
+      </label>
+      <label className="text-sm font-medium">Valor do gestor (R$)
+        <input name="cost" required defaultValue={defaults.cost} className={input} />
+      </label>
+      <label className="text-sm font-medium">Próximo vencimento
+        <input value={defaults.nextDue} readOnly className={`${input} bg-surface`} />
+      </label>
+      <p className="text-xs text-muted sm:col-span-2">
+        Login Vivo, número, plano PJ e forma de pagamento já cadastrados no número não são alterados. A data de ativação é hoje.
+      </p>
+      <button disabled={pending} className={`${buttonStyles.primary} bg-success hover:bg-green-800 sm:col-span-2`}>
+        {pending ? "Ativando..." : "Confirmar ativação"}
+      </button>
+    </form>
+  );
+}
+
+export function AddNumbersForm({ action }: { action: Action }) {
+  const [s, a, pending] = useActionState(action, {});
+  return (
+    <form action={a} className="space-y-3">
+      <Msg s={s} />
+      <label className="block text-sm font-medium">Login Vivo Gestão (padrão)
+        <input name="vivoLogin" className={input} placeholder="Ex.: 471500000" />
+      </label>
+      <label className="block text-sm font-medium">Números (um por linha)
+        <textarea name="numbers" rows={6} required className={`${input} font-mono`}
+          placeholder={"11900000001;Internet Móvel 10GB Emp 4G\n11900000002;Smart Empresas 6+200GB"} />
+      </label>
+      <p className="text-xs text-muted">
+        Formatos aceitos: <code>número</code>, <code>número;plano PJ</code> ou <code>login;número;plano PJ</code>. Também dá para
+        copiar as colunas Login, Número e Plano PJ da planilha e colar aqui.
+      </p>
+      <button disabled={pending} className={`${buttonStyles.primary} py-2`}>{pending ? "Salvando..." : "Adicionar ao estoque"}</button>
+    </form>
+  );
+}
+
+export function CostForm({ action, current }: { action: Action; current: string }) {
+  const [s, a, pending] = useActionState(action, {});
+  return (
+    <form action={a} className="flex flex-wrap items-end gap-3">
+      <label className="text-sm font-medium">Valor pago ao gestor por linha (R$)
+        <input name="cost" required defaultValue={current} className={input} />
+      </label>
+      <button disabled={pending} className={`${buttonStyles.primary} py-3`}>{pending ? "Salvando..." : "Salvar"}</button>
+      <div className="w-full"><Msg s={s} /></div>
+    </form>
+  );
+}

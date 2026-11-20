@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { processQueuedContracts, retryContract, syncContractByDocument } from "@/lib/server/contracts";
 import { changeCustomerEmail } from "@/lib/server/customer-admin";
 import { sql } from "@/lib/server/db";
+import { parseMoneyToCents, parseNumbersPaste } from "@/lib/domain/lines";
+import { activateOrder, addAvailableNumbers, setLineCostCents } from "@/lib/server/lines";
 import { d4sign } from "@/lib/integrations/d4sign/client";
 import { redirect } from "next/navigation";
 import { revealSensitive, type SensitiveField } from "@/lib/server/admin";
@@ -112,4 +114,39 @@ export async function changeEmailAction(_p: FormState, fd: FormData): Promise<Fo
   const me = await requireStaff(["owner", "admin", "ativador"]);
   const r = await changeCustomerEmail(me, str(fd, "orderId"), str(fd, "email"));
   return { ok: r.ok, message: r.messages.join(" ") };
+}
+
+export async function activateLineAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner", "admin", "ativador"]);
+  const sale = parseMoneyToCents(str(fd, "salePrice"));
+  const cost = parseMoneyToCents(str(fd, "cost"));
+  if (sale === null || cost === null) return { message: "Confira os valores de venda e do gestor." };
+  if (!str(fd, "lineId")) return { message: "Escolha o número disponível." };
+  const r = await activateOrder(me, str(fd, "orderId"), {
+    lineId: str(fd, "lineId"),
+    iccid: str(fd, "iccid"),
+    smartDados: str(fd, "smartDados").trim(),
+    salePriceCents: sale,
+    costCents: cost,
+  });
+  return { ok: r.ok, message: r.message };
+}
+
+export async function addNumbersAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner", "admin"]);
+  const { rows, invalid } = parseNumbersPaste(str(fd, "numbers"), str(fd, "vivoLogin").trim() || null);
+  if (!rows.length) return { message: "Nenhum número válido encontrado." + (invalid.length ? ` Linhas ignoradas: ${invalid.length}.` : "") };
+  const r = await addAvailableNumbers(me, rows);
+  const parts = [`${r.added} número(s) adicionado(s) como disponível.`];
+  if (r.duplicated.length) parts.push(`${r.duplicated.length} já estava(m) cadastrado(s).`);
+  if (invalid.length) parts.push(`${invalid.length} linha(s) ignorada(s) por número inválido.`);
+  return { ok: true, message: parts.join(" ") };
+}
+
+export async function setCostAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner"]);
+  const cents = parseMoneyToCents(str(fd, "cost"));
+  if (cents === null) return { message: "Valor inválido. Use, por exemplo, 30,00." };
+  await setLineCostCents(me, cents);
+  return { ok: true, message: "Valor do gestor atualizado. Vale para as próximas ativações." };
 }

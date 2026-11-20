@@ -323,3 +323,20 @@ print do *#06# → contrato assinado + aparelho informado → **pronto para ativ
   bloqueia a assinatura quando o rosto não confere ou só registra o resultado no relatório.
 - Alternativa futura, se precisar de checagem contra base oficial: validador externo (ver pesquisa
   de preços: Validra, Serpro Datavalid, ZapSign ID, unico/CAF/idwall).
+
+## D26 — Estoque de linhas no painel substitui a planilha (20/11/2026)
+
+- Os números da conta Vivo Gestão entram como **"disponível"** (login, número, plano PJ) — colando
+  direto da planilha em Painel → Linhas.
+- **Ativação** (pedido "pronto para ativação" → "Ativar linha"): o dono escolhe o número disponível e
+  digita **só o ICCID** (no chip físico já vem o ICCID informado pelo cliente). O sistema preenche
+  os campos da venda: cliente, Smart-Dados ("Franquia de X+YGB"), data de ativação (hoje), venda
+  final (preço do pedido), valor do gestor e próximo vencimento. **Login, número, plano PJ e forma
+  de pagamento já cadastrados nunca são alterados.**
+- **Valor do gestor** (padrão R$ 30) é configurável em Painel → Configurações; cada linha guarda o
+  valor da época da ativação.
+- Pedido vira **"ativado"** e o cliente recebe o e-mail "Sua linha está ativa" (fila de e-mails).
+- Painel → Linhas mostra a "planilha" com filtros e busca, e **Baixar planilha (Excel)** exporta no
+  mesmo formato (CSV com ; e acentos para o Excel, protegido contra fórmulas).
+- A planilha antiga tem dados pessoais de clientes: compartilhar só com quem precisa. Importar os
+  clientes antigos (com `legacy_customer_name`) fica para quando os sócios enviarem o arquivo.

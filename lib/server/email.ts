@@ -1,4 +1,5 @@
 import "server-only";
+import { formatMsisdn } from "@/lib/domain/lines";
 import { issueAccessToken } from "./customer-access";
 import { sql, type Tx } from "./db";
 import { env } from "./env";
@@ -9,7 +10,7 @@ import { env } from "./env";
  * O link de acesso é criado só NA HORA do envio (nunca fica guardado na fila).
  */
 
-export type EmailTemplate = "formulario_ativacao";
+export type EmailTemplate = "formulario_ativacao" | "linha_ativada";
 
 export function emailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
@@ -55,6 +56,23 @@ ${button(p.link, "Abrir formulário de ativação")}
   return { subject, html, text };
 }
 
+export function renderActivatedEmail(p: { firstName: string; code: string; planName: string; number: string }) {
+  const subject = `Sua linha Gigachip está ativa! (pedido ${p.code})`;
+  const html = layout(
+    `Sua linha está ativa, ${p.firstName}! ✅`,
+    `<p style="line-height:1.6">Ativamos sua linha do <strong>${p.planName}</strong> (pedido <strong>${p.code}</strong>).</p>
+<p style="font-size:22px;font-weight:bold;margin:16px 0">${p.number}</p>
+<p style="line-height:1.6">Lembretes importantes:</p>
+<ul style="line-height:1.8;padding-left:20px">
+<li>A mensalidade vence todo mês no mesmo dia da contratação — enviamos lembretes antes.</li>
+<li>Pelo contrato, este número <strong>não pode</strong> ser usado para cadastrar WhatsApp nem aplicativos de banco/PIX.</li>
+</ul>
+<p style="line-height:1.6">Qualquer dúvida, é só responder este e-mail.</p>`,
+  );
+  const text = `Sua linha está ativa, ${p.firstName}!\n\nPedido ${p.code} (${p.planName})\nNúmero: ${p.number}\n\nLembrete: este número não pode ser usado para cadastrar WhatsApp nem apps de banco/PIX.\n\nGigachip Ltda.`;
+  return { subject, html, text };
+}
+
 async function sendViaResend(to: string, content: { subject: string; html: string; text: string }) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -84,9 +102,16 @@ export async function processEmails(limit = 5): Promise<{ sent: number; failed: 
       const [o] = await sql()<{ code: string; plan_name: string; sim_type: "esim" | "physical"; full_name: string; email: string }[]>`
         select o.code, o.plan_snapshot->>'name' as plan_name, o.sim_type::text as sim_type, c.full_name, c.email::text as email
         from public.orders o join public.customers c on c.id = o.customer_id where o.id = ${n.order_id}`;
-      const token = await sql().begin((tx) => issueAccessToken(tx, n.order_id, "email"));
-      const link = `${env().APP_URL.replace(/\/$/, "")}/acesso/${token}`;
-      const content = renderActivationEmail({ firstName: o.full_name.split(/\s+/)[0], code: o.code, planName: o.plan_name, link, simType: o.sim_type });
+      const firstName = o.full_name.split(/\s+/)[0];
+      let content: { subject: string; html: string; text: string };
+      if (n.template === "linha_ativada") {
+        const [l] = await sql()<{ msisdn: string }[]>`select msisdn from public.lines where order_id = ${n.order_id}`;
+        content = renderActivatedEmail({ firstName, code: o.code, planName: o.plan_name, number: l ? formatMsisdn(l.msisdn) : "" });
+      } else {
+        const token = await sql().begin((tx) => issueAccessToken(tx, n.order_id, "email"));
+        const link = `${env().APP_URL.replace(/\/$/, "")}/acesso/${token}`;
+        content = renderActivationEmail({ firstName, code: o.code, planName: o.plan_name, link, simType: o.sim_type });
+      }
       const id = await sendViaResend(o.email, content);
       await sql()`update public.notifications set status = 'done', sent_at = now(), provider_message_id = ${id}, attempts = attempts + 1, last_error = null where id = ${n.id}`;
       sent++;
