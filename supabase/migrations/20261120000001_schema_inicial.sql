@@ -13,7 +13,8 @@
 --  * Valores monetários em centavos (integer).
 -- =============================================================================
 
-create extension if not exists citext;
+create schema if not exists extensions;
+create extension if not exists citext with schema extensions;
 
 -- -----------------------------------------------------------------------------
 -- Enums
@@ -36,7 +37,8 @@ create type public.contract_status as enum (
 create type public.device_status as enum ('pending', 'submitted', 'confirmed', 'invalid');
 create type public.billing_type as enum ('pix', 'boleto', 'credit_card', 'undefined');
 create type public.subscription_status as enum ('active', 'overdue', 'cancelled');
-create type public.line_status as enum ('ativa', 'suspensa', 'cancelada');
+-- cancelamento_pendente: mensalidade vencida, aguardando a equipe cancelar na Vivo (manual)
+create type public.line_status as enum ('ativa', 'suspensa', 'cancelamento_pendente', 'cancelada');
 create type public.actor_type as enum ('system', 'customer', 'staff', 'webhook');
 create type public.notification_channel as enum ('email', 'whatsapp');
 create type public.queue_status as enum ('queued', 'processing', 'done', 'failed');
@@ -47,14 +49,14 @@ create type public.data_request_type as enum ('export', 'delete', 'correct');
 -- Utilitários
 -- -----------------------------------------------------------------------------
 create or replace function public.gc_set_updated_at() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = public as $$
 begin
   new.updated_at := now();
   return new;
 end $$;
 
 create or replace function public.gc_block_mutation() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = public as $$
 begin
   raise exception 'tabela % é somente inserção', tg_table_name;
 end $$;
@@ -136,7 +138,7 @@ create table public.customers (
   cpf_hash            text not null unique,      -- HMAC-SHA256 do CPF (busca/duplicidade)
   cpf_last_digits     text not null check (cpf_last_digits ~ '^\d{2}$'),
   birth_date          date not null,
-  email               citext not null,
+  email               extensions.citext not null,
   phone_e164          text not null check (phone_e164 ~ '^\+55\d{10,11}$'),
   whatsapp_opt_in_at  timestamptz,
   created_at          timestamptz not null default now(),
@@ -195,7 +197,7 @@ create trigger orders_updated_at before update on public.orders
 
 -- Código público GC-AAAA-NNNNN
 create or replace function public.gc_orders_set_code() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = public as $$
 begin
   if new.code is null then
     new.code := 'GC-' || to_char(now() at time zone 'America/Sao_Paulo', 'YYYY') || '-'
@@ -226,7 +228,7 @@ create trigger order_events_append_only before update or delete on public.order_
 -- A aplicação define o ator da transação com:
 --   select set_config('gc.actor_type', 'staff', true), set_config('gc.actor_id', '<uuid>', true);
 create or replace function public.gc_orders_apply_rules() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = public as $$
 declare
   v_actor_type public.actor_type := coalesce(nullif(current_setting('gc.actor_type', true), ''), 'system')::public.actor_type;
   v_actor_id   uuid := nullif(current_setting('gc.actor_id', true), '')::uuid;
@@ -304,7 +306,9 @@ create table public.subscriptions (
   provider_subscription_id  text unique,
   billing_type              public.billing_type not null default 'pix',
   monthly_price_cents       int not null check (monthly_price_cents > 0),
-  due_day                   smallint check (due_day between 1 and 28),
+  -- Dia da compra = dia de vencimento (D9). Em meses sem esse dia, vence no último dia do mês.
+  due_day                   smallint not null check (due_day between 1 and 31),
+  next_due_date             date,
   status                    public.subscription_status not null default 'active',
   cancelled_at              timestamptz,
   created_at                timestamptz not null default now(),
@@ -331,6 +335,7 @@ create table public.payments (
   updated_at            timestamptz not null default now()
 );
 create index payments_order_idx on public.payments (order_id);
+create index payments_subscription_idx on public.payments (subscription_id);
 create index payments_status_due_idx on public.payments (status, due_date);
 -- No máximo UMA primeira cobrança pendente por pedido (evita cobrança duplicada)
 create unique index payments_one_pending_first_per_order
@@ -422,12 +427,11 @@ create table public.lines (
   vivo_protocol       text,
   activated_by        uuid not null references public.staff (id),
   activated_at        timestamptz not null default now(),
-  benefit_description text,
-  benefit_cents       int not null default 0 check (benefit_cents >= 0),
-  loyalty_days        smallint not null default 90,
   suspended_at        timestamptz,
+  cancellation_requested_at timestamptz,   -- entrou na fila de cancelamento
+  cancellation_reason text,                -- ex.: inadimplencia, pedido_cliente, arrependimento
+  cancelled_by        uuid references public.staff (id),
   cancelled_at        timestamptz,
-  cancellation_fine_cents int,
   esim_qr_path        text,        -- bucket privado; apagado após confirmação de instalação
   notes               text,
   created_at          timestamptz not null default now(),
@@ -580,3 +584,4 @@ create policy payments_owner_read on public.payments
 
 -- Garantia extra: anon/authenticated não escrevem em nada diretamente.
 revoke insert, update, delete on all tables in schema public from anon, authenticated;
+alter default privileges in schema public revoke insert, update, delete on tables from anon, authenticated;

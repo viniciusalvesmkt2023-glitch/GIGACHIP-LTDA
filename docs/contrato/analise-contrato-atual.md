@@ -8,8 +8,7 @@
 1. **A linha fica no CNPJ da Gigachip** e é fornecida ao cliente para uso (cláusula 5).
 2. **A Gigachip cobra a mensalidade todo mês** (cláusula 1) → o sistema precisa de **cobrança
    recorrente** no Asaas, controle de inadimplência e suspensão (decisão D7).
-3. **Fidelidade de 90 dias** só vale com benefício descrito e valorado; multa proporcional com teto
-   de R$ 50 (cláusulas 2 e 3) → cálculo implementado em `lib/domain/early-termination.ts`.
+3. ~~Fidelidade de 90 dias~~ — **decidido: linhas sem fidelidade (D10)**. As cláusulas 2 e 3 saem.
 4. **Proibido usar o número em WhatsApp e apps bancários** (cláusula 4) — regra antifraude.
 
 ## Pontos que precisam mudar para o fluxo online

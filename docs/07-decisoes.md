@@ -90,11 +90,9 @@ mensalidade à Gigachip.
 - Nova entidade **`lines`** (linha fornecida): número, ativação e ciclo de vida
   `ativa → suspensa → cancelada`. Substitui a tabela `activations` do doc 04.
 - Painel ganha a fila de **inadimplentes** e a tarefa manual de **suspender/reativar** a linha na Vivo.
-- Cancelamento calcula a multa de permanência (`lib/domain/early-termination.ts`).
 - A cobrança recorrente entra no MVP.
 
-**A decidir:** dia de vencimento (fixo ou dia da contratação), PIX todo mês ou cartão recorrente,
-prazos de suspensão e cancelamento por atraso, regra de reajuste.
+**Decidido em D9–D12.** Ainda a decidir: regra de reajuste.
 
 ## D8 — Planos iniciais (20/11/2026)
 
@@ -104,5 +102,44 @@ prazos de suspensão e cancelamento por atraso, regra de reajuste.
 | Plano 300GB | 200GB + 100GB bônus | 300GB | R$ 149,99 |
 | Plano 400GB | 300GB + 100GB bônus | 400GB | R$ 179,99 |
 
-Cadastrados em `supabase/seed.sql`. **A confirmar:** ligações (ilimitadas?), se o bônus de 100GB é
-permanente ou promocional, e os nomes comerciais.
+Cadastrados em `supabase/seed.sql`. Ver D11 para ligações e bônus. A confirmar: nomes comerciais definitivos.
+
+## D9 — Vencimento no mesmo dia da compra (20/11/2026)
+
+Compra em 20/11 → a 1ª mensalidade é paga na hora e cobre 30 dias; as próximas vencem todo dia 20.
+Compras nos dias 29–31: em meses sem esse dia, vence no último dia do mês e volta ao dia original
+no mês seguinte. Implementado em `lib/domain/billing.ts`.
+
+## D10 — Sem fidelidade; inadimplência cancela no dia seguinte (20/11/2026)
+
+- Linhas **sem fidelidade e sem multa** de cancelamento.
+- Mensalidade não paga até o fim do dia do vencimento → **no dia seguinte** a linha entra na fila
+  **"cancelamento pendente"** do painel e a equipe cancela na Vivo (manual). Prazo configurável
+  (`cancelAfterDays`, padrão 1).
+- Lembretes automáticos 3 dias antes e no dia do vencimento.
+- Se o pagamento cair enquanto a linha ainda está em "cancelamento pendente" (a equipe ainda não
+  cancelou na Vivo), a linha volta para "ativa" automaticamente e sai da fila.
+- O contrato precisa dizer isso de forma explícita (cláusula 2.3 do modelo v2).
+
+## D11 — Planos: ligações ilimitadas, bônus permanente (20/11/2026)
+
+Todos os planos têm ligações ilimitadas. O bônus de 100GB é parte do plano e renova todo mês
+enquanto o plano estiver ativo.
+
+## D12 — PIX e cartão de crédito pelo Asaas (20/11/2026)
+
+**Decisão:** manter tudo no Asaas, com **PIX** e **cartão de crédito**, sem Stripe.
+
+**Motivo:** o Asaas já é usado, faz assinatura mensal com PIX e com cartão, e ter um só provedor de
+pagamento simplifica conciliação, webhooks, painel e financeiro. O Stripe só faria sentido se o
+Asaas recusar cartão para a conta.
+
+**Como:** o cliente escolhe PIX ou cartão no checkout. Os dados do cartão são digitados na página de
+pagamento do Asaas (nunca passam pelo nosso servidor).
+
+**A confirmar no sandbox / com o Asaas:**
+- [ ] Cartão de crédito habilitado na conta (pode exigir análise do Asaas) e taxas
+- [ ] Em assinatura com cartão, as mensalidades seguintes são cobradas sozinhas no cartão salvo
+- [ ] Assinatura com PIX: o Asaas gera a cobrança PIX de cada mês e avisa o cliente
+- [ ] Se a conta tem **Pix Automático** (débito recorrente via PIX), que evitaria o cliente ter de pagar manualmente todo mês
+- [ ] Como o Asaas trata vencimento em dia 29–31 nas assinaturas (o sistema já calcula pela regra D9)

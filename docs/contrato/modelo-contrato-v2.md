@@ -16,8 +16,9 @@ celular de contato {{celular_contato}}.
 
 ### 1. Objeto
 1.1. Fornecimento, para uso do CLIENTE, de linha móvel com acesso à rede Vivo, **registrada em nome
-da CONTRATADA**, no plano **{{plano_nome}}** — franquia de internet de **{{franquia_total}}**
-({{franquia_detalhe}}){{beneficios_extras}}.
+da CONTRATADA**, no plano **{{plano_nome}}** — franquia mensal de internet de **{{franquia_total}}**
+({{franquia_detalhe}}, com o bônus renovado todo mês enquanto o plano estiver ativo) e **ligações
+ilimitadas**.
 1.2. Tipo de ativação: **{{tipo_ativacao}}** (eSIM, ou chip físico lacrado adquirido pelo CLIENTE).
 1.3. O número da linha e a data de ativação serão informados no **Termo de Ativação**, disponibilizado
 na área do cliente e por e-mail, que passa a integrar este contrato.
@@ -25,22 +26,20 @@ na área do cliente e por e-mail, que passa a integrar este contrato.
 e restrições) estão descritas na página do plano e foram apresentadas antes do aceite.
 
 ### 2. Valor, pagamento e atraso
-2.1. Mensalidade de **{{valor_mensal}}**, cobrada pela CONTRATADA por meio da plataforma Asaas
-(PIX{{outras_formas_pagamento}}). A primeira mensalidade é paga na contratação; as seguintes vencem
-todo dia **{{dia_vencimento}}**.
-2.2. Atraso: multa de 2% e juros de 1% ao mês, proporcionais aos dias de atraso.
-2.3. ⚠️ Após **{{dias_para_suspensao}} dias** de atraso, com aviso prévio, a linha poderá ser
-suspensa; após **{{dias_para_cancelamento}} dias**, o contrato poderá ser cancelado, sem prejuízo
-da cobrança dos valores devidos.
+2.1. Mensalidade de **{{valor_mensal}}**, cobrada pela CONTRATADA por meio da plataforma Asaas,
+por **{{forma_pagamento}}** (PIX ou cartão de crédito). A primeira mensalidade é paga na contratação
+e cobre os primeiros 30 dias; as seguintes vencem todo dia **{{dia_vencimento}}** (mesmo dia da
+contratação). Nos meses que não tiverem esse dia, o vencimento será no último dia do mês.
+2.2. A CONTRATADA enviará lembretes de pagamento 3 (três) dias antes e no dia do vencimento.
+2.3. **Não havendo pagamento até o fim do dia do vencimento, o contrato será cancelado e a linha
+desativada a partir do dia seguinte**, encerrando a autorização de uso prevista na cláusula 5. O
+CLIENTE declara estar ciente de que, por a linha ser de titularidade da CONTRATADA, o número não
+poderá ser recuperado após o cancelamento.
 2.4. ⚠️ Reajuste: {{regra_reajuste}}, com aviso de no mínimo 30 dias.
 
-### 3. Permanência e benefício
-⚠️ *(Incluir somente se houver benefício concreto.)*
-3.1. Em contrapartida ao benefício **{{beneficio_descricao}}**, no valor de **{{beneficio_valor}}**,
-o CLIENTE adere à permanência mínima de **90 dias** contados da ativação.
-3.2. Cancelamento antes de 90 dias: multa = (menor valor entre R$ 50,00 e o valor do benefício) ×
-dias restantes ÷ 90. Após 90 dias, não há multa nem renovação automática da permanência. Não há multa
-nas hipóteses legais de isenção, inclusive por descumprimento da CONTRATADA.
+### 3. Sem fidelidade
+3.1. Não há prazo mínimo de permanência nem multa por cancelamento. O CLIENTE pode cancelar a
+qualquer momento pelo canal de atendimento; o cancelamento vale ao fim do período já pago.
 
 ### 4. Uso da linha
 4.1. É proibido usar o número fornecido para cadastrar ou ativar conta de **WhatsApp**, ou vinculá-lo
@@ -93,5 +92,5 @@ Aceite eletrônico em {{data_aceite}} — registro de assinatura anexo (D4Sign).
 | `plano_nome`, `franquia_total`, `franquia_detalhe`, `valor_mensal` | `orders.plan_snapshot` |
 | `tipo_ativacao` | `orders.sim_type` |
 | `dia_vencimento` | `subscriptions.due_day` |
-| `beneficio_*` | definição comercial (⚠️ a decidir) |
+| `forma_pagamento` | `subscriptions.billing_type` |
 | `versao_modelo` | versão deste modelo, gravada em `contracts.template_version` |
