@@ -4,25 +4,42 @@ import { Suspense } from "react";
 import { Container, buttonStyles } from "@/components/ui";
 import { whatsappLink } from "@/components/whatsapp";
 import { formatBRL } from "@/lib/domain/money";
-import { asaas } from "@/lib/integrations/asaas/client";
+import { asaas, AsaasError } from "@/lib/integrations/asaas/client";
 import { getPaymentView, type PaymentView } from "@/lib/server/payments";
 import { CopyButton, PaymentStatusWatcher } from "./payment-status";
 
 export const metadata: Metadata = { title: "Pagamento", robots: { index: false } };
 
-async function PixBox({ paymentId }: { paymentId: string }) {
-  const qr = await asaas.getPixQrCode(paymentId).catch(() => null);
+async function PixBox({ paymentId, invoiceUrl }: { paymentId: string; invoiceUrl: string | null }) {
+  const qr = await asaas.getPixQrCode(paymentId).catch((err: unknown) => {
+    // Sem dados pessoais no log: só o id da cobrança e o erro do Asaas
+    const detail = err instanceof AsaasError ? `${err.status} ${JSON.stringify(err.errors)}` : String(err);
+    console.error(`[pagamento] QR Code PIX indisponível para ${paymentId}: ${detail}`);
+    return null;
+  });
   if (!qr) {
-    return <p className="text-sm text-danger">Não foi possível carregar o QR Code. Atualize a página em instantes.</p>;
+    return (
+      <div className="space-y-4 text-center">
+        <p className="text-sm text-muted">
+          Não conseguimos mostrar o QR Code aqui agora. Você pode pagar pela página segura do Asaas, nosso parceiro de
+          pagamentos:
+        </p>
+        {invoiceUrl && (
+          <a href={invoiceUrl} target="_blank" rel="noopener noreferrer" className={`${buttonStyles.primary} w-full`}>
+            Abrir página de pagamento
+          </a>
+        )}
+      </div>
+    );
   }
   return (
-      <div className="space-y-4 text-center">
-        {/* eslint-disable-next-line @next/next/no-img-element -- imagem base64 gerada pelo Asaas */}
-        <img src={`data:image/png;base64,${qr.encodedImage}`} alt="QR Code PIX" className="mx-auto h-56 w-56" />
-        <p className="text-sm text-muted">Abra o app do seu banco, escolha PIX e escaneie o QR Code — ou copie o código:</p>
-        <p className="break-all rounded-xl bg-surface p-3 font-mono text-xs">{qr.payload}</p>
-        <CopyButton text={qr.payload} />
-      </div>
+    <div className="space-y-4 text-center">
+      {/* eslint-disable-next-line @next/next/no-img-element -- imagem base64 gerada pelo Asaas */}
+      <img src={`data:image/png;base64,${qr.encodedImage}`} alt="QR Code PIX" className="mx-auto h-56 w-56" />
+      <p className="text-sm text-muted">Abra o app do seu banco, escolha PIX e escaneie o QR Code — ou copie o código:</p>
+      <p className="break-all rounded-xl bg-surface p-3 font-mono text-xs">{qr.payload}</p>
+      <CopyButton text={qr.payload} />
+    </div>
   );
 }
 
@@ -82,7 +99,7 @@ async function Payment({ params }: { params: PageProps<"/pedido/[id]/pagamento">
             </div>
           ) : (
             <Suspense fallback={<div className="mx-auto h-56 w-56 animate-pulse rounded-xl bg-surface" />}>
-              <PixBox paymentId={view.providerPaymentId} />
+              <PixBox paymentId={view.providerPaymentId} invoiceUrl={view.invoiceUrl} />
             </Suspense>
           )}
         </div>
