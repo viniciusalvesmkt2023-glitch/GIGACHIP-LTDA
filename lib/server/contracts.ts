@@ -45,6 +45,7 @@ type ContractRow = {
   step: Step;
   attempts: number;
   provider_document_uuid: string | null;
+  docs_to_cancel: string[];
   code: string;
   sim_type: "esim" | "physical";
   plan: { name: string; dataBaseGb: number; dataBonusGb: number; dataTotalGb: number; monthlyPriceCents: number };
@@ -59,7 +60,7 @@ type ContractRow = {
 
 async function loadContract(contractId: string): Promise<ContractRow | null> {
   const [row] = await sql()<ContractRow[]>`
-    select ct.id, ct.order_id, ct.step, ct.attempts, ct.provider_document_uuid,
+    select ct.id, ct.order_id, ct.step, ct.attempts, ct.provider_document_uuid, ct.docs_to_cancel,
            o.code, o.sim_type::text as sim_type, o.plan_snapshot as plan,
            c.full_name, c.cpf_encrypted, c.birth_date::text as birth_date, c.email::text as email, c.phone_e164,
            s.due_day, s.billing_type::text as billing_type
@@ -116,8 +117,20 @@ async function advance(contractId: string): Promise<void> {
   if (!e.D4SIGN_SAFE_UUID) throw new Error("D4SIGN_SAFE_UUID não configurado");
 
   const remaining = STEPS.length - 1 - STEPS.indexOf(r.step);
-  if ((await d4signBudget()) < Math.min(remaining, CALLS_PER_CONTRACT)) {
+  if ((await d4signBudget()) < Math.min(remaining, CALLS_PER_CONTRACT) + r.docs_to_cancel.length) {
     throw new D4SignRateLimited("aguardando limite da D4Sign");
+  }
+
+  // Cancela documentos antigos (ex.: e-mail do cliente corrigido) antes de enviar o novo
+  for (const old of r.docs_to_cancel) {
+    try {
+      await d4sign.cancelDocument(old, "Substituído por um novo contrato (dados do cliente corrigidos).");
+    } catch (err) {
+      if (err instanceof D4SignRateLimited) throw err;
+      // Já cancelado/finalizado na D4Sign: segue em frente, mas registra
+      console.error(`[contratos] não foi possível cancelar ${old}: ${err instanceof Error ? err.message : err}`);
+    }
+    await sql()`update public.contracts set docs_to_cancel = array_remove(docs_to_cancel, ${old}) where id = ${contractId}`;
   }
 
   let step = r.step;

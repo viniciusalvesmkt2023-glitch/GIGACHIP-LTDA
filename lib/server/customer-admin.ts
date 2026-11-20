@@ -1,7 +1,7 @@
 import "server-only";
 import { after } from "next/server";
 import { asaas } from "@/lib/integrations/asaas/client";
-import { d4sign, d4signConfigured } from "@/lib/integrations/d4sign/client";
+import { d4signBudget, d4signConfigured } from "@/lib/integrations/d4sign/client";
 import { processQueuedContracts } from "./contracts";
 import { sql, withActor } from "./db";
 import type { Staff } from "./staff-auth";
@@ -52,9 +52,13 @@ export async function changeCustomerEmail(staff: Staff, orderId: string, rawEmai
     // Contrato ainda não assinado → refaz com o e-mail certo
     let resendContract = false;
     if (o.contract_status !== "signed" && o.contract_status !== "not_created") {
+      // O documento antigo vai para a lista de cancelamento; a fila cancela antes de enviar o novo
       await tx`
         update public.contracts
-        set status = 'queued', step = 'gerar_pdf', provider_document_uuid = null, pdf_sha256 = null,
+        set status = 'queued', step = 'gerar_pdf',
+            docs_to_cancel = case when provider_document_uuid is null then docs_to_cancel
+                                  else array_append(docs_to_cancel, provider_document_uuid) end,
+            provider_document_uuid = null, pdf_sha256 = null,
             attempts = 0, last_error = null, next_attempt_at = now(), sent_at = null
         where order_id = ${orderId}`;
       await tx`update public.orders set contract_status = 'queued' where id = ${orderId}`;
@@ -83,22 +87,17 @@ export async function changeCustomerEmail(staff: Staff, orderId: string, rawEmai
     messages.push("⚠️ O contrato já estava assinado com o e-mail antigo; ele não foi refeito.");
   }
   if (plan.resendContract && d4signConfigured()) {
-    // Parte lenta (várias chamadas à D4Sign) roda DEPOIS de responder, para a tela não travar
-    // nem estourar o tempo máximo da hospedagem.
-    const oldDoc = plan.oldDoc;
-    after(async () => {
-      if (oldDoc) {
-        await d4sign
-          .cancelDocument(oldDoc, "E-mail do cliente corrigido; novo contrato enviado.")
-          .catch((e) => console.error(`[corrigir e-mail] cancelar contrato antigo ${oldDoc}: ${e}`));
-      }
-      await processQueuedContracts(1).catch((e) => console.error(`[corrigir e-mail] reenviar contrato: ${e}`));
-    });
-    messages.push(
-      oldDoc
-        ? "O contrato antigo será cancelado na D4Sign e o novo enviado para o e-mail correto em instantes. Atualize a página em 1 minuto para conferir."
-        : "O contrato será enviado para o e-mail correto em instantes.",
-    );
+    const budget = await d4signBudget();
+    // Cancelar o antigo + enviar o novo usa até 5 chamadas da D4Sign
+    if (budget >= 5) {
+      after(() => processQueuedContracts(1).then(() => undefined).catch((e) => console.error(`[corrigir e-mail] ${e}`)));
+      messages.push("O contrato antigo será cancelado na D4Sign e o novo enviado para o e-mail correto em instantes. Atualize a página em 1 minuto.");
+    } else {
+      messages.push(
+        "A D4Sign está no limite de chamadas desta hora. O contrato antigo será cancelado e o novo enviado assim que liberar " +
+          "(automaticamente, ou pelo botão \"Enviar agora\" no card do contrato).",
+      );
+    }
   }
   return { ok: true, messages };
 }

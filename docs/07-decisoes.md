@@ -293,3 +293,15 @@ o e-mail. O sistema:
 
 Antes de trocar, a equipe deve confirmar com o cliente pelo celular cadastrado (evita golpe de
 alguém pedindo para trocar o e-mail de outra pessoa).
+
+## D24 — Lições do 1º teste real com a D4Sign (20/11/2026)
+
+- **Funcionou de verdade:** pagamento confirmado → contrato enviado à D4Sign em ~10 s; correção de
+  e-mail cancelou o antigo e enviou um novo.
+- **Limite de 10 chamadas/hora da D4Sign é fácil de atingir em testes.** Agora o cancelamento do
+  contrato antigo entra na fila (`contracts.docs_to_cancel`, migração 0007) e respeita o limite; se
+  estiver no limite, o painel avisa e o envio acontece quando liberar.
+- **Rotina a cada 10 minutos** pelo Supabase (pg_cron + pg_net, `scripts/supabase/agendar-rotinas.sql`)
+  processa a fila de contratos, confere assinaturas e envia e-mails — a rotina da Vercel no plano
+  gratuito só roda 1 vez por dia.
+- Ações do painel que falam com a D4Sign respondem na hora e fazem o trabalho logo depois (`after`).
