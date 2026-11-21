@@ -32,6 +32,7 @@ function Numbers({ row }: { row: BoardRow }) {
         <span key={l.id} className="mr-3 inline-block font-mono">
           {formatMsisdn(l.msisdn)}
           {l.vivoLogin && <span className="ml-1 font-sans text-xs text-muted">({l.vivoLogin})</span>}
+          {l.sheetRow && <span className="ml-1 font-sans text-xs text-muted">· linha {l.sheetRow} da planilha</span>}
         </span>
       ))}
     </p>
@@ -55,7 +56,7 @@ async function Content() {
   const staff = await requireStaff(["owner", "admin", "ativador", "financeiro"]);
   const [board, last] = await Promise.all([overdueBoard(), lastOverdueSync()]);
   const canAct = ["owner", "admin", "ativador"].includes(staff.role);
-  const linkable = board.linkable.map((l) => ({ id: l.id, label: `${formatMsisdn(l.msisdn)}${l.name ? ` — ${l.name}` : ""}` }));
+  const linkable = board.linkable.map((l) => ({ id: l.id, label: `${l.sheet_row ? `#${l.sheet_row} · ` : ""}${formatMsisdn(l.msisdn)}${l.name ? ` — ${l.name}` : ""}` }));
 
   return (
     <PanelShell staff={staff}>

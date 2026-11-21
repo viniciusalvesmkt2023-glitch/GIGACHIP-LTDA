@@ -117,7 +117,7 @@ export async function lastOverdueSync(): Promise<Date | null> {
 }
 
 export type OverdueItem = { id: string; valueCents: number; due: string; daysLate: number; invoiceUrl: string | null };
-export type BoardLine = { id: string; msisdn: string; vivoLogin: string | null };
+export type BoardLine = { id: string; msisdn: string; vivoLogin: string | null; sheetRow: number | null };
 export type BoardRow = {
   customerId: string;
   name: string;
@@ -131,7 +131,7 @@ export type BoardRow = {
   blockedDays: number | null;
   paidAt: Date | null;
 };
-export type LinkableLine = { id: string; msisdn: string; name: string | null };
+export type LinkableLine = { id: string; msisdn: string; name: string | null; sheet_row: number | null };
 
 /** Listas do painel: bloquear, bloqueados (aguardando pagamento) e desbloquear. */
 export async function overdueBoard() {
@@ -161,15 +161,15 @@ export async function overdueBoard() {
 
   const ids = rows.map((r) => r.customer_id);
   const lineRows = ids.length
-    ? await sql()<{ id: string; msisdn: string; vivo_login: string | null; customer_id: string }[]>`
-        select l.id, l.msisdn, l.vivo_login, coalesce(l.asaas_customer_id, s.provider_customer_id) as customer_id
+    ? await sql()<{ id: string; msisdn: string; vivo_login: string | null; sheet_row: number | null; customer_id: string }[]>`
+        select l.id, l.msisdn, l.vivo_login, l.sheet_row, coalesce(l.asaas_customer_id, s.provider_customer_id) as customer_id
         from public.lines l
         left join public.subscriptions s on s.order_id = l.order_id
         where l.asaas_customer_id = any(${ids}) or s.provider_customer_id = any(${ids})`
     : [];
   // Linhas antigas (planilha) ainda sem cliente do Asaas: para ligar na hora de bloquear
-  const linkable = await sql()<{ id: string; msisdn: string; name: string | null }[]>`
-    select id, msisdn, legacy_customer_name as name from public.lines
+  const linkable = await sql()<{ id: string; msisdn: string; name: string | null; sheet_row: number | null }[]>`
+    select id, msisdn, legacy_customer_name as name, sheet_row from public.lines
     where order_id is null and asaas_customer_id is null and status not in ('disponivel', 'cancelada')
     order by legacy_customer_name nulls last, msisdn`;
 
@@ -178,7 +178,7 @@ export async function overdueBoard() {
     const items: OverdueItem[] = r.items.map((i) => ({
       id: i.id, valueCents: i.value, due: i.due, daysLate: daysLate(i.due, today), invoiceUrl: i.url,
     }));
-    const lines = lineRows.filter((l) => l.customer_id === r.customer_id).map((l) => ({ id: l.id, msisdn: l.msisdn, vivoLogin: l.vivo_login }));
+    const lines = lineRows.filter((l) => l.customer_id === r.customer_id).map((l) => ({ id: l.id, msisdn: l.msisdn, vivoLogin: l.vivo_login, sheetRow: l.sheet_row }));
     const wanted = normalizeName(r.name);
     const row: BoardRow = {
       customerId: r.customer_id,

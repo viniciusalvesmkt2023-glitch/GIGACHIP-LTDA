@@ -417,3 +417,6 @@ O gestor usa a planilha, então ela **não** é substituída (revisa D26). O sis
   tiver "Disponível" com algum desses preenchido, ou Cliente vazio, o número sai da lista de
   disponíveis, aparece no "Testar planilha" com a linha e o motivo, e o sistema não escreve nele
   até a planilha ser arrumada.
+- **Posição na planilha:** a tela Linhas mostra a coluna **"#"** com o número da linha na planilha
+  (o mesmo 1, 2, 3 da lateral do Google Planilhas), na mesma ordem da planilha; clicar abre a
+  planilha naquela linha. Botão "Abrir planilha" no topo. Atualizado a cada leitura.

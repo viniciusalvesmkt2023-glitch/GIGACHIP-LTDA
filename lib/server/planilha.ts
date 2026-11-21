@@ -178,6 +178,22 @@ export async function importFromSheet(staff: Staff | null) {
     }
   }
 
+  // Posição de cada número na planilha (o "1, 2, 3" da lateral), para o painel mostrar na mesma ordem
+  const pos = new Map<string, { tab: string; gid: number; row: number }>();
+  for (const t of s.tabs) for (const r of t.rows) if (!pos.has(r.msisdn)) pos.set(r.msisdn, { tab: t.title, gid: t.sheetId, row: r.rowNumber });
+  const list = [...pos.entries()];
+  if (list.length) {
+    await sql()`
+      update public.lines l set sheet_tab = v.tab, sheet_gid = v.gid, sheet_row = v.row
+      from unnest(${list.map(([m]) => m)}::text[], ${list.map(([, p]) => p.tab)}::text[],
+                  ${list.map(([, p]) => p.gid)}::int[], ${list.map(([, p]) => p.row)}::int[]) as v(msisdn, tab, gid, row)
+      where l.msisdn = v.msisdn
+        and (l.sheet_row is distinct from v.row or l.sheet_tab is distinct from v.tab or l.sheet_gid is distinct from v.gid)`;
+  }
+  await sql()`
+    update public.lines set sheet_tab = null, sheet_gid = null, sheet_row = null
+    where sheet_row is not null and not (msisdn = any(${list.map(([m]) => m)}::text[]))`;
+
   await sql()`
     insert into public.app_settings (key, value, updated_at) values (${READ_KEY}, ${sql().json(new Date().toISOString())}, now())
     on conflict (key) do update set value = excluded.value, updated_at = now()`;

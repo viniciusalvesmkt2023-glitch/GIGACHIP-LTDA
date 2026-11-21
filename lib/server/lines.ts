@@ -45,6 +45,9 @@ export type LineRow = {
   orderCode: string | null;
   sheetPending: boolean;
   sheetError: string | null;
+  sheetRow: number | null;
+  sheetGid: number | null;
+  sheetTab: string | null;
 };
 
 export async function listLines(filter: { status?: string; q?: string }): Promise<LineRow[]> {
@@ -55,13 +58,13 @@ export async function listLines(filter: { status?: string; q?: string }): Promis
       id: string; status: string; customer: string | null; vivo_login: string | null; msisdn: string; iccid: string | null;
       smart_dados: string | null; plano_pj: string | null; activated_at: Date | null; sale_price_cents: number | null;
       cost_cents: number | null; due_date: string | null; payment_method: string | null; order_id: string | null; code: string | null;
-      sheet_pending: boolean; sheet_error: string | null;
+      sheet_pending: boolean; sheet_error: string | null; sheet_row: number | null; sheet_gid: number | null; sheet_tab: string | null;
     }[]
   >`
     select l.id, l.status::text, coalesce(c.full_name, l.legacy_customer_name) as customer, l.vivo_login, l.msisdn, l.iccid,
            l.smart_dados, l.plano_pj, l.activated_at, l.sale_price_cents, l.cost_cents,
            coalesce(s.next_due_date, l.legacy_due_date)::text as due_date, l.payment_method, l.order_id, o.code,
-           l.sheet_pending, l.sheet_error
+           l.sheet_pending, l.sheet_error, l.sheet_row, l.sheet_gid, l.sheet_tab
     from public.lines l
     left join public.orders o on o.id = l.order_id
     left join public.customers c on c.id = o.customer_id
@@ -69,7 +72,8 @@ export async function listLines(filter: { status?: string; q?: string }): Promis
     where (${status}::text is null or l.status::text = ${status})
       and (${q}::text is null or l.msisdn ilike ${q} or l.iccid ilike ${q}
            or coalesce(c.full_name, l.legacy_customer_name, '') ilike ${q} or coalesce(o.code, '') ilike ${q})
-    order by (l.status = 'disponivel') desc, l.activated_at desc nulls last, l.msisdn
+    -- Mesma ordem da planilha do gestor; o que não está nela (ex.: cadastrado à mão) vem no fim
+    order by l.sheet_tab nulls last, l.sheet_row nulls last, (l.status = 'disponivel') desc, l.activated_at desc nulls last, l.msisdn
     limit 500`;
   return rows.map((r) => ({
     id: r.id,
@@ -89,6 +93,9 @@ export async function listLines(filter: { status?: string; q?: string }): Promis
     orderCode: r.code,
     sheetPending: r.sheet_pending,
     sheetError: r.sheet_error,
+    sheetRow: r.sheet_row,
+    sheetGid: r.sheet_gid,
+    sheetTab: r.sheet_tab,
   }));
 }
 
@@ -212,9 +219,10 @@ export async function linesCsv(): Promise<string> {
     const [y, m, day] = iso.slice(0, 10).split("-");
     return `${day}/${m}/${y}`;
   };
-  const header = ["Cliente Ativos", "Loguin Vivo Gestão", "Número", "ICCID Atual", "Smart-Dados", "Plano PJ", "Ativação", "Venda Final", "Valor", "Vencimento", "Forma de Pagamento", "Situação", "Pedido"];
+  const header = ["Linha na planilha", "Cliente Ativos", "Loguin Vivo Gestão", "Número", "ICCID Atual", "Smart-Dados", "Plano PJ", "Ativação", "Venda Final", "Valor", "Vencimento", "Forma de Pagamento", "Situação", "Pedido"];
   const lines = rows.map((r) =>
     [
+      r.sheetRow,
       r.status === "disponivel" ? "Disponível" : r.customer,
       r.vivoLogin,
       formatMsisdn(r.msisdn).replace(/\D/g, ""),

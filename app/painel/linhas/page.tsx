@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { formatMsisdn } from "@/lib/domain/lines";
 import { formatBRL } from "@/lib/domain/money";
 import { lineCounts, listLines } from "@/lib/server/lines";
-import { lastSheetRead, sheetEnabled, sheetQueueCounts } from "@/lib/server/planilha";
+import { getSheetConfig, lastSheetRead, sheetEnabled, sheetQueueCounts } from "@/lib/server/planilha";
 import { requireStaff } from "@/lib/server/staff-auth";
 import { addNumbersAction, importSheetAction, retrySheetAction } from "../actions";
 import { ActionButton, AddNumbersForm, HiddenFieldsButton } from "../forms";
@@ -30,7 +30,9 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
   const status = typeof sp.status === "string" ? sp.status : undefined;
   const q = typeof sp.q === "string" ? sp.q : undefined;
   const [rows, counts, sheetOn] = await Promise.all([listLines({ status, q }), lineCounts(), sheetEnabled()]);
-  const [lastRead, queue] = sheetOn ? await Promise.all([lastSheetRead(), sheetQueueCounts()]) : [null, null];
+  const [lastRead, queue, sheetCfg] = sheetOn ? await Promise.all([lastSheetRead(), sheetQueueCounts(), getSheetConfig()]) : [null, null, null];
+  const sheetUrl = sheetCfg ? `https://docs.google.com/spreadsheets/d/${sheetCfg.spreadsheetId}/edit` : null;
+  const rowUrl = (gid: number | null, row: number) => `${sheetUrl}#gid=${gid ?? 0}&range=A${row}`;
   const sheetErrors = rows.filter((r) => r.sheetError);
   const canAct = ["owner", "admin", "ativador"].includes(staff.role);
   const canEdit = ["owner", "admin"].includes(staff.role);
@@ -55,7 +57,14 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
             {queue && queue.pending > 0 && <> · {queue.pending} para escrever</>}
             {queue && queue.errors > 0 && <span className="text-danger"> · {queue.errors} com aviso</span>}
           </p>
-          {canAct && <ActionButton action={importSheetAction} label="Ler planilha agora" />}
+          <div className="flex flex-wrap items-start gap-2">
+            {sheetUrl && (
+              <a href={sheetUrl} target="_blank" rel="noopener noreferrer" className="rounded-xl border border-border bg-white px-4 py-2 font-semibold">
+                Abrir planilha ↗
+              </a>
+            )}
+            {canAct && <ActionButton action={importSheetAction} label="Ler planilha agora" />}
+          </div>
         </div>
       )}
       {sheetErrors.length > 0 && (
@@ -84,7 +93,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
         <table className="w-full min-w-[1100px] text-left text-xs">
           <thead className="bg-[#3b0a5c] text-white">
             <tr>
-              {["Cliente", "Login Vivo", "Número", "ICCID atual", "Smart-Dados", "Plano PJ", "Ativação", "Venda final", "Valor", "Vencimento", "Pagamento", "Situação"].map((h) => (
+              {[...(sheetOn ? ["#"] : []), "Cliente", "Login Vivo", "Número", "ICCID atual", "Smart-Dados", "Plano PJ", "Ativação", "Venda final", "Valor", "Vencimento", "Pagamento", "Situação"].map((h) => (
                 <th key={h} className="p-2 font-semibold">{h}</th>
               ))}
             </tr>
@@ -92,6 +101,13 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className="border-t border-border hover:bg-surface">
+                {sheetOn && (
+                  <td className="p-2 text-muted" title={r.sheetTab ? `Aba “${r.sheetTab}”, linha ${r.sheetRow}` : "Não está na planilha"}>
+                    {r.sheetRow && sheetUrl ? (
+                      <a href={rowUrl(r.sheetGid, r.sheetRow)} target="_blank" rel="noopener noreferrer" className="font-mono underline">{r.sheetRow}</a>
+                    ) : "—"}
+                  </td>
+                )}
                 <td className="p-2 font-medium">
                   {r.status === "disponivel" ? <span className="text-brand">Disponível</span>
                     : r.orderId ? <Link href={`/painel/pedidos/${r.orderId}`} className="underline">{r.customer}</Link> : r.customer}
@@ -112,7 +128,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
                 </td>
               </tr>
             ))}
-            {rows.length === 0 && <tr><td colSpan={12} className="p-6 text-center text-muted">Nenhuma linha. Cadastre os números disponíveis abaixo.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={sheetOn ? 13 : 12} className="p-6 text-center text-muted">Nenhuma linha. Cadastre os números disponíveis abaixo.</td></tr>}
           </tbody>
         </table>
       </Card>
