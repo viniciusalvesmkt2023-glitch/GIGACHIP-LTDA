@@ -40,7 +40,8 @@ function fieldForHeader(h: string): SheetField | null {
   if (n.includes("plano")) return "plano";
   if (n.includes("ativacao")) return "ativacao";
   if (n.includes("venda")) return "venda";
-  if (n.includes("vencimento")) return "vencimento";
+  // Aceita erros de digitação e abreviações: "Vencimeto", "Venc.", "Vcto", "Vencto"
+  if (n.includes("venc") || n.includes("vcto")) return "vencimento";
   if (n.includes("pagamento")) return "pagamento";
   if (n.startsWith("valor")) return "valor";
   return null;

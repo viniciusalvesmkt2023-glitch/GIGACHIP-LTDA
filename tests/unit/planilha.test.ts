@@ -21,6 +21,9 @@ describe("mapHeader", () => {
   it("funciona com as colunas em outra ordem", () => {
     expect(mapHeader(["Numero", "Valor", "Venda final", "Cliente"])).toEqual({ numero: 0, valor: 1, venda: 2, cliente: 3 });
   });
+  it("aceita o vencimento escrito errado ou abreviado", () => {
+    for (const h of ["Vencimeto", "Venc.", "Vcto", "Próx. vencto"]) expect(mapHeader(["Número", h])?.vencimento).toBe(1);
+  });
   it("sem coluna de número não é cabeçalho", () => {
     expect(mapHeader(["Cliente", "Plano"])).toBeNull();
   });
