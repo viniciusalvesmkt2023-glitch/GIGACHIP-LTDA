@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { asaas } from "@/lib/integrations/asaas/client";
 import { isPaymentEvent, reaisToCents, statusFromEvent } from "@/lib/integrations/asaas/mapping";
 import { enqueueEmail } from "./email";
+import { trackAsaasPayment } from "./inadimplencia";
 import { sql, withActor } from "./db";
 
 type WebhookBody = { id?: string; event?: string; dateCreated?: string; payment?: { id?: string } };
@@ -44,6 +45,8 @@ export async function processAsaasEvent(eventRowId: bigint): Promise<void> {
 
   try {
     const apiPayment = await asaas.getPayment(paymentId);
+    // Inadimplência (D29): vale para todos os clientes do Asaas, inclusive os antigos (sem pedido no site)
+    await trackAsaasPayment(apiPayment).catch((e) => console.error(`[inadimplencia] webhook: ${e instanceof Error ? e.message : e}`));
     const newStatus = statusFromEvent(ev.event_type, apiPayment.status);
 
     await withActor({ type: "webhook", reason: ev.event_type }, async (tx) => {

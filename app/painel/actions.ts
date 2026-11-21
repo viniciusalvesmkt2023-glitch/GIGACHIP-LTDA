@@ -13,6 +13,7 @@ import { revealSensitive, type SensitiveField } from "@/lib/server/admin";
 import { decideIdentity } from "@/lib/server/identity";
 import { createStaff, login, logout, requireStaff, staffCount, verifySecondFactor, type StaffRole } from "@/lib/server/staff-auth";
 import { env } from "@/lib/server/env";
+import { blockCustomer, syncOverdue, unblockCustomer } from "@/lib/server/inadimplencia";
 
 export type FormState = { message?: string; ok?: boolean; value?: string; email?: string };
 
@@ -157,4 +158,29 @@ export async function setCostAction(_p: FormState, fd: FormData): Promise<FormSt
   await setLineCostCents(me, cents);
   refresh();
   return { ok: true, message: "Valor do gestor atualizado. Vale para as próximas ativações." };
+}
+
+export async function blockCustomerAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner", "admin", "ativador"]);
+  const r = await blockCustomer(me, str(fd, "customerId"), str(fd, "lineId") || null);
+  refresh();
+  return r;
+}
+
+export async function unblockCustomerAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner", "admin", "ativador"]);
+  const r = await unblockCustomer(me, str(fd, "blockId"));
+  refresh();
+  return r;
+}
+
+export async function syncOverdueAction(): Promise<FormState> {
+  await requireStaff(["owner", "admin", "ativador", "financeiro"]);
+  try {
+    const r = await syncOverdue({ force: true });
+    refresh();
+    return { ok: true, message: r.skipped ? "Atualizado." : `Atualizado: ${r.overdue} cobrança(s) vencida(s) no Asaas.` };
+  } catch (e) {
+    return { message: `Não foi possível falar com o Asaas: ${e instanceof Error ? e.message : String(e)}` };
+  }
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { formatBRL } from "@/lib/domain/money";
 import { dashboardCounts, STATUS_LABEL } from "@/lib/server/admin";
+import { overdueCounts } from "@/lib/server/inadimplencia";
 import { requireStaff } from "@/lib/server/staff-auth";
 import { Card, PanelShell } from "./shell";
 
@@ -10,10 +11,12 @@ export const metadata: Metadata = { title: "Visão geral" };
 
 async function Content() {
   const staff = await requireStaff();
-  const c = await dashboardCounts(staff);
+  const [c, overdue] = await Promise.all([dashboardCounts(staff), overdueCounts()]);
   const n = (s: string) => c.byStatus[s] ?? 0;
   const tiles: { label: string; value: string | number; href?: string; highlight?: boolean }[] = [
     { label: "Prontos para ativação", value: n("pronto_para_ativacao"), href: "/painel/pedidos?status=pronto_para_ativacao", highlight: true },
+    { label: "Bloquear linha — sem pagamento", value: overdue.bloquear, href: "/painel/inadimplencia", highlight: true },
+    { label: "Desbloquear — pagou", value: overdue.desbloquear, href: "/painel/inadimplencia", highlight: true },
     { label: "Identidades para analisar", value: c.identity_review, href: "/painel/pedidos?identidade=1", highlight: true },
     { label: "Pendências", value: n("pendencia"), href: "/painel/pedidos?status=pendencia" },
     { label: "Em andamento (cliente concluindo)", value: n("em_andamento"), href: "/painel/pedidos?status=em_andamento" },

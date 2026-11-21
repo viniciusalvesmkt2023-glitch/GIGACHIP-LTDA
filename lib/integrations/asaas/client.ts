@@ -22,7 +22,10 @@ export type AsaasPayment = {
   externalReference?: string | null;
   paymentDate?: string | null;
   confirmedDate?: string | null;
+  deleted?: boolean;
 };
+
+export type AsaasList<T> = { hasMore: boolean; totalCount: number; limit: number; offset: number; data: T[] };
 
 export type AsaasSubscription = {
   id: string;
@@ -106,6 +109,16 @@ export const asaas = {
       "GET",
       `/subscriptions/${encodeURIComponent(subscriptionId)}/payments`,
     );
+  },
+
+  /** Lista cobranças por status (página de até 100). Ex.: status OVERDUE = vencidas sem pagamento. */
+  listPaymentsByStatus(status: string, offset = 0, limit = 100) {
+    const q = new URLSearchParams({ status, offset: String(offset), limit: String(limit) });
+    return request<AsaasList<AsaasPayment>>("GET", `/payments?${q}`);
+  },
+
+  getCustomer(id: string) {
+    return request<AsaasCustomer & { deleted?: boolean }>("GET", `/customers/${encodeURIComponent(id)}`);
   },
 
   getPayment(id: string) {

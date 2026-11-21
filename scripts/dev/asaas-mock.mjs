@@ -55,6 +55,28 @@ createServer(async (req, res) => {
   if (req.method === "GET" && (m = path.match(/^\/subscriptions\/([^/]+)\/payments$/))) {
     return send(res, 200, { data: [...payments.values()].filter((p) => p.subscription === m[1]) });
   }
+  if (req.method === "GET" && (m = path.match(/^\/customers\/([^/]+)$/))) {
+    const c = customers.get(m[1]);
+    return c ? send(res, 200, c) : send(res, 404, { errors: [{ code: "not_found" }] });
+  }
+  if (req.method === "GET" && path === "/payments") {
+    const status = url.searchParams.get("status");
+    const offset = Number(url.searchParams.get("offset") ?? 0);
+    const limit = Number(url.searchParams.get("limit") ?? 10);
+    const all = [...payments.values()].filter((p) => !status || p.status === status);
+    return send(res, 200, { object: "list", hasMore: offset + limit < all.length, totalCount: all.length, limit, offset, data: all.slice(offset, offset + limit) });
+  }
+  // Atalho de teste: cria um cliente "antigo" com uma cobrança (ex.: da planilha) — POST /_test/legacy {name, value, dueDate, status}
+  if (req.method === "POST" && path === "/_test/legacy") {
+    const c = { id: `cus_${randomUUID().slice(0, 8)}`, name: body.name, cpfCnpj: "00000000000" };
+    customers.set(c.id, c);
+    const p = {
+      id: `pay_${randomUUID().slice(0, 8)}`, customer: c.id, subscription: null, status: body.status ?? "OVERDUE",
+      billingType: "PIX", value: body.value, dueDate: body.dueDate, invoiceUrl: `http://localhost:${port}/fatura`,
+    };
+    payments.set(p.id, p);
+    return send(res, 200, { customer: c, payment: p });
+  }
   if (req.method === "GET" && (m = path.match(/^\/payments\/([^/]+)\/pixQrCode$/))) {
     return send(res, 200, { encodedImage: PNG, payload: `00020126PIXFALSO${m[1]}`, expirationDate: "2099-01-01 23:59:59" });
   }

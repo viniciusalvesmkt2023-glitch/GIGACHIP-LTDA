@@ -220,3 +220,40 @@ export function CostForm({ action, current }: { action: Action; current: string 
     </form>
   );
 }
+
+/** Botão de ação com campos escondidos (ex.: desbloquear). */
+export function HiddenFieldsButton({ action, fields, label, variant = "secondary", confirm }: {
+  action: Action; fields: Record<string, string>; label: string; variant?: "primary" | "secondary"; confirm?: string;
+}) {
+  const [s, a, pending] = useActionState(action, {});
+  return (
+    <form action={a} className="space-y-2" onSubmit={(e) => { if (confirm && !window.confirm(confirm)) e.preventDefault(); }}>
+      {Object.entries(fields).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
+      <button disabled={pending} className={`${buttonStyles[variant]} py-2`}>{pending ? "Aguarde..." : label}</button>
+      <Msg s={s} />
+    </form>
+  );
+}
+
+/** "Bloqueei na Vivo" — com a opção de ligar a linha da planilha ao cliente do Asaas. */
+export function BlockForm({ action, customerId, name, lines, suggestedLineId }: {
+  action: Action; customerId: string; name: string; lines: { id: string; label: string }[] | null; suggestedLineId: string | null;
+}) {
+  const [s, a, pending] = useActionState(action, {});
+  return (
+    <form action={a} className="space-y-2" onSubmit={(e) => { if (!window.confirm(`Confirma que você BLOQUEOU a linha de ${name} na Vivo?`)) e.preventDefault(); }}>
+      <input type="hidden" name="customerId" value={customerId} />
+      {lines && lines.length > 0 && (
+        <label className="block text-xs text-muted">
+          Qual número é? (da planilha — opcional)
+          <select name="lineId" defaultValue={suggestedLineId ?? ""} className="mt-1 w-full rounded-lg border border-border bg-white px-2 py-2 text-sm text-foreground">
+            <option value="">Não sei / não está no sistema</option>
+            {lines.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
+          </select>
+        </label>
+      )}
+      <button disabled={pending} className={`${buttonStyles.primary} w-full py-2`}>{pending ? "Aguarde..." : "Bloqueei na Vivo"}</button>
+      <Msg s={s} />
+    </form>
+  );
+}

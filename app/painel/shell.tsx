@@ -11,10 +11,11 @@ export function PanelShell({ staff, children }: { staff: Staff; children: ReactN
       <header className="border-b border-border bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
           <Link href="/painel" className="font-extrabold">giga<span className="text-brand">chip</span> <span className="text-sm font-medium text-muted">painel</span></Link>
-          <nav className="flex gap-4 text-sm font-medium">
+          <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium">
             <Link href="/painel" className="hover:text-brand">Visão geral</Link>
             <Link href="/painel/pedidos" className="hover:text-brand">Pedidos</Link>
             <Link href="/painel/linhas" className="hover:text-brand">Linhas</Link>
+            {staff.role !== "atendente" && <Link href="/painel/inadimplencia" className="hover:text-brand">Inadimplência</Link>}
             {staff.role === "owner" && <Link href="/painel/equipe" className="hover:text-brand">Equipe</Link>}
             {staff.role === "owner" && <Link href="/painel/integracoes" className="hover:text-brand">Integrações</Link>}
             {staff.role === "owner" && <Link href="/painel/configuracoes" className="hover:text-brand">Configurações</Link>}

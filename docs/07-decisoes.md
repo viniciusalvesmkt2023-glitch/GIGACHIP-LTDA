@@ -371,3 +371,24 @@ Esta é a referência para qualquer mudança futura. Substitui D21 (contrato no 
 Automático: cobrança, formulário, leitura do print, envio do contrato, validação de identidade
 (D4Sign), acompanhamento da assinatura, liberação do WhatsApp, e-mails e lembretes.
 Manual: ativar na Vivo, escolher o número/ICCID no painel, conversar com o cliente.
+
+## D29 — Inadimplência no painel (21/11/2026)
+
+Antes: no dia seguinte ao vencimento, o dono olhava no Asaas quem não pagou, procurava o nome na
+planilha, pintava de vermelho e bloqueava na Vivo.
+
+Agora (Painel → **Inadimplência**):
+- O sistema **puxa do Asaas** as cobranças vencidas (status OVERDUE, que o Asaas marca no dia
+  seguinte ao vencimento) — de **todos** os clientes da conta, inclusive os antigos da planilha.
+  Atualiza sozinho a cada hora (rotina) e na hora pelos avisos (webhook) do Asaas; há também o
+  botão "Atualizar agora".
+- Lista **"Bloquear linha — sem pagamento"**: nome, valor, vencimento, dias de atraso, link da
+  cobrança e o número da linha (quando o sistema sabe). O dono bloqueia **na Vivo, à mão**, e clica
+  **"Bloqueei na Vivo"**. Para clientes da planilha, pode escolher qual é o número (o sistema
+  sugere pelo nome) — a ligação fica salva para os próximos meses.
+- Pagou estando bloqueado → lista **"Desbloquear — pagou"** → desbloqueia na Vivo (até 24 h, pelo
+  contrato) e clica **"Desbloqueei na Vivo"**. A linha volta a "Ativa" na tela Linhas.
+- Lista **"Bloqueadas — aguardando pagamento"** mostra há quantos dias; passando de 5 dias fica em
+  vermelho (pelo contrato já pode cancelar). **Nada é cancelado sozinho.**
+- Pagamento fora do Asaas (ex.: dinheiro): marcar "recebido em dinheiro" no Asaas — o painel segue.
+- Tudo fica registrado (quem bloqueou/desbloqueou e quando) no histórico e no audit_log.
