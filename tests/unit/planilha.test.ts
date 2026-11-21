@@ -50,6 +50,10 @@ describe("findHeader + parseSheetRows", () => {
     });
     expect(invalid).toEqual([6]);
   });
+  it("número repetido fica marcado (o sistema não escreve nele)", () => {
+    const { duplicates } = parseSheetRows(rows, findHeader(rows)!);
+    expect([...duplicates.entries()]).toEqual([["+5511937336662", [4, 7]]]);
+  });
 });
 
 describe("formatação", () => {

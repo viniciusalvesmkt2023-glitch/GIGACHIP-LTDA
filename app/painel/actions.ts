@@ -213,6 +213,7 @@ export async function testSheetAction(): Promise<FormState> {
           t.missing.length ? `  ⚠ Não achei: ${t.missing.join(", ")} (essas colunas não serão preenchidas)` : null,
           `  ${t.total} números: ${t.disponiveis} sem cliente (disponíveis) e ${t.clientes} com cliente`,
           t.invalid.length ? `  ⚠ Número inválido nas linhas: ${t.invalid.join(", ")}` : null,
+          t.duplicates.length ? `  ⚠ Número repetido (o sistema não escreve nele): linhas ${t.duplicates.map((d) => d.join(" e ")).join("; ")}` : null,
         ].filter(Boolean).join("\n"),
       )
       .join("\n\n");

@@ -99,11 +99,15 @@ export function parseSheetDate(v: string | null): string | null {
   return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
 }
 
-/** Linhas de dados (abaixo do cabeçalho) com número válido. Números repetidos: vale o primeiro. */
+/**
+ * Linhas de dados (abaixo do cabeçalho) com número válido. Número repetido: fica em `duplicates`
+ * e o sistema NÃO escreve nele (não dá para saber qual das linhas é a certa).
+ */
 export function parseSheetRows(rows: string[][], header: { index: number; map: ColumnMap }) {
   const out: SheetRow[] = [];
   const invalid: number[] = [];
-  const seen = new Set<string>();
+  const seen = new Map<string, number>(); // número → linha onde apareceu primeiro
+  const duplicates = new Map<string, number[]>(); // número repetido → todas as linhas
   const get = (r: string[], f: SheetField) => (header.map[f] === undefined ? null : text(r[header.map[f]!]));
   for (let i = header.index + 1; i < rows.length; i++) {
     const r = rows[i] ?? [];
@@ -114,8 +118,11 @@ export function parseSheetRows(rows: string[][], header: { index: number; map: C
       invalid.push(i + 1);
       continue;
     }
-    if (seen.has(msisdn)) continue;
-    seen.add(msisdn);
+    if (seen.has(msisdn)) {
+      duplicates.set(msisdn, [...(duplicates.get(msisdn) ?? [seen.get(msisdn)!]), i + 1]);
+      continue;
+    }
+    seen.set(msisdn, i + 1);
     const money = (f: SheetField) => {
       const v = get(r, f);
       return v ? parseMoneyToCents(v) : null;
@@ -135,7 +142,7 @@ export function parseSheetRows(rows: string[][], header: { index: number; map: C
       pagamento: get(r, "pagamento"),
     });
   }
-  return { rows: out, invalid };
+  return { rows: out, invalid, duplicates };
 }
 
 /** 0 → A, 25 → Z, 26 → AA */

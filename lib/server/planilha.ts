@@ -50,7 +50,9 @@ export async function sheetEnabled(): Promise<boolean> {
   return sheetsConfigured() && (await getSheetConfig()) !== null;
 }
 
-type TabData = { title: string; sheetId: number; headerIndex: number; map: ColumnMap; rows: SheetRow[]; invalid: number[] };
+type TabData = {
+  title: string; sheetId: number; headerIndex: number; map: ColumnMap; rows: SheetRow[]; invalid: number[]; duplicates: Map<string, number[]>;
+};
 
 /** Lê todas as abas (ou só a configurada) que têm um cabeçalho com a coluna "Número". */
 export async function readSheet() {
@@ -84,6 +86,7 @@ export async function describeSheet() {
       disponiveis: t.rows.filter((r) => !r.cliente).length,
       clientes: t.rows.filter((r) => r.cliente).length,
       invalid: t.invalid.slice(0, 10),
+      duplicates: [...t.duplicates.values()].slice(0, 10),
     })),
   };
 }
@@ -212,7 +215,16 @@ export async function pushPendingToSheet(limit = 20) {
     return { written: 0, failed: pending.length, error: msg };
   }
   const where = new Map<string, { tab: TabData; row: SheetRow }>();
-  for (const tab of sheet.tabs) for (const row of tab.rows) if (!where.has(row.msisdn)) where.set(row.msisdn, { tab, row });
+  // Número que aparece mais de uma vez (na mesma aba ou em abas diferentes): onde está cada um
+  const repeated = new Map<string, string[]>();
+  for (const tab of sheet.tabs) {
+    for (const [msisdn, lines] of tab.duplicates) repeated.set(msisdn, [...(repeated.get(msisdn) ?? []), ...lines.map((n) => `${tab.title} linha ${n}`)]);
+    for (const row of tab.rows) {
+      const first = where.get(row.msisdn);
+      if (first) repeated.set(row.msisdn, [...(repeated.get(row.msisdn) ?? [`${first.tab.title} linha ${first.row.rowNumber}`]), `${tab.title} linha ${row.rowNumber}`]);
+      else where.set(row.msisdn, { tab, row });
+    }
+  }
 
   let written = 0;
   let failed = 0;
@@ -224,6 +236,12 @@ export async function pushPendingToSheet(limit = 20) {
     const loc = where.get(l.msisdn);
     if (!loc) {
       await giveUp(l.id, "número não encontrado na planilha");
+      continue;
+    }
+    const dup = repeated.get(l.msisdn);
+    if (dup) {
+      // Não dá para saber qual das linhas é a certa: não escreve nada
+      await giveUp(l.id, `o número aparece mais de uma vez na planilha (${[...new Set(dup)].join(", ")}) — deixe só uma e clique em Tentar de novo`);
       continue;
     }
     const { tab, row } = loc;

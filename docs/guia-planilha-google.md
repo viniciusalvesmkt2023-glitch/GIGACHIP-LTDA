@@ -56,6 +56,7 @@ forem **compartilhadas com ele**, do mesmo jeito que você compartilha com uma p
 | Dono | "Desbloqueei na Vivo" | Volta o nome para preto |
 
 - **Nunca** altera Login Vivo, Número, Plano PJ e Forma de pagamento.
-- Se o número já tiver outro cliente escrito na planilha, **não passa por cima**: mostra um aviso
+- Se o número já tiver outro cliente escrito na planilha, ou aparecer **mais de uma vez**, o sistema
+  **não escreve nada**: mostra um aviso
   em Linhas para você conferir.
 - Se o Google estiver fora do ar, a escrita fica pendente e a rotina tenta de novo.
