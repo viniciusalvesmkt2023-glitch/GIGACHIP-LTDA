@@ -412,3 +412,8 @@ O gestor usa a planilha, então ela **não** é substituída (revisa D26). O sis
   escreve nada (aviso no painel).
   Falha do Google → escrita pendente, a rotina tenta de novo.
 - Passo a passo de configuração: `docs/guia-planilha-google.md`.
+- **Regra do disponível (pedido do dono):** só é disponível o número com **"Disponível" na coluna
+  Cliente E com ICCID Atual, Smart-Dados, Ativação, Venda Final, Valor e Vencimento vazios**. Se
+  tiver "Disponível" com algum desses preenchido, ou Cliente vazio, o número sai da lista de
+  disponíveis, aparece no "Testar planilha" com a linha e o motivo, e o sistema não escreve nele
+  até a planilha ser arrumada.

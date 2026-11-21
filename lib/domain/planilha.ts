@@ -66,10 +66,23 @@ export function findHeader(rows: string[][], maxScan = 10): { index: number; map
   return null;
 }
 
+/**
+ * - disponivel: "Disponível" na coluna Cliente E as colunas da venda vazias (pode vender);
+ * - cliente: tem nome de cliente;
+ * - inconsistente: "Disponível" mas com dados da venda preenchidos, ou Cliente vazio → fica FORA
+ *   da lista de disponíveis e o sistema não escreve nela até alguém arrumar a planilha.
+ */
+export type SheetRowKind = "disponivel" | "cliente" | "inconsistente";
+
+/** Colunas que precisam estar vazias para o número estar de fato disponível. */
+export const SALE_FIELDS: SheetField[] = ["iccid", "smart", "ativacao", "venda", "valor", "vencimento"];
+
 export type SheetRow = {
   rowNumber: number; // 1 = primeira linha da aba (como aparece na planilha)
   msisdn: string;
-  cliente: string | null;
+  kind: SheetRowKind;
+  problem: string | null; // por que está inconsistente
+  cliente: string | null; // só quando kind = "cliente"
   login: string | null;
   plano: string | null;
   iccid: string | null;
@@ -91,9 +104,20 @@ const text = (v: unknown): string | null => {
  * venda vazias). Também aceita variações comuns. Esses números são tratados como SEM cliente.
  */
 export function isAvailableMarker(cliente: string | null): boolean {
-  if (!cliente) return true;
-  const n = normalizeHeader(cliente);
-  return n === "" || /^(disponive(l|is)|livre|estoque|vago|sem cliente|para venda|a venda)$/.test(n);
+  if (!cliente) return false;
+  return /^(disponive(l|is)|livre|estoque|vago|sem cliente|para venda|a venda)$/.test(normalizeHeader(cliente));
+}
+
+/** Classifica a linha da planilha (regra combinada com o dono — ver SheetRowKind). */
+export function classifyRow(cliente: string | null, filledSaleFields: SheetField[]): { kind: SheetRowKind; problem: string | null } {
+  const filled = filledSaleFields.map((f) => FIELD_LABEL[f]).join(", ");
+  if (isAvailableMarker(cliente)) {
+    return filledSaleFields.length
+      ? { kind: "inconsistente", problem: `está "Disponível" mas tem ${filled} preenchido` }
+      : { kind: "disponivel", problem: null };
+  }
+  if (!cliente) return { kind: "inconsistente", problem: "coluna Cliente vazia (escreva Disponível ou o nome do cliente)" };
+  return { kind: "cliente", problem: null };
 }
 
 /** "20/11/2026", "20/11/26" ou "2026-11-20" → "2026-11-20". null se não for data. */
@@ -138,10 +162,14 @@ export function parseSheetRows(rows: string[][], header: { index: number; map: C
       const v = get(r, f);
       return v ? parseMoneyToCents(v) : null;
     };
+    const clienteRaw = get(r, "cliente");
+    const { kind, problem } = classifyRow(clienteRaw, SALE_FIELDS.filter((f) => get(r, f)));
     out.push({
       rowNumber: i + 1,
       msisdn,
-      cliente: isAvailableMarker(get(r, "cliente")) ? null : get(r, "cliente"),
+      kind,
+      problem,
+      cliente: kind === "cliente" ? clienteRaw : null,
       login: get(r, "login"),
       plano: get(r, "plano"),
       iccid: get(r, "iccid")?.replace(/\s/g, "") ?? null,

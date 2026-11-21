@@ -35,7 +35,7 @@ describe("findHeader + parseSheetRows", () => {
     ["CONTROLE DE LINHAS"],
     [],
     HEADER,
-    ["", "471500000", "11 93733-6662", "", "", "Smart Empresas 6+200GB", "", "", "", "", "PIX Asaas"],
+    ["Disponível", "471500000", "11 93733-6662", "", "", "Smart Empresas 6+200GB", "", "", "", "", "PIX Asaas"],
     ["Maria Souza", "471500000", "(11) 93733-6663", "89551093000000000012", "Franquia de 100+100GB", "Smart Empresas", "05/10/2026", "R$ 124,99", "R$ 30,00", "05/12/2026", "Cartão"],
     ["", "", "123", "", "", "", "", "", "", "", ""],
     ["Repetido", "", "11937336662", "", "", "", "", "", "", "", ""],
@@ -47,9 +47,9 @@ describe("findHeader + parseSheetRows", () => {
     const h = findHeader(rows)!;
     const { rows: out, invalid } = parseSheetRows(rows, h);
     expect(out).toHaveLength(2);
-    expect(out[0]).toMatchObject({ rowNumber: 4, msisdn: "+5511937336662", cliente: null, login: "471500000", plano: "Smart Empresas 6+200GB" });
+    expect(out[0]).toMatchObject({ rowNumber: 4, msisdn: "+5511937336662", kind: "disponivel", cliente: null, login: "471500000", plano: "Smart Empresas 6+200GB" });
     expect(out[1]).toMatchObject({
-      rowNumber: 5, cliente: "Maria Souza", iccid: "89551093000000000012", ativacao: "2026-10-05",
+      rowNumber: 5, kind: "cliente", cliente: "Maria Souza", iccid: "89551093000000000012", ativacao: "2026-10-05",
       vendaCents: 12499, valorCents: 3000, vencimento: "2026-12-05", pagamento: "Cartão",
     });
     expect(invalid).toEqual([6]);
@@ -62,7 +62,17 @@ describe("findHeader + parseSheetRows", () => {
 
 describe("número disponível", () => {
   it("'Disponível' (com ou sem acento, maiúsculo) é número livre", () => {
-    for (const v of ["Disponível", "DISPONIVEL", " disponível ", "Livre", "", null]) expect(isAvailableMarker(v)).toBe(true);
+    for (const v of ["Disponível", "DISPONIVEL", " disponível ", "Livre"]) expect(isAvailableMarker(v)).toBe(true);
+  });
+  it("'Disponível' com dados da venda preenchidos fica fora da lista", () => {
+    const rows = [["Cliente", "Número", "ICCID Atual", "Smart-Dados", "Vencimeto"], ["Disponível", "11919908711", "", "Franquia de 100+100GB", "05/12/2026"]];
+    const r = parseSheetRows(rows, findHeader(rows)!).rows[0];
+    expect(r.kind).toBe("inconsistente");
+    expect(r.problem).toBe('está "Disponível" mas tem Smart-Dados, Vencimento preenchido');
+  });
+  it("Cliente vazio fica fora da lista", () => {
+    const rows = [["Cliente", "Número", "ICCID"], ["", "11919908711", ""]];
+    expect(parseSheetRows(rows, findHeader(rows)!).rows[0].kind).toBe("inconsistente");
   });
   it("nome de cliente não é número livre", () => {
     expect(isAvailableMarker("Maria Disponível Souza")).toBe(false);
@@ -70,7 +80,9 @@ describe("número disponível", () => {
   });
   it("na leitura, 'Disponível' vira linha sem cliente", () => {
     const rows = [["Cliente", "Número", "ICCID"], ["Disponível", "11919908711", ""]];
-    expect(parseSheetRows(rows, findHeader(rows)!).rows[0].cliente).toBeNull();
+    const r = parseSheetRows(rows, findHeader(rows)!).rows[0];
+    expect(r.kind).toBe("disponivel");
+    expect(r.cliente).toBeNull();
   });
 });
 

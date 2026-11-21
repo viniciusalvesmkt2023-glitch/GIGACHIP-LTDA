@@ -55,6 +55,9 @@ forem **compartilhadas com ele**, do mesmo jeito que você compartilha com uma p
 | Dono | "Bloqueei na Vivo" (Inadimplência) | Pinta o nome do cliente de **vermelho** |
 | Dono | "Desbloqueei na Vivo" | Volta o nome para preto |
 
+- Número **disponível** = "Disponível" na coluna Cliente **e** ICCID Atual, Smart-Dados, Ativação,
+  Venda Final, Valor e Vencimento vazios. Se algum estiver preenchido, o número fica fora da lista
+  (o "Testar planilha" mostra a linha para arrumar).
 - **Nunca** altera Login Vivo, Número, Plano PJ e Forma de pagamento.
 - Se o número já tiver outro cliente escrito na planilha, ou aparecer **mais de uma vez**, o sistema
   **não escreve nada**: mostra um aviso

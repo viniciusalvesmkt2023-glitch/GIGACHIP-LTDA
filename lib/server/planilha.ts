@@ -83,8 +83,9 @@ export async function describeSheet() {
       columns: (Object.entries(t.map) as [SheetField, number][]).map(([f, i]) => `${FIELD_LABEL[f]} = coluna ${columnLetter(i)}`),
       missing: WRITABLE_FIELDS.filter((f) => t.map[f] === undefined).map((f) => FIELD_LABEL[f]),
       total: t.rows.length,
-      disponiveis: t.rows.filter((r) => !r.cliente).length,
-      clientes: t.rows.filter((r) => r.cliente).length,
+      disponiveis: t.rows.filter((r) => r.kind === "disponivel").length,
+      clientes: t.rows.filter((r) => r.kind === "cliente").length,
+      problems: t.rows.filter((r) => r.kind === "inconsistente").map((r) => `linha ${r.rowNumber}: ${r.problem}`),
       invalid: t.invalid.slice(0, 10),
       duplicates: [...t.duplicates.values()].slice(0, 10),
     })),
@@ -109,12 +110,24 @@ export async function importFromSheet(staff: Staff | null) {
         select id, msisdn, order_id, status::text, sheet_pending from public.lines where msisdn = any(${rows.map((r) => r.msisdn)})`
     ).map((l) => [l.msisdn, l]),
   );
-  const stats = { novosDisponiveis: 0, novosClientes: 0, atualizados: 0, liberados: 0 };
+  const stats = { novosDisponiveis: 0, novosClientes: 0, atualizados: 0, liberados: 0, foraDaLista: 0, inconsistentes: 0 };
 
   for (const r of rows) {
     const cur = existing.get(r.msisdn);
+    if (r.kind === "inconsistente") {
+      // Planilha com problema nesta linha: não entra como disponível (e sai da lista se já estava)
+      stats.inconsistentes++;
+      if (cur && !cur.order_id && cur.status === "disponivel") {
+        const del = await sql()`
+          delete from public.lines l where l.id = ${cur.id} and l.order_id is null and l.status = 'disponivel'
+            and not exists (select 1 from public.line_blocks b where b.line_id = l.id)
+          returning id`;
+        stats.foraDaLista += del.length;
+      }
+      continue;
+    }
     if (!cur) {
-      if (r.cliente) {
+      if (r.kind === "cliente") {
         await sql()`
           insert into public.lines (msisdn, status, vivo_login, plano_pj, payment_method, legacy_customer_name, iccid, smart_dados,
                                     activated_at, sale_price_cents, cost_cents, legacy_due_date)
@@ -138,7 +151,7 @@ export async function importFromSheet(staff: Staff | null) {
         and (vivo_login is distinct from ${r.login} or plano_pj is distinct from ${r.plano}
              or (${r.pagamento}::text is not null and payment_method is distinct from ${r.pagamento}))`;
     if (cur.order_id || cur.sheet_pending) continue; // vendida pelo site ou com escrita pendente: o sistema manda
-    if (r.cliente) {
+    if (r.kind === "cliente") {
       const res = await sql()`
         update public.lines
         set legacy_customer_name = ${r.cliente}, iccid = ${r.iccid}, smart_dados = ${r.smart}, activated_at = ${at(r.ativacao)},
@@ -249,7 +262,11 @@ export async function pushPendingToSheet(limit = 20) {
     const cells: { range: string; value: string }[] = [];
     if (l.order_id) {
       // Venda pelo site: preenche as colunas da venda, sem passar por cima de outro cliente
-      if (row.cliente && normalizeName(row.cliente) !== normalizeName(l.customer ?? "")) {
+      if (row.kind === "inconsistente") {
+        await giveUp(l.id, `na planilha a linha ${row.rowNumber} ${row.problem} — arrume a planilha e clique em Tentar de novo`);
+        continue;
+      }
+      if (row.kind === "cliente" && normalizeName(row.cliente ?? "") !== normalizeName(l.customer ?? "")) {
         await giveUp(l.id, `na planilha este número já está com o cliente "${row.cliente}" — confira antes`);
         continue;
       }

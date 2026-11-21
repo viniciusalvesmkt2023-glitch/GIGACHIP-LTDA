@@ -211,8 +211,9 @@ export async function testSheetAction(): Promise<FormState> {
           `Aba “${t.title}” (cabeçalho na linha ${t.headerRow})`,
           `  ${t.columns.join(" · ")}`,
           t.missing.length ? `  ⚠ Não achei: ${t.missing.join(", ")} (essas colunas não serão preenchidas)` : null,
-          `  ${t.total} números: ${t.disponiveis} sem cliente (disponíveis) e ${t.clientes} com cliente`,
+          `  ${t.total} números: ${t.disponiveis} disponíveis · ${t.clientes} com cliente${t.problems.length ? ` · ${t.problems.length} com problema` : ""}`,
           t.invalid.length ? `  ⚠ Número inválido nas linhas: ${t.invalid.join(", ")}` : null,
+          t.problems.length ? `  ⚠ Fora da lista de disponíveis (arrume na planilha):\n${t.problems.slice(0, 15).map((x) => `     • ${x}`).join("\n")}${t.problems.length > 15 ? `\n     … e mais ${t.problems.length - 15}` : ""}` : null,
           t.duplicates.length ? `  ⚠ Número repetido (o sistema não escreve nele): linhas ${t.duplicates.map((d) => d.join(" e ")).join("; ")}` : null,
         ].filter(Boolean).join("\n"),
       )
@@ -231,7 +232,7 @@ export async function importSheetAction(): Promise<FormState> {
     refresh();
     return {
       ok: true,
-      message: `Planilha lida: ${r.numeros} números. Novos disponíveis: ${r.novosDisponiveis} · novos clientes: ${r.novosClientes} · atualizados: ${r.atualizados}${r.liberados ? ` · voltaram a ficar livres: ${r.liberados}` : ""}.`,
+      message: `Planilha lida: ${r.numeros} números. Novos disponíveis: ${r.novosDisponiveis} · novos clientes: ${r.novosClientes} · atualizados: ${r.atualizados}${r.liberados ? ` · voltaram a ficar livres: ${r.liberados}` : ""}${r.inconsistentes ? ` · com problema na planilha (fora da lista): ${r.inconsistentes} — veja em Integrações → Testar planilha` : ""}.`,
     };
   } catch (e) {
     return { message: `Não consegui ler a planilha: ${e instanceof Error ? e.message : String(e)}` };
