@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@tesseract.js-data/eng": "^1.0.0",
+    "lucide-react": "0.575.0",
     "next": "16.4.6",
     "pdf-lib": "^1.17.1",
     "postgres": "^4.1.1",

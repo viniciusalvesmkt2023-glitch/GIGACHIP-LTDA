@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { PlanCard, PlanGridSkeleton } from "@/components/plan-card";
+import { PlanCards, PlanCardsSkeleton } from "@/components/site/plan-cards";
 import { Container, SectionTitle } from "@/components/ui";
 import { formatBRL } from "@/lib/domain/money";
 import { listActivePlans } from "@/lib/server/catalog";
@@ -22,11 +22,7 @@ async function Comparison() {
   ];
   return (
     <>
-      <div className="grid gap-6 md:grid-cols-3">
-        {plans.map((plan, i) => (
-          <PlanCard key={plan.id} plan={plan} highlight={plans.length >= 3 && i === Math.floor(plans.length / 2)} />
-        ))}
-      </div>
+      <PlanCards plans={plans} />
       <div className="mt-16 overflow-x-auto rounded-2xl border border-border">
         <table className="w-full min-w-[560px] text-left text-sm">
           <caption className="sr-only">Comparação dos planos</caption>
@@ -59,7 +55,7 @@ export default function PlanosPage() {
     <Container className="py-16">
       <SectionTitle eyebrow="Planos" title="Compare e escolha" subtitle="Todos com ligações ilimitadas, bônus mensal e sem fidelidade." />
       <div className="mt-10">
-        <Suspense fallback={<PlanGridSkeleton />}>
+        <Suspense fallback={<PlanCardsSkeleton />}>
           <Comparison />
         </Suspense>
       </div>
