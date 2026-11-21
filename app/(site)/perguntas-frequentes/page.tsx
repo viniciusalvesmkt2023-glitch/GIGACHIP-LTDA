@@ -33,7 +33,11 @@ const faq: { q: string; a: string }[] = [
   },
   {
     q: "Por que preciso enviar documento e selfie?",
-    a: "Para confirmar que é você mesmo quem está contratando e evitar fraudes. O envio é feito pela sua área segura no site — nunca por e-mail. Os arquivos são apagados após o prazo necessário.",
+    a: "Para confirmar que é você mesmo quem está contratando e evitar fraudes. A D4Sign, nossa plataforma de assinatura digital, pede a foto do documento e uma selfie na hora de assinar o contrato. Nunca pedimos documentos por e-mail ou WhatsApp.",
+  },
+  {
+    q: "Posso escolher o número da linha?",
+    a: "Não. O número é definido pela nossa equipe na hora da ativação, conforme a disponibilidade. Assim que a linha for ativada, você recebe o número por e-mail.",
   },
   {
     q: "Posso usar o número da linha no WhatsApp ou no banco?",
@@ -41,7 +45,7 @@ const faq: { q: string; a: string }[] = [
   },
   {
     q: "Em quanto tempo a linha é ativada?",
-    a: "Depois que o pagamento, a confirmação de identidade, o contrato e os dados do aparelho estiverem completos, nossa equipe faz a ativação e você recebe a confirmação.",
+    a: "Depois do pagamento, do envio do ID do celular e da assinatura do contrato, você chama a gente no WhatsApp pelo formulário de ativação. Nossa equipe ativa a linha e você recebe o número por e-mail.",
   },
 ];
 

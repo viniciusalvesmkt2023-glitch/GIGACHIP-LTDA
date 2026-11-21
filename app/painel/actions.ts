@@ -15,6 +15,7 @@ import { decideIdentity } from "@/lib/server/identity";
 import { createStaff, login, logout, requestPasswordReset, requireStaff, resetPassword, staffCount, verifySecondFactor, type StaffRole } from "@/lib/server/staff-auth";
 import { env } from "@/lib/server/env";
 import { blockCustomer, syncOverdue, unblockCustomer } from "@/lib/server/inadimplencia";
+import { processEmails } from "@/lib/server/email";
 import { describeSheet, importFromSheet, pushPendingToSheet, setSheetConfig } from "@/lib/server/planilha";
 import { spreadsheetIdFromUrl } from "@/lib/domain/planilha";
 
@@ -139,6 +140,8 @@ export async function activateLineAction(_p: FormState, fd: FormData): Promise<F
     costCents: cost,
   });
   refresh();
+  // E-mail "Sua linha está ativa" sai na hora (sem esperar a rotina de 10 min)
+  if (r.ok) after(() => processEmails(3).then(() => undefined).catch((e) => console.error(`[e-mails] ${e instanceof Error ? e.message : e}`)));
   after(() => pushPendingToSheet().catch((e) => console.error(`[planilha] ${e instanceof Error ? e.message : e}`)));
   return { ok: r.ok, message: r.message };
 }

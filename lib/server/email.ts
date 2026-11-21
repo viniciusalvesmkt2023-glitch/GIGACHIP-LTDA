@@ -113,8 +113,12 @@ export async function processEmails(limit = 5): Promise<{ sent: number; failed: 
   if (!emailConfigured()) return { sent: 0, failed: 0, skipped: "e-mail ainda não configurado" };
   let sent = 0;
   let failed = 0;
+  // E-mail que ficou "enviando" há mais de 10 min (o servidor caiu no meio): volta para a fila
+  await sql()`
+    update public.notifications set status = 'queued'
+    where status = 'processing' and channel = 'email' and scheduled_for < now() - interval '10 minutes'`;
   const rows = await sql()<{ id: bigint; order_id: string; template: EmailTemplate; attempts: number }[]>`
-    update public.notifications set status = 'processing'
+    update public.notifications set status = 'processing', scheduled_for = now() -- marca a hora em que começou a enviar
     where id in (
       select id from public.notifications
       where status = 'queued' and channel = 'email' and scheduled_for <= now()

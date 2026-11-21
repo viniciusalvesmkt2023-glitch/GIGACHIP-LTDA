@@ -44,8 +44,9 @@ async function PlanDetail({ params }: { params: PageProps<"/planos/[slug]">["par
         <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-muted">
           <li>Preencha o cadastro e escolha eSIM ou chip físico.</li>
           <li>Pague a 1ª mensalidade por PIX ou cartão.</li>
-          <li>Confirme sua identidade, assine o contrato digital e informe os dados do aparelho.</li>
-          <li>Nossa equipe ativa sua linha e você recebe a confirmação.</li>
+          <li>No formulário de ativação, envie o print do *#06# (ID do celular).</li>
+          <li>Assine o contrato digital no seu e-mail (com foto do documento e selfie).</li>
+          <li>Nossa equipe ativa sua linha e você recebe o número por e-mail.</li>
         </ol>
       </div>
       <aside className="h-fit rounded-2xl border border-border bg-white p-6 shadow-sm lg:sticky lg:top-24">

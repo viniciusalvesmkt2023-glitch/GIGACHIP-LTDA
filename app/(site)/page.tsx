@@ -6,9 +6,9 @@ import { listActivePlans } from "@/lib/server/catalog";
 const steps = [
   { n: "1", title: "Escolha o plano", text: "Compare as opções e escolha a franquia ideal para você." },
   { n: "2", title: "Cadastre-se e pague", text: "Preencha seus dados e pague a 1ª mensalidade por PIX ou cartão." },
-  { n: "3", title: "Confirme sua identidade", text: "Envie documento e selfie pela sua área segura. Nada de documento por e-mail." },
-  { n: "4", title: "Assine e informe o aparelho", text: "Assine o contrato digital e informe IMEI e EID (eSIM) ou o número do chip." },
-  { n: "5", title: "Linha ativada", text: "Nossa equipe ativa sua linha e você recebe a confirmação." },
+  { n: "3", title: "Envie o ID do celular", text: "No formulário de ativação, mande o print do *#06# — o site lê os números sozinho." },
+  { n: "4", title: "Assine o contrato", text: "Chega no seu e-mail pela D4Sign, com foto do documento e selfie para confirmar que é você." },
+  { n: "5", title: "Linha ativada", text: "Você chama a gente no WhatsApp, nossa equipe ativa a linha e você recebe o número por e-mail." },
 ];
 
 async function Plans() {

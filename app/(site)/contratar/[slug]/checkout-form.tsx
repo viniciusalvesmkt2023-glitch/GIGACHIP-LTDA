@@ -65,7 +65,8 @@ export function CheckoutForm({ planSlug, allowEsim, allowPhysical }: { planSlug:
         </div>
         <Field label="E-mail" name="email" type="email" autoComplete="email" defaultValue={v.email} error={e.email}
           hint="Enviaremos o passo a passo da ativação para este e-mail." required />
-        <Field label="Celular para contato (WhatsApp)" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="(00) 90000-0000"
+        <Field label="Seu celular atual, para contato (WhatsApp)" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="(00) 90000-0000"
+          hint="Só para falarmos com você. O número da linha nova é definido pela nossa equipe na ativação."
           defaultValue={v.phone} error={e.phone} required />
       </fieldset>
 
