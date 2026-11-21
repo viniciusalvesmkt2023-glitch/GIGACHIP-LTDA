@@ -5,6 +5,7 @@ import {
   FIELD_LABEL,
   findHeader,
   formatForSheet,
+  isAvailableMarker,
   parseSheetRows,
   quoteTab,
   WRITABLE_FIELDS,
@@ -106,8 +107,9 @@ export async function importFromSheet(staff: Staff | null) {
 
   const existing = new Map(
     (
-      await sql()<{ id: string; msisdn: string; order_id: string | null; status: string; sheet_pending: boolean }[]>`
-        select id, msisdn, order_id, status::text, sheet_pending from public.lines where msisdn = any(${rows.map((r) => r.msisdn)})`
+      await sql()<{ id: string; msisdn: string; order_id: string | null; status: string; sheet_pending: boolean; legacy_customer_name: string | null }[]>`
+        select id, msisdn, order_id, status::text, sheet_pending, legacy_customer_name
+        from public.lines where msisdn = any(${rows.map((r) => r.msisdn)})`
     ).map((l) => [l.msisdn, l]),
   );
   const stats = { novosDisponiveis: 0, novosClientes: 0, atualizados: 0, liberados: 0, foraDaLista: 0, inconsistentes: 0 };
@@ -117,9 +119,10 @@ export async function importFromSheet(staff: Staff | null) {
     if (r.kind === "inconsistente") {
       // Planilha com problema nesta linha: não entra como disponível (e sai da lista se já estava)
       stats.inconsistentes++;
-      if (cur && !cur.order_id && cur.status === "disponivel") {
+      // Também remove o que uma leitura antiga gravou como "cliente" chamado "Disponível"
+      if (cur && !cur.order_id && (cur.status === "disponivel" || isAvailableMarker(cur.legacy_customer_name))) {
         const del = await sql()`
-          delete from public.lines l where l.id = ${cur.id} and l.order_id is null and l.status = 'disponivel'
+          delete from public.lines l where l.id = ${cur.id} and l.order_id is null
             and not exists (select 1 from public.line_blocks b where b.line_id = l.id)
           returning id`;
         stats.foraDaLista += del.length;
