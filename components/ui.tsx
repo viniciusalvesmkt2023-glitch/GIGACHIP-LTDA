@@ -93,3 +93,12 @@ export function ShineButton({ href, children, size = "md", className = "" }: {
     </span>
   );
 }
+
+/** Texto em destaque (fundo clarinho, bordas laterais, texto em degradê azul e bolinhas nos cantos). */
+export function Destaque({ children, dark = false, className = "" }: { children: ReactNode; dark?: boolean; className?: string }) {
+  return (
+    <span className={`destaque ${dark ? "destaque-escuro" : ""} ${className}`}>
+      <span className="destaque-texto">{children}</span>
+    </span>
+  );
+}

@@ -114,13 +114,50 @@ body {
   .marquee, .float-slow, .float-slower { animation: none; }
 }
 
-/* "Marca-texto" no azul da logo, atrás de palavras-chave (texto continua preto) */
-.mark {
-  background-image: linear-gradient(transparent 70%, var(--logo-blue) 70%, var(--logo-blue) 92%, transparent 92%);
-  padding: 0 0.08em;
+/*
+ * Texto em destaque (do pacote de códigos "Texto com destaque", no azul da logo):
+ * fundo clarinho, linhas finas nas laterais, texto em degradê e bolinhas nos cantos.
+ * Uso: <span class="destaque"><span class="destaque-texto">texto</span></span>
+ */
+.destaque {
+  --realce-fundo: rgb(1 186 254 / 0.12);
+  --cor-bordas: #01bafe;
+  --gradiente-texto: linear-gradient(90deg, #0284c7 0%, #01bafe 100%);
+  --cor-marcadores: #0284c7;
+  position: relative;
+  display: inline-block;
+  padding: 0.02em 0.22em;
+  border-left: 1px solid var(--cor-bordas);
+  border-right: 1px solid var(--cor-bordas);
+  border-radius: 3px;
+  background: var(--realce-fundo);
+  line-height: 1.1;
+}
+.destaque-escuro { /* sobre fundo preto */
+  --realce-fundo: rgb(1 186 254 / 0.18);
+  --gradiente-texto: linear-gradient(90deg, #01bafe 0%, #7fdcff 100%);
+  --cor-marcadores: #01bafe;
+}
+.destaque-texto {
+  background: var(--gradiente-texto);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
+.destaque::before,
+.destaque::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cor-marcadores);
+  pointer-events: none;
+}
+.destaque::before { top: -5px; left: -5px; }
+.destaque::after { bottom: -5px; right: -5px; }
 
 /*
  * Botão com anel de luz girando (do pacote de códigos, no azul da logo):
@@ -129,13 +166,13 @@ body {
  */
 .shine-wrap {
   display: inline-flex;
-  padding: 5px;
+  padding: 3px;
   border-radius: 9999px;
   background: radial-gradient(68.5% 119.7% at 49.1% 100%, rgb(1 186 254 / 0.45) 0%, rgb(82 205 255 / 0.4) 100%);
-  box-shadow: 0 0 18px 0 rgb(1 186 254 / 0.3);
+  box-shadow: 0 0 10px 0 rgb(1 186 254 / 0.25);
   transition: box-shadow 0.4s ease;
 }
-.shine-wrap:hover { box-shadow: 0 0 34px 4px rgb(1 186 254 / 0.38); }
+.shine-wrap:hover { box-shadow: 0 0 18px 2px rgb(1 186 254 / 0.32); }
 .shine {
   position: relative;
   isolation: isolate;

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { IconArrowRight, IconCheck } from "@/components/icons";
 import { PhoneMock } from "@/components/phone-mock";
 import { PlanCard, PlanGridSkeleton } from "@/components/plan-card";
-import { ButtonLink, Container, ShineButton } from "@/components/ui";
+import { ButtonLink, Container, Destaque, ShineButton } from "@/components/ui";
 import { FAQ } from "@/lib/faq";
 import { listActivePlans } from "@/lib/server/catalog";
 
@@ -55,7 +55,7 @@ export default function Home() {
               <span className="h-1.5 w-1.5 rounded-full bg-[#1bb36a]" /> Na rede Vivo · sem fidelidade
             </p>
             <h1 className="font-heading mt-6 text-5xl font-extrabold leading-[1.02] text-ink sm:text-7xl">
-              Internet que dura <span className="mark whitespace-nowrap">o mês inteiro</span>.
+              Internet que dura <Destaque className="whitespace-nowrap">o mês inteiro</Destaque>.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink/60 sm:text-xl">
               Planos de 200GB a 400GB com ligações ilimitadas. Contrate pelo celular em poucos minutos, sem fidelidade e sem papelada.
@@ -108,7 +108,7 @@ export default function Home() {
       <section id="como-funciona" className="scroll-mt-20 bg-surface py-20 sm:py-28">
         <Container>
           <Heading eyebrow="Como funciona" sub="Da compra à linha ativa, sem sair de casa.">
-            Cinco passos, <span className="mark">tudo pelo celular</span>
+            Cinco passos, <Destaque>tudo pelo celular</Destaque>
           </Heading>
           <ol className="relative mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-5 lg:gap-6">
             <span className="absolute left-0 right-0 top-5 hidden h-px bg-ink/10 lg:block" aria-hidden />
@@ -153,7 +153,7 @@ export default function Home() {
         <Container>
           <div className="rounded-[32px] bg-ink px-7 py-14 text-white sm:px-14 sm:py-20">
             <h2 className="font-heading max-w-3xl text-4xl font-extrabold leading-tight sm:text-6xl">
-              Chega de ficar sem internet no <span className="bg-logo-blue px-2 text-ink">fim do mês</span>.
+              Chega de ficar sem internet no <Destaque dark>fim do mês</Destaque>.
             </h2>
             <p className="mt-5 max-w-xl text-lg text-white/60">Escolha o plano, pague por PIX ou cartão e acompanhe tudo pelo celular.</p>
             <ShineButton href="#planos" size="lg" className="mt-9">Escolher meu plano</ShineButton>
