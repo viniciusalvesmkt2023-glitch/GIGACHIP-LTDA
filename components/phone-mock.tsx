@@ -31,7 +31,7 @@ export function PhoneMock() {
                 <p className="text-[11px] text-ink/50">Ligações</p>
                 <p className="mt-1 font-bold text-ink">Ilimitadas</p>
               </div>
-              <div className="rounded-3xl bg-neon-lime p-4">
+              <div className="rounded-3xl bg-logo-blue p-4">
                 <p className="text-[11px] text-ink/60">Bônus</p>
                 <p className="mt-1 font-bold text-ink">+100GB</p>
               </div>
@@ -47,7 +47,7 @@ export function PhoneMock() {
       </div>
       {/* aviso que chega por e-mail */}
       <div className="absolute -bottom-6 -left-16 hidden w-56 items-start gap-3 rounded-2xl bg-white p-3.5 shadow-[0_20px_40px_-16px_rgb(4_7_13/0.3)] ring-1 ring-ink/[0.07] sm:flex">
-        <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-neon-lime text-ink"><IconCheck className="h-4 w-4" /></span>
+        <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-logo-blue text-ink"><IconCheck className="h-4 w-4" /></span>
         <span className="text-xs leading-snug text-ink/70"><strong className="block text-sm text-ink">Linha ativada</strong>Seu número chegou no e-mail.</span>
       </div>
     </div>

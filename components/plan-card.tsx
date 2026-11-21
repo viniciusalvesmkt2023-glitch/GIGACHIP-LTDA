@@ -13,7 +13,7 @@ export function PlanCard({ plan, highlight = false }: { plan: PublicPlan; highli
     >
       <div className="flex items-center justify-between">
         <p className={`text-sm font-medium ${dark ? "text-white/60" : "text-ink/55"}`}>{plan.name}</p>
-        {highlight && <span className="rounded-full bg-neon-lime px-2.5 py-1 text-xs font-bold text-ink">Mais escolhido</span>}
+        {highlight && <span className="rounded-full bg-logo-blue px-2.5 py-1 text-xs font-bold text-ink">Mais escolhido</span>}
       </div>
 
       <p className="font-heading mt-5 flex items-baseline gap-1.5">
@@ -32,7 +32,7 @@ export function PlanCard({ plan, highlight = false }: { plan: PublicPlan; highli
       <ul className={`mt-7 flex-1 space-y-3 border-t pt-6 text-[15px] ${dark ? "border-white/10" : "border-ink/[0.08]"}`}>
         {plan.benefits.map((b) => (
           <li key={b} className="flex items-start gap-3">
-            <IconCheck className={`mt-0.5 h-[18px] w-[18px] flex-none ${dark ? "text-neon-lime" : "text-ink"}`} />
+            <IconCheck className={`mt-0.5 h-[18px] w-[18px] flex-none ${dark ? "text-logo-blue" : "text-ink"}`} />
             <span className={dark ? "text-white/85" : "text-ink/80"}>{b}</span>
           </li>
         ))}

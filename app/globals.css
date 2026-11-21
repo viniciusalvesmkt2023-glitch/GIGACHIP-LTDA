@@ -22,6 +22,8 @@
   --neon-cyan: #01bafe;
   --neon-green: #34fba6;
   --neon-lime: #d8fd0d;
+  --logo-blue: #01bafe;      /* azul-ciano da logo: cor de destaque do site */
+  --logo-blue-deep: #0284c7; /* mesmo azul, mais escuro (texto branco legível em cima) */
   color-scheme: light;
 }
 
@@ -42,6 +44,8 @@
   --color-neon-cyan: var(--neon-cyan);
   --color-neon-green: var(--neon-green);
   --color-neon-lime: var(--neon-lime);
+  --color-logo-blue: var(--logo-blue);
+  --color-logo-blue-deep: var(--logo-blue-deep);
   --font-display: var(--font-display);
   --font-heading: var(--font-heading);
   --font-sans: var(--font-geist-sans);
@@ -111,16 +115,16 @@ body {
   .marquee, .float-slow, .float-slower { animation: none; }
 }
 
-/* "Marca-texto" verde-limão da logo, atrás de palavras-chave (texto continua preto) */
+/* "Marca-texto" no azul da logo, atrás de palavras-chave (texto continua preto) */
 .mark {
-  background-image: linear-gradient(transparent 58%, var(--neon-lime) 58%, var(--neon-lime) 92%, transparent 92%);
+  background-image: linear-gradient(transparent 58%, rgb(1 186 254 / 0.45) 58%, rgb(1 186 254 / 0.45) 92%, transparent 92%);
   padding: 0 0.08em;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
 
 /*
- * Botão com anel de luz girando (do pacote de códigos, adaptado do azul para o verde-limão):
+ * Botão com anel de luz girando (do pacote de códigos, no azul da logo):
  * .shine-wrap = moldura translúcida com brilho suave; .shine = botão; .shine-fill = preenchimento;
  * a luz branca (.shine::before) gira por trás e só aparece no anel entre a borda e o preenchimento.
  */
@@ -128,11 +132,11 @@ body {
   display: inline-flex;
   padding: 5px;
   border-radius: 9999px;
-  background: radial-gradient(68.5% 119.7% at 49.1% 100%, rgb(216 253 13 / 0.38) 0%, rgb(232 255 110 / 0.28) 100%);
-  box-shadow: 0 0 18px 0 rgb(216 253 13 / 0.28);
+  background: radial-gradient(68.5% 119.7% at 49.1% 100%, rgb(1 186 254 / 0.45) 0%, rgb(82 205 255 / 0.4) 100%);
+  box-shadow: 0 0 18px 0 rgb(1 186 254 / 0.3);
   transition: box-shadow 0.4s ease;
 }
-.shine-wrap:hover { box-shadow: 0 0 34px 4px rgb(216 253 13 / 0.36); }
+.shine-wrap:hover { box-shadow: 0 0 34px 4px rgb(1 186 254 / 0.38); }
 .shine {
   position: relative;
   isolation: isolate;
@@ -143,7 +147,7 @@ body {
   justify-content: center;
   gap: 0.6rem;
   border-radius: 9999px;
-  color: var(--ink);
+  color: #fff;
   font-weight: 800;
   cursor: pointer;
   transition: transform 0.4s ease;
@@ -177,7 +181,7 @@ body {
   inset: 1.5px;
   z-index: 3;
   border-radius: inherit;
-  background: radial-gradient(53.6% 100% at 50% 100%, #f2ff8a 0%, var(--neon-lime) 100%);
+  background: radial-gradient(53.6% 100% at 50% 100%, var(--logo-blue) 0%, var(--logo-blue-deep) 100%);
 }
 .shine > :not(.shine-fill) { position: relative; z-index: 4; }
 @keyframes gc-shine-spin {

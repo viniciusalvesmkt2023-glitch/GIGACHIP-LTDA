@@ -16,8 +16,8 @@ export const buttonStyles = {
   neon: `${buttonBase} rounded-full bg-neon text-ink shadow-[0_8px_30px_-6px_rgb(52_251_166/0.55)] hover:brightness-105`,
   /** Botão escuro (pílula) para fundo claro */
   ink: `${buttonBase} rounded-full bg-ink text-white hover:bg-ink-soft`,
-  /** Verde-limão da logo com texto preto (para fundo preto) */
-  lime: `${buttonBase} rounded-full bg-neon-lime text-ink hover:brightness-95`,
+  /** Azul da logo */
+  blue: `${buttonBase} rounded-full bg-logo-blue-deep text-white hover:brightness-110`,
   /** Contorno discreto (fundo claro) */
   outline: `${buttonBase} rounded-full border border-ink/15 bg-white text-ink hover:border-ink/40`,
   /** Botão secundário sobre fundo preto */
@@ -51,7 +51,7 @@ export function Logo({ dark = false, size = 36 }: { dark?: boolean; size?: numbe
       {/* eslint-disable-next-line @next/next/no-img-element -- logo pequena e estática */}
       <img src="/brand/gigachip-logo-192.png" alt="" width={size} height={size} className="rounded-full" />
       <span className={`font-display text-xl font-bold italic tracking-tight ${dark ? "text-white" : "text-ink"}`}>
-        GIGA<span className="text-neon-lime">CHIP</span>
+        GIGA<span className="text-logo-blue">CHIP</span>
       </span>
     </span>
   );
@@ -80,7 +80,7 @@ export function ShineInner({ children }: { children: ReactNode }) {
   );
 }
 
-/** Botão verde-limão com anel de luz girando (efeito do pacote de códigos). */
+/** Botão azul (da logo) com anel de luz girando (efeito do pacote de códigos). */
 export function ShineButton({ href, children, size = "md", className = "" }: {
   href: string; children: ReactNode; size?: "sm" | "md" | "lg"; className?: string;
 }) {

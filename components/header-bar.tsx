@@ -21,10 +21,11 @@ function smoothScrollTo(id: string) {
   return true;
 }
 
+// Ícones dos planos no azul da logo (do mais claro ao mais forte)
 const PLAN_GRADIENT = [
-  "from-[#01bafe] to-[#0a7ea4]",
-  "from-[#34fba6] to-[#0fae6d]",
-  "from-[#d8fd0d] to-[#7cc90a]",
+  "from-[#7fdcff] to-[#01bafe]",
+  "from-[#33c8ff] to-[#0298de]",
+  "from-[#01bafe] to-[#0273b3]",
 ];
 
 function SectionLink({ id, children, onDone, className }: { id: string; children: React.ReactNode; onDone?: () => void; className: string }) {
@@ -45,7 +46,7 @@ function SectionLink({ id, children, onDone, className }: { id: string; children
 }
 
 function GlowButton({ className = "", onClick }: { className?: string; onClick?: () => void }) {
-  // Botão verde-limão com anel de luz girando (efeito do pacote de códigos)
+  // Botão azul (da logo) com anel de luz girando (efeito do pacote de códigos)
   return (
     <span className={`shine-wrap ${className}`}>
       <SectionLink id="planos" onDone={onClick} className="shine px-5 py-2.5 text-sm">

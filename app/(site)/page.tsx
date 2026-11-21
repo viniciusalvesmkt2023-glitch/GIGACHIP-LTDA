@@ -153,7 +153,7 @@ export default function Home() {
         <Container>
           <div className="rounded-[32px] bg-ink px-7 py-14 text-white sm:px-14 sm:py-20">
             <h2 className="font-heading max-w-3xl text-4xl font-extrabold leading-tight sm:text-6xl">
-              Chega de ficar sem internet no <span className="bg-neon-lime px-2 text-ink">fim do mês</span>.
+              Chega de ficar sem internet no <span className="bg-logo-blue px-2 text-ink">fim do mês</span>.
             </h2>
             <p className="mt-5 max-w-xl text-lg text-white/60">Escolha o plano, pague por PIX ou cartão e acompanhe tudo pelo celular.</p>
             <ShineButton href="#planos" size="lg" className="mt-9">Escolher meu plano</ShineButton>
