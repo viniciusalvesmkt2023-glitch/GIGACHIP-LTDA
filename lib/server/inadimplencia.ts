@@ -240,7 +240,7 @@ export async function blockCustomer(staff: Staff, customerId: string, lineId: st
       insert into public.line_blocks (provider_customer_id, customer_name, line_id, blocked_by)
       values (${customerId}, ${debt.name ?? ""}, ${lineId}, ${staff.id}) returning id`;
     const lines = await tx<{ id: string }[]>`
-      update public.lines l set status = 'suspensa', suspended_at = now()
+      update public.lines l set status = 'suspensa', suspended_at = now(), sheet_pending = true
       where l.status in ('ativa', 'suspensao_pendente')
         and (l.asaas_customer_id = ${customerId}
              or l.order_id in (select order_id from public.subscriptions where provider_customer_id = ${customerId}))
@@ -263,7 +263,7 @@ export async function unblockCustomer(staff: Staff, blockId: string): Promise<Re
     if (debt.n > 0) return { ok: false, message: "O cliente ainda tem cobrança em atraso no Asaas." };
     await tx`update public.line_blocks set unblocked_at = now(), unblocked_by = ${staff.id} where id = ${blockId}`;
     const lines = await tx<{ id: string }[]>`
-      update public.lines l set status = 'ativa', reactivated_at = now()
+      update public.lines l set status = 'ativa', reactivated_at = now(), sheet_pending = true
       where l.status in ('suspensa', 'reativacao_pendente')
         and (l.asaas_customer_id = ${b.customer_id}
              or l.order_id in (select order_id from public.subscriptions where provider_customer_id = ${b.customer_id}))

@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { d4signBudget, d4signConfigured } from "@/lib/integrations/d4sign/client";
 import { env } from "@/lib/server/env";
+import { serviceAccountEmail, sheetsConfigured } from "@/lib/integrations/google/sheets";
+import { getSheetConfig } from "@/lib/server/planilha";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { listSafesAction } from "../actions";
+import { listSafesAction, testSheetAction } from "../actions";
 import { ActionButton } from "../forms";
 import { Card, PanelShell } from "../shell";
 
@@ -16,6 +18,8 @@ async function Content() {
   const e = env();
   const configured = d4signConfigured();
   const budget = configured ? await d4signBudget() : null;
+  const robot = serviceAccountEmail();
+  const sheet = await getSheetConfig();
   return (
     <PanelShell staff={staff}>
       <h1 className="text-2xl font-bold">Integrações</h1>
@@ -30,6 +34,24 @@ async function Content() {
           <div className="mt-4">
             <p className="mb-2 text-sm text-muted">Use para descobrir o código (uuid) do cofre onde os contratos serão criados. Gasta 1 chamada da D4Sign.</p>
             <ActionButton action={listSafesAction} label="Listar meus cofres" />
+          </div>
+        )}
+      </Card>
+      <Card title="Google Planilhas (planilha do gestor)" className="mt-4">
+        <ul className="space-y-1 text-sm">
+          <li>Usuário robô (GOOGLE_SERVICE_ACCOUNT_JSON): {ok(sheetsConfigured())}</li>
+          {robot && (
+            <li>
+              E-mail do robô — compartilhe a planilha com ele como <strong>Editor</strong>:{" "}
+              <code className="select-all break-all rounded bg-surface px-1">{robot}</code>
+            </li>
+          )}
+          <li>Link da planilha (Configurações): {ok(Boolean(sheet))}</li>
+        </ul>
+        {sheetsConfigured() && sheet && (
+          <div className="mt-4">
+            <p className="mb-2 text-sm text-muted">Confere se o robô consegue abrir a planilha e quais colunas ele achou. Só lê; não altera nada.</p>
+            <ActionButton action={testSheetAction} label="Testar planilha" />
           </div>
         )}
       </Card>

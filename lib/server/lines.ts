@@ -43,6 +43,8 @@ export type LineRow = {
   paymentMethod: string | null;
   orderId: string | null;
   orderCode: string | null;
+  sheetPending: boolean;
+  sheetError: string | null;
 };
 
 export async function listLines(filter: { status?: string; q?: string }): Promise<LineRow[]> {
@@ -53,11 +55,13 @@ export async function listLines(filter: { status?: string; q?: string }): Promis
       id: string; status: string; customer: string | null; vivo_login: string | null; msisdn: string; iccid: string | null;
       smart_dados: string | null; plano_pj: string | null; activated_at: Date | null; sale_price_cents: number | null;
       cost_cents: number | null; due_date: string | null; payment_method: string | null; order_id: string | null; code: string | null;
+      sheet_pending: boolean; sheet_error: string | null;
     }[]
   >`
     select l.id, l.status::text, coalesce(c.full_name, l.legacy_customer_name) as customer, l.vivo_login, l.msisdn, l.iccid,
            l.smart_dados, l.plano_pj, l.activated_at, l.sale_price_cents, l.cost_cents,
-           coalesce(s.next_due_date, l.legacy_due_date)::text as due_date, l.payment_method, l.order_id, o.code
+           coalesce(s.next_due_date, l.legacy_due_date)::text as due_date, l.payment_method, l.order_id, o.code,
+           l.sheet_pending, l.sheet_error
     from public.lines l
     left join public.orders o on o.id = l.order_id
     left join public.customers c on c.id = o.customer_id
@@ -83,6 +87,8 @@ export async function listLines(filter: { status?: string; q?: string }): Promis
     paymentMethod: r.payment_method,
     orderId: r.order_id,
     orderCode: r.code,
+    sheetPending: r.sheet_pending,
+    sheetError: r.sheet_error,
   }));
 }
 
@@ -173,7 +179,7 @@ export async function activateOrder(staff: Staff, orderId: string, input: Activa
       set order_id = ${orderId}, status = 'ativa', iccid = ${iccid}, smart_dados = ${input.smartDados},
           sale_price_cents = ${input.salePriceCents}, cost_cents = ${input.costCents},
           payment_method = coalesce(payment_method, ${defaults.paymentMethod}),
-          activated_by = ${staff.id}, activated_at = now()
+          activated_by = ${staff.id}, activated_at = now(), sheet_pending = true, sheet_error = null
       where id = ${line.id}`;
     await tx`update public.orders set status = 'ativado', assigned_to = ${staff.id} where id = ${orderId}`;
     await tx`
@@ -185,13 +191,24 @@ export async function activateOrder(staff: Staff, orderId: string, input: Activa
   });
 }
 
+/** Linha ligada a um pedido (card "Linha" no pedido). */
+export async function lineForOrder(orderId: string) {
+  const [l] = await sql()<{
+    id: string; msisdn: string; iccid: string | null; status: string; activated_at: Date | null;
+    sheet_pending: boolean; sheet_error: string | null; sheet_synced_at: Date | null;
+  }[]>`
+    select id, msisdn, iccid, status::text, activated_at, sheet_pending, sheet_error, sheet_synced_at
+    from public.lines where order_id = ${orderId}`;
+  return l ?? null;
+}
+
 export async function linesCsv(): Promise<string> {
   const { csvCell, formatMsisdn } = await import("@/lib/domain/lines");
   const rows = await listLines({});
   const money = (c: number | null) => (c === null ? "" : (c / 100).toFixed(2).replace(".", ","));
   const date = (d: Date | string | null) => {
     if (!d) return "";
-    const iso = typeof d === "string" ? d : d.toISOString().slice(0, 10);
+    const iso = typeof d === "string" ? d : new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(d);
     const [y, m, day] = iso.slice(0, 10).split("-");
     return `${day}/${m}/${y}`;
   };

@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { after } from "next/server";
 import { headers } from "next/headers";
 import { processQueuedContracts, retryContract, syncContractByDocument } from "@/lib/server/contracts";
 import { changeCustomerEmail } from "@/lib/server/customer-admin";
@@ -14,6 +15,8 @@ import { decideIdentity } from "@/lib/server/identity";
 import { createStaff, login, logout, requireStaff, staffCount, verifySecondFactor, type StaffRole } from "@/lib/server/staff-auth";
 import { env } from "@/lib/server/env";
 import { blockCustomer, syncOverdue, unblockCustomer } from "@/lib/server/inadimplencia";
+import { describeSheet, importFromSheet, pushPendingToSheet, setSheetConfig } from "@/lib/server/planilha";
+import { spreadsheetIdFromUrl } from "@/lib/domain/planilha";
 
 export type FormState = { message?: string; ok?: boolean; value?: string; email?: string };
 
@@ -136,6 +139,7 @@ export async function activateLineAction(_p: FormState, fd: FormData): Promise<F
     costCents: cost,
   });
   refresh();
+  after(() => pushPendingToSheet().catch((e) => console.error(`[planilha] ${e instanceof Error ? e.message : e}`)));
   return { ok: r.ok, message: r.message };
 }
 
@@ -164,6 +168,7 @@ export async function blockCustomerAction(_p: FormState, fd: FormData): Promise<
   const me = await requireStaff(["owner", "admin", "ativador"]);
   const r = await blockCustomer(me, str(fd, "customerId"), str(fd, "lineId") || null);
   refresh();
+  after(() => pushPendingToSheet().catch((e) => console.error(`[planilha] ${e instanceof Error ? e.message : e}`)));
   return r;
 }
 
@@ -171,6 +176,7 @@ export async function unblockCustomerAction(_p: FormState, fd: FormData): Promis
   const me = await requireStaff(["owner", "admin", "ativador"]);
   const r = await unblockCustomer(me, str(fd, "blockId"));
   refresh();
+  after(() => pushPendingToSheet().catch((e) => console.error(`[planilha] ${e instanceof Error ? e.message : e}`)));
   return r;
 }
 
@@ -183,4 +189,58 @@ export async function syncOverdueAction(): Promise<FormState> {
   } catch (e) {
     return { message: `Não foi possível falar com o Asaas: ${e instanceof Error ? e.message : String(e)}` };
   }
+}
+
+export async function setSheetConfigAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner"]);
+  const id = spreadsheetIdFromUrl(str(fd, "url"));
+  if (!id) return { message: "Cole o link da planilha (o endereço que aparece no navegador quando ela está aberta)." };
+  await setSheetConfig(me, { spreadsheetId: id, tab: str(fd, "tab").trim() || null });
+  refresh();
+  return { ok: true, message: "Planilha salva. Agora clique em “Testar planilha” em Integrações." };
+}
+
+export async function testSheetAction(): Promise<FormState> {
+  await requireStaff(["owner"]);
+  try {
+    const d = await describeSheet();
+    if (!d.tabs.length) return { message: `Abri a planilha “${d.title}”, mas não achei nenhuma aba com a coluna “Número” no cabeçalho.` };
+    const text = d.tabs
+      .map((t) =>
+        [
+          `Aba “${t.title}” (cabeçalho na linha ${t.headerRow})`,
+          `  ${t.columns.join(" · ")}`,
+          t.missing.length ? `  ⚠ Não achei: ${t.missing.join(", ")} (essas colunas não serão preenchidas)` : null,
+          `  ${t.total} números: ${t.disponiveis} sem cliente (disponíveis) e ${t.clientes} com cliente`,
+          t.invalid.length ? `  ⚠ Número inválido nas linhas: ${t.invalid.join(", ")}` : null,
+        ].filter(Boolean).join("\n"),
+      )
+      .join("\n\n");
+    return { ok: true, message: `Conectado à planilha “${d.title}”. Nada foi alterado.`, value: text };
+  } catch (e) {
+    return { message: `Não consegui abrir a planilha: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+export async function importSheetAction(): Promise<FormState> {
+  const me = await requireStaff(["owner", "admin", "ativador"]);
+  try {
+    const r = await importFromSheet(me);
+    after(() => pushPendingToSheet().catch((e) => console.error(`[planilha] ${e instanceof Error ? e.message : e}`)));
+    refresh();
+    return {
+      ok: true,
+      message: `Planilha lida: ${r.numeros} números. Novos disponíveis: ${r.novosDisponiveis} · novos clientes: ${r.novosClientes} · atualizados: ${r.atualizados}${r.liberados ? ` · voltaram a ficar livres: ${r.liberados}` : ""}.`,
+    };
+  } catch (e) {
+    return { message: `Não consegui ler a planilha: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+export async function retrySheetAction(_p: FormState, fd: FormData): Promise<FormState> {
+  await requireStaff(["owner", "admin", "ativador"]);
+  await sql()`update public.lines set sheet_pending = true where id = ${str(fd, "lineId")}`;
+  const r = await pushPendingToSheet();
+  refresh();
+  return "error" in r && r.error ? { message: r.error } : { ok: true, message: "Tentei escrever de novo na planilha." };
 }

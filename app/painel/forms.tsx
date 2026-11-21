@@ -257,3 +257,19 @@ export function BlockForm({ action, customerId, name, lines, suggestedLineId }: 
     </form>
   );
 }
+
+export function SheetConfigForm({ action, url, tab }: { action: Action; url: string; tab: string }) {
+  const [s, a, pending] = useActionState(action, {});
+  return (
+    <form action={a} className="space-y-3">
+      <label className="block text-sm font-medium">Link da planilha (copie da barra do navegador)
+        <input name="url" required defaultValue={url} className={input} placeholder="https://docs.google.com/spreadsheets/d/..." />
+      </label>
+      <label className="block text-sm font-medium">Nome da aba (opcional — em branco, o sistema procura em todas)
+        <input name="tab" defaultValue={tab} className={input} />
+      </label>
+      <button disabled={pending} className={`${buttonStyles.primary} py-2`}>{pending ? "Salvando..." : "Salvar"}</button>
+      <Msg s={s} />
+    </form>
+  );
+}

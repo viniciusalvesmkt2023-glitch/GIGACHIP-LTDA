@@ -23,6 +23,10 @@ const schema = z.object({
   /** Senha que vai na URL do aviso da D4Sign (o sistema só aceita avisos com ela). 32+ caracteres. */
   D4SIGN_WEBHOOK_SECRET: z.string().min(32).regex(/^[A-Za-z0-9_-]+$/).optional(),
   D4SIGN_RATE_LIMIT_PER_HOUR: z.coerce.number().int().positive().default(10),
+  // Google Planilhas (opcional): conteúdo do arquivo JSON da conta de serviço ("usuário robô")
+  GOOGLE_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
+  GOOGLE_OAUTH_TOKEN_URL: z.string().url().default("https://oauth2.googleapis.com/token"),
+  GOOGLE_SHEETS_API_URL: z.string().url().default("https://sheets.googleapis.com/v4"),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

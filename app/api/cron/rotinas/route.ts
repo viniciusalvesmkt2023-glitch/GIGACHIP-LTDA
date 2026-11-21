@@ -3,6 +3,7 @@ import { processQueuedContracts, syncPendingSignatures } from "@/lib/server/cont
 import { processEmails } from "@/lib/server/email";
 import { syncOverdue } from "@/lib/server/inadimplencia";
 import { expireUnpaidOrders } from "@/lib/server/payments";
+import { importFromSheetIfDue, pushPendingToSheet } from "@/lib/server/planilha";
 
 /**
  * Rotina agendada (Vercel Cron). A Vercel envia "Authorization: Bearer <CRON_SECRET>".
@@ -25,5 +26,8 @@ export async function GET(request: Request) {
   const expired = await expireUnpaidOrders().catch((e) => ({ error: e instanceof Error ? e.message : String(e) }));
   // Inadimplência: puxa as cobranças vencidas do Asaas (no máximo 1 vez por hora)
   const overdue = await syncOverdue().catch((e) => ({ error: e instanceof Error ? e.message : String(e) }));
-  return Response.json({ contracts, synced, emails, expired, overdue });
+  // Planilha do gestor: escreve o que ficou pendente e lê números novos (1 vez por hora)
+  const sheetWrite = await pushPendingToSheet().catch((e) => ({ error: e instanceof Error ? e.message : String(e) }));
+  const sheetRead = await importFromSheetIfDue().catch((e) => ({ error: e instanceof Error ? e.message : String(e) }));
+  return Response.json({ contracts, synced, emails, expired, overdue, sheetWrite, sheetRead });
 }

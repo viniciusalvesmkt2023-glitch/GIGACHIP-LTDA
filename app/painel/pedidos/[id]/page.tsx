@@ -6,12 +6,13 @@ import { formatBRL } from "@/lib/domain/money";
 import { getOrderDetail, STATUS_LABEL } from "@/lib/server/admin";
 import { getContractInfo } from "@/lib/server/contracts";
 import { getIdentityReview } from "@/lib/server/identity";
-import { activationDefaults, availableNumbers } from "@/lib/server/lines";
+import { activationDefaults, availableNumbers, lineForOrder } from "@/lib/server/lines";
 import { formatMsisdn } from "@/lib/domain/lines";
 import { identityMode } from "@/lib/server/identity-mode";
+import { sheetEnabled } from "@/lib/server/planilha";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { activateLineAction, changeEmailAction, decideIdentityAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
-import { ActionButton, ActivateLineForm, ChangeEmailForm, IdentityDecisionForm, RevealButton } from "../../forms";
+import { activateLineAction, changeEmailAction, decideIdentityAction, importSheetAction, retryContractAction, retrySheetAction, revealAction, syncContractAction } from "../../actions";
+import { ActionButton, ActivateLineForm, ChangeEmailForm, HiddenFieldsButton, IdentityDecisionForm, RevealButton } from "../../forms";
 import { Card, PanelShell } from "../../shell";
 
 export const metadata: Metadata = { title: "Pedido" };
@@ -37,6 +38,8 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
   const [act, numbers] = canActivate ? await Promise.all([activationDefaults(id), availableNumbers()]) : [null, []];
   const brMoney = (c: number) => (c / 100).toFixed(2).replace(".", ",");
   const canSee = ["owner", "admin", "ativador"].includes(staff.role);
+  const line = ["ativado", "pronto_para_ativacao", "em_ativacao"].includes(o.status) ? await lineForOrder(id) : null;
+  const sheetOn = canActivate || line ? await sheetEnabled() : false;
 
   return (
     <PanelShell staff={staff}>
@@ -65,6 +68,38 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
               nextDue: act.nextDueDate ? act.nextDueDate.split("-").reverse().join("/") : "—",
             }}
           />
+          {sheetOn && (
+            <div className="mt-4 border-t border-border pt-4 text-sm">
+              <p className="mb-2 text-muted">
+                Os números disponíveis vêm da planilha do gestor (lida de hora em hora). Ao confirmar, o sistema preenche a linha do
+                número na planilha. Não achou o número? Leia a planilha agora:
+              </p>
+              <ActionButton action={importSheetAction} label="Ler planilha agora" />
+            </div>
+          )}
+        </Card>
+      )}
+
+      {line && (
+        <Card title="✅ Linha ativada" className="mt-6 border-success ring-1 ring-success">
+          <p className="text-sm">
+            Número <strong className="font-mono">{formatMsisdn(line.msisdn)}</strong> · ICCID <span className="font-mono">{line.iccid ?? "—"}</span> ·
+            ativada em {fmt(line.activated_at)}
+          </p>
+          {sheetOn && (
+            <div className="mt-2 text-sm">
+              {line.sheet_error ? (
+                <div className="space-y-2">
+                  <p className="rounded-lg bg-red-50 p-2 text-danger">Planilha: {line.sheet_error}</p>
+                  {canSee && <HiddenFieldsButton action={retrySheetAction} fields={{ lineId: line.id }} label="Tentar de novo" />}
+                </div>
+              ) : line.sheet_pending ? (
+                <p className="text-muted">Planilha: escrevendo… (atualize a página em alguns segundos)</p>
+              ) : line.sheet_synced_at ? (
+                <p className="text-success">Planilha do gestor preenchida ✓ ({fmt(line.sheet_synced_at)})</p>
+              ) : null}
+            </div>
+          )}
         </Card>
       )}
 

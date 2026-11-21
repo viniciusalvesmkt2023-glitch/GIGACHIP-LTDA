@@ -395,3 +395,18 @@ Agora (Painel → **Inadimplência**):
 - Pedido do site que **não foi pago em 48 h** expira sozinho e a assinatura é **apagada no Asaas**
   (senão o Asaas continuaria gerando cobrança todo mês para quem desistiu). A 1ª mensalidade não
   paga nunca entra na lista de bloqueio (não existe linha).
+
+## D30 — A planilha do gestor (Google Planilhas) continua oficial; o sistema lê e escreve nela (21/11/2026)
+
+O gestor usa a planilha, então ela **não** é substituída (revisa D26). O sistema acessa por um
+"usuário robô" (conta de serviço do Google) com quem a planilha é compartilhada como Editor.
+- **Lê** (de hora em hora e no botão "Ler planilha agora"): números sem cliente → disponíveis para
+  "Ativar linha"; linhas com cliente → clientes antigos (aparecem em Linhas e na Inadimplência).
+  O gestor é quem coloca números novos quando o estoque acaba.
+- **Escreve**: na ativação, Cliente, ICCID, Smart-Dados, Ativação, Venda final, Valor e Vencimento;
+  no bloqueio, nome em vermelho; no desbloqueio, nome em preto. Login Vivo, Número, Plano PJ e
+  Forma de pagamento são do gestor e nunca são alterados.
+- Colunas achadas pelo **nome do cabeçalho** (a ordem pode mudar). Linhas achadas pelo **número**.
+- Segurança: se o número já tiver outro cliente na planilha, não sobrescreve (aviso no painel).
+  Falha do Google → escrita pendente, a rotina tenta de novo.
+- Passo a passo de configuração: `docs/guia-planilha-google.md`.
