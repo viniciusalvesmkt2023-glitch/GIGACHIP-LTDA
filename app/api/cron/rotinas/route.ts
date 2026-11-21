@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { processQueuedContracts, syncPendingSignatures } from "@/lib/server/contracts";
 import { processEmails } from "@/lib/server/email";
 import { syncOverdue } from "@/lib/server/inadimplencia";
+import { expireUnpaidOrders } from "@/lib/server/payments";
 
 /**
  * Rotina agendada (Vercel Cron). A Vercel envia "Authorization: Bearer <CRON_SECRET>".
@@ -20,7 +21,9 @@ export async function GET(request: Request) {
   const synced = await syncPendingSignatures(2);
   const contracts = await processQueuedContracts(2);
   const emails = await processEmails(20);
+  // Pedidos não pagos em 48 h: expira e apaga a assinatura no Asaas
+  const expired = await expireUnpaidOrders().catch((e) => ({ error: e instanceof Error ? e.message : String(e) }));
   // Inadimplência: puxa as cobranças vencidas do Asaas (no máximo 1 vez por hora)
   const overdue = await syncOverdue().catch((e) => ({ error: e instanceof Error ? e.message : String(e) }));
-  return Response.json({ contracts, synced, emails, overdue });
+  return Response.json({ contracts, synced, emails, expired, overdue });
 }

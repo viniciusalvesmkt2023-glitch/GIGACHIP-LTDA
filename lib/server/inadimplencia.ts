@@ -34,6 +34,11 @@ async function customerName(customerId: string, cache: Map<string, string>): Pro
 export async function trackAsaasPayment(p: AsaasPayment, cache = new Map<string, string>()): Promise<void> {
   const state = overdueStateFromAsaas(p.status, p.deleted === true);
   if (!state) return;
+  if (state === "em_aberto" && (await isUnpaidSiteOrder(p))) {
+    // Pedido do site que nunca foi pago (desistiu no PIX): não existe linha para bloquear
+    await sql()`update public.overdue_payments set status = 'sem_atraso', checked_at = now() where provider_payment_id = ${p.id}`;
+    return;
+  }
   if (state === "em_aberto") {
     const name = await customerName(p.customer, cache);
     await sql()`
@@ -50,6 +55,17 @@ export async function trackAsaasPayment(p: AsaasPayment, cache = new Map<string,
     set status = ${state}, checked_at = now(),
         paid_at = case when ${state} = 'pago' then coalesce(paid_at, now()) else paid_at end
     where provider_payment_id = ${p.id}`;
+}
+
+/** 1ª mensalidade de um pedido do site, ou cobrança de um pedido que nunca chegou a ser pago. */
+async function isUnpaidSiteOrder(p: AsaasPayment): Promise<boolean> {
+  const [r] = await sql()<{ skip: boolean }[]>`
+    select exists (select 1 from public.payments where provider_payment_id = ${p.id} and is_first_payment)
+        or exists (
+          select 1 from public.subscriptions s join public.orders o on o.id = s.order_id
+          where s.provider_subscription_id = ${p.subscription ?? ""}
+            and o.status in ('rascunho', 'aguardando_pagamento', 'expirado', 'cancelado')) as skip`;
+  return r.skip;
 }
 
 /** Puxa do Asaas as cobranças vencidas e confere as que saíram da lista. */

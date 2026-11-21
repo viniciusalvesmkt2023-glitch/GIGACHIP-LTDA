@@ -158,3 +158,46 @@ export async function getPaymentView(orderId: string): Promise<PaymentView | nul
     expiresAt: row.expires_at,
   };
 }
+
+/**
+ * Pedido que não foi pago no prazo (48 h): expira e APAGA a assinatura no Asaas, para não gerar
+ * cobrança todo mês para quem desistiu (o Asaas remove junto as cobranças pendentes/vencidas dela).
+ */
+export async function expireUnpaidOrders(limit = 10): Promise<number> {
+  const rows = await sql()<{ order_id: string; subscription_id: string | null; provider_subscription_id: string | null }[]>`
+    select o.id as order_id, s.id as subscription_id, s.provider_subscription_id
+    from public.orders o left join public.subscriptions s on s.order_id = o.id
+    where o.status = 'aguardando_pagamento' and o.expires_at < now()
+      and o.payment_status not in ('confirmed', 'received')
+    order by o.expires_at limit ${limit}`;
+  let n = 0;
+  for (const r of rows) {
+    if (r.provider_subscription_id) {
+      try {
+        // Confere antes: se pagou no último minuto, não expira (o webhook vai processar)
+        const first = await sql()<{ provider_payment_id: string }[]>`
+          select provider_payment_id from public.payments where order_id = ${r.order_id} and is_first_payment`;
+        if (first[0]) {
+          const api = await asaas.getPayment(first[0].provider_payment_id);
+          if (["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"].includes(api.status)) continue;
+        }
+        await asaas.deleteSubscription(r.provider_subscription_id);
+      } catch (err) {
+        const status = (err as { status?: number }).status;
+        if (status !== 404) {
+          console.error(`[expirar] não foi possível apagar a assinatura: ${err instanceof Error ? err.message : err}`);
+          continue;
+        }
+      }
+    }
+    await withActor({ type: "system", reason: "não pagou no prazo (48 h)" }, async (tx) => {
+      await tx`update public.orders set status = 'expirado' where id = ${r.order_id} and status = 'aguardando_pagamento'`;
+      if (r.subscription_id) {
+        await tx`update public.subscriptions set status = 'cancelled', cancelled_at = now() where id = ${r.subscription_id}`;
+      }
+      await tx`update public.payments set status = 'cancelled' where order_id = ${r.order_id} and status in ('pending', 'overdue')`;
+    });
+    n++;
+  }
+  return n;
+}

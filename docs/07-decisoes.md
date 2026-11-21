@@ -392,3 +392,6 @@ Agora (Painel → **Inadimplência**):
   vermelho (pelo contrato já pode cancelar). **Nada é cancelado sozinho.**
 - Pagamento fora do Asaas (ex.: dinheiro): marcar "recebido em dinheiro" no Asaas — o painel segue.
 - Tudo fica registrado (quem bloqueou/desbloqueou e quando) no histórico e no audit_log.
+- Pedido do site que **não foi pago em 48 h** expira sozinho e a assinatura é **apagada no Asaas**
+  (senão o Asaas continuaria gerando cobrança todo mês para quem desistiu). A 1ª mensalidade não
+  paga nunca entra na lista de bloqueio (não existe linha).
