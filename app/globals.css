@@ -1,21 +1,27 @@
 @import "tailwindcss";
 
 /*
- * Identidade visual PROVISÓRIA (neutra). Para trocar as cores da marca, altere só estas variáveis.
- * Evitar o roxo da Vivo como cor principal para não parecer o site oficial da operadora.
+ * Identidade visual da Gigachip (cores tiradas da logo): fundo preto e o degradê
+ * azul-ciano → verde → limão. Texto de leitura sempre em fundo claro, com contraste alto.
+ * Para ajustar as cores da marca, altere só estas variáveis.
  */
 :root {
   --background: #ffffff;
-  --foreground: #0f172a;
-  --muted: #64748b;
-  --surface: #f8fafc;
-  --border: #e2e8f0;
-  --brand: #0e7490;        /* azul petróleo */
-  --brand-strong: #155e75;
-  --brand-soft: #ecfeff;
+  --foreground: #0b1220;
+  --muted: #5b6577;
+  --surface: #f4f7fa;
+  --border: #e3e8ef;
+  --brand: #0a7ea4;        /* azul da marca escurecido (texto e botões em fundo claro) */
+  --brand-strong: #075f7c;
+  --brand-soft: #e6f7fd;
   --accent: #f59e0b;
   --success: #15803d;
   --danger: #b91c1c;
+  --ink: #04070d;          /* preto da logo */
+  --ink-soft: #0c1422;
+  --neon-cyan: #01bafe;
+  --neon-green: #34fba6;
+  --neon-lime: #d8fd0d;
   color-scheme: light;
 }
 
@@ -31,6 +37,12 @@
   --color-accent: var(--accent);
   --color-success: var(--success);
   --color-danger: var(--danger);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-neon-cyan: var(--neon-cyan);
+  --color-neon-green: var(--neon-green);
+  --color-neon-lime: var(--neon-lime);
+  --font-display: var(--font-display);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -39,4 +51,22 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Degradê da marca (fundo e texto) */
+.bg-neon {
+  background-image: linear-gradient(90deg, var(--neon-cyan), var(--neon-green) 55%, var(--neon-lime));
+}
+.text-neon {
+  background-image: linear-gradient(90deg, var(--neon-cyan), var(--neon-green) 55%, var(--neon-lime));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* Brilho suave atrás do conteúdo escuro */
+.glow-hero {
+  background:
+    radial-gradient(60% 50% at 85% 20%, rgb(1 186 254 / 0.22), transparent 70%),
+    radial-gradient(50% 45% at 10% 90%, rgb(52 251 166 / 0.16), transparent 70%),
+    var(--ink);
 }

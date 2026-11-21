@@ -26,46 +26,50 @@ async function Plans() {
 export default function Home() {
   return (
     <>
-      <section className="bg-gradient-to-b from-brand-soft to-white">
-        <Container className="grid gap-10 py-16 sm:py-24 lg:grid-cols-2 lg:items-center">
+      {/* Topo escuro com o brilho da marca */}
+      <section className="glow-hero text-white">
+        <Container className="grid gap-10 py-14 sm:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div>
-            <p className="inline-block rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand shadow-sm">
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/80">
+              <span className="h-2 w-2 rounded-full bg-neon-green shadow-[0_0_8px_var(--neon-green)]" />
               Na rede Vivo · sem fidelidade
             </p>
-            <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">
-              Internet de sobra e ligações ilimitadas, contratando 100% online.
+            <h1 className="mt-5 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+              Internet de sobra e <span className="text-neon">ligações ilimitadas</span>, contratando 100% online.
             </h1>
-            <p className="mt-4 text-lg text-muted">
-              Planos de 200GB a 400GB por mês, com eSIM ou chip físico. Sem fila, sem papelada: tudo pelo
-              celular, com contrato digital e acompanhamento do pedido.
+            <p className="mt-5 text-lg text-white/70">
+              Planos de 200GB a 400GB por mês, com eSIM ou chip físico. Sem fila e sem papelada: tudo pelo celular.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href="/planos">Ver planos</ButtonLink>
-              <ButtonLink href="#como-funciona" variant="secondary">
-                Como funciona
-              </ButtonLink>
+              <ButtonLink href="/planos" variant="neon" className="px-6 py-3.5 text-base">Ver planos</ButtonLink>
+              <ButtonLink href="#como-funciona" variant="ghostDark" className="px-6 py-3.5 text-base">Como funciona</ButtonLink>
             </div>
+            <ul className="mt-10 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+              {[
+                ["Sem fidelidade", "Cancele sem multa"],
+                ["Ligações ilimitadas", "Fale à vontade"],
+                ["+100GB todo mês", "Bônus renovado"],
+                ["eSIM ou chip", "Você escolhe"],
+              ].map(([t, d]) => (
+                <li key={t} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="font-semibold text-white">{t}</p>
+                  <p className="mt-0.5 text-white/55">{d}</p>
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="grid gap-3 text-sm sm:grid-cols-2">
-            {[
-              ["Sem fidelidade", "Cancele quando quiser, sem multa."],
-              ["Ligações ilimitadas", "Fale à vontade, sem contar minutos."],
-              ["Bônus todo mês", "100GB extras renovados mensalmente."],
-              ["eSIM ou chip", "Ative no aparelho que preferir."],
-            ].map(([t, d]) => (
-              <li key={t} className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-                <p className="font-semibold">{t}</p>
-                <p className="mt-1 text-muted">{d}</p>
-              </li>
-            ))}
-          </ul>
+          <div className="relative mx-auto hidden w-full max-w-sm lg:block">
+            <div className="absolute inset-6 rounded-full bg-neon opacity-30 blur-3xl" aria-hidden />
+            {/* eslint-disable-next-line @next/next/no-img-element -- logo estática */}
+            <img src="/brand/gigachip-logo-512.png" alt="Gigachip — voz, dados e TV" className="relative w-full rounded-full" />
+          </div>
         </Container>
       </section>
 
-      <section id="planos" className="py-16">
+      <section id="planos" className="py-16 sm:py-20">
         <Container>
-          <SectionTitle eyebrow="Planos" title="Escolha o seu plano" subtitle="Mensalidade fixa, sem fidelidade." />
-          <div className="mt-10">
+          <SectionTitle eyebrow="Planos" title="Escolha o seu plano" subtitle="Mensalidade fixa, ligações ilimitadas e sem fidelidade." />
+          <div className="mt-12">
             <Suspense fallback={<PlanGridSkeleton />}>
               <Plans />
             </Suspense>
@@ -73,20 +77,31 @@ export default function Home() {
         </Container>
       </section>
 
-      <section id="como-funciona" className="bg-surface py-16">
+      <section id="como-funciona" className="bg-surface py-16 sm:py-20">
         <Container>
-          <SectionTitle eyebrow="Como funciona" title="Da escolha à linha ativa" />
-          <ol className="mt-10 grid gap-4 md:grid-cols-5">
+          <SectionTitle eyebrow="Como funciona" title="Da compra à linha ativa" subtitle="Tudo pelo celular, em poucos minutos." />
+          <ol className="mt-12 grid gap-4 md:grid-cols-5">
             {steps.map((s) => (
-              <li key={s.n} className="rounded-2xl border border-border bg-white p-5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
-                  {s.n}
+              <li key={s.n} className="relative rounded-2xl border border-border bg-white p-5 shadow-sm">
+                <span className="font-display flex h-10 w-10 items-center justify-center rounded-xl bg-ink text-lg font-bold">
+                  <span className="text-neon">{s.n}</span>
                 </span>
-                <p className="mt-3 font-semibold">{s.title}</p>
-                <p className="mt-1 text-sm text-muted">{s.text}</p>
+                <p className="mt-4 font-semibold">{s.title}</p>
+                <p className="mt-1 text-sm leading-relaxed text-muted">{s.text}</p>
               </li>
             ))}
           </ol>
+        </Container>
+      </section>
+
+      {/* Chamada final */}
+      <section className="py-16 sm:py-20">
+        <Container>
+          <div className="glow-hero relative overflow-hidden rounded-3xl px-6 py-12 text-center text-white sm:px-12">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Pronto para ter <span className="text-neon">internet de sobra</span>?</h2>
+            <p className="mx-auto mt-3 max-w-xl text-white/70">Escolha o plano, pague por PIX ou cartão e acompanhe tudo pelo celular.</p>
+            <ButtonLink href="/planos" variant="neon" className="mt-8 px-8 py-4 text-base">Ver planos</ButtonLink>
+          </div>
         </Container>
       </section>
     </>
