@@ -1,32 +1,28 @@
 import Link from "next/link";
 import { CONTACT_EMAIL } from "@/lib/site";
 import { IconWhatsapp } from "./icons";
-import { NavMobile, NavPill } from "./nav-pill";
-import { Container, Logo, buttonStyles } from "./ui";
+import { Suspense } from "react";
+import { formatBRL } from "@/lib/domain/money";
+import { listActivePlans } from "@/lib/server/catalog";
+import { HeaderBar } from "./header-bar";
+import { Container, Logo } from "./ui";
 import { whatsappLink } from "./whatsapp";
 
-const nav = [
-  { href: "/#planos", label: "Planos" },
-  { href: "/#como-funciona", label: "Como funciona" },
-  { href: "/#duvidas", label: "Dúvidas" },
-];
+async function HeaderWithPlans() {
+  const plans = await listActivePlans();
+  return (
+    <HeaderBar
+      plans={plans.map((p) => ({ slug: p.slug, name: p.name, gb: p.dataTotalGb, price: formatBRL(p.monthlyPriceCents) }))}
+    />
+  );
+}
 
+/** Menu do topo (estilo do site EngajaEu). Os planos do menu suspenso vêm do cadastro. */
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 bg-white/75 backdrop-blur-lg">
-      <Container className="grid h-[72px] grid-cols-[1fr_auto_1fr] items-center gap-4">
-        <Link href="/" aria-label="Gigachip — início" className="justify-self-start">
-          <Logo size={30} />
-        </Link>
-        <nav aria-label="Menu principal" className="hidden md:block">
-          <NavPill items={nav} />
-        </nav>
-        <div className="flex items-center gap-2 justify-self-end">
-          <Link href="/#planos" className={`${buttonStyles.ink} px-5 py-2.5`}>Ver planos</Link>
-          <NavMobile items={nav} />
-        </div>
-      </Container>
-    </header>
+    <Suspense fallback={<HeaderBar plans={[]} />}>
+      <HeaderWithPlans />
+    </Suspense>
   );
 }
 

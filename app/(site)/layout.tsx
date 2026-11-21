@@ -4,7 +4,8 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <SiteHeader />
-      <main className="flex-1">{children}</main>
+      {/* Espaço do menu flutuante (fixo no topo) */}
+      <main className="flex-1 pt-24 md:pt-28">{children}</main>
       <SiteFooter />
       <WhatsappFloat />
     </>

@@ -49,7 +49,7 @@ export default function Home() {
     <>
       {/* TOPO */}
       <section className="overflow-hidden">
-        <Container className="grid gap-14 pb-20 pt-14 sm:pt-20 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:pb-28">
+        <Container className="grid gap-14 pb-20 pt-6 sm:pt-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:pb-28">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-ink/10 px-3 py-1.5 text-xs font-semibold text-ink/70">
               <span className="h-1.5 w-1.5 rounded-full bg-[#1bb36a]" /> Na rede Vivo · sem fidelidade

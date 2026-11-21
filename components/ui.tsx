@@ -51,7 +51,7 @@ export function Logo({ dark = false, size = 36 }: { dark?: boolean; size?: numbe
       {/* eslint-disable-next-line @next/next/no-img-element -- logo pequena e estática */}
       <img src="/brand/gigachip-logo-192.png" alt="" width={size} height={size} className="rounded-full" />
       <span className={`font-display text-xl font-bold italic tracking-tight ${dark ? "text-white" : "text-ink"}`}>
-        GIGA<span className={dark ? "text-neon-lime" : "text-ink/60"}>CHIP</span>
+        GIGA<span className={dark ? "text-neon-green" : "text-emerald-500"}>CHIP</span>
       </span>
     </span>
   );
