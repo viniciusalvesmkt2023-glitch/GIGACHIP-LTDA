@@ -9,7 +9,7 @@
   --background: #ffffff;
   --foreground: #0b1220;
   --muted: #5b6577;
-  --surface: #f4f7fa;
+  --surface: #f6f6f3;      /* off-white levemente quente */
   --border: #e3e8ef;
   --brand: #0a7ea4;        /* azul da marca escurecido (texto e botões em fundo claro) */
   --brand-strong: #075f7c;
@@ -109,4 +109,12 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .marquee, .float-slow, .float-slower { animation: none; }
+}
+
+/* "Marca-texto" verde-limão da logo, atrás de palavras-chave (texto continua preto) */
+.mark {
+  background-image: linear-gradient(transparent 58%, var(--neon-lime) 58%, var(--neon-lime) 92%, transparent 92%);
+  padding: 0 0.08em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }

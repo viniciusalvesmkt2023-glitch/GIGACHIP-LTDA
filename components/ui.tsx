@@ -16,6 +16,10 @@ export const buttonStyles = {
   neon: `${buttonBase} rounded-full bg-neon text-ink shadow-[0_8px_30px_-6px_rgb(52_251_166/0.55)] hover:brightness-105`,
   /** Botão escuro (pílula) para fundo claro */
   ink: `${buttonBase} rounded-full bg-ink text-white hover:bg-ink-soft`,
+  /** Verde-limão da logo com texto preto (para fundo preto) */
+  lime: `${buttonBase} rounded-full bg-neon-lime text-ink hover:brightness-95`,
+  /** Contorno discreto (fundo claro) */
+  outline: `${buttonBase} rounded-full border border-ink/15 bg-white text-ink hover:border-ink/40`,
   /** Botão secundário sobre fundo preto */
   ghostDark: `${buttonBase} rounded-full border border-white/20 bg-white/5 text-white hover:bg-white/10`,
 };
@@ -47,7 +51,7 @@ export function Logo({ dark = false, size = 36 }: { dark?: boolean; size?: numbe
       {/* eslint-disable-next-line @next/next/no-img-element -- logo pequena e estática */}
       <img src="/brand/gigachip-logo-192.png" alt="" width={size} height={size} className="rounded-full" />
       <span className={`font-display text-xl font-bold italic tracking-tight ${dark ? "text-white" : "text-ink"}`}>
-        GIGA<span className={dark ? "text-neon" : "text-brand"}>CHIP</span>
+        GIGA<span className={dark ? "text-neon-lime" : "text-ink/60"}>CHIP</span>
       </span>
     </span>
   );

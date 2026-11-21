@@ -1,0 +1,43 @@
+/** Perguntas frequentes (página de dúvidas e página inicial). */
+export const FAQ: { q: string; a: string }[] = [
+  {
+    q: "A Gigachip é a Vivo?",
+    a: "Não. A Gigachip é uma empresa independente, parceira comercial da Vivo. As linhas funcionam na rede Vivo e são fornecidas pela Gigachip.",
+  },
+  {
+    q: "Tem fidelidade ou multa para cancelar?",
+    a: "Não. Os planos não têm fidelidade. Você pode cancelar quando quiser, sem multa.",
+  },
+  {
+    q: "Como pago a mensalidade?",
+    a: "Por PIX ou cartão de crédito. A 1ª mensalidade é paga na contratação e as próximas vencem todo mês no mesmo dia da compra.",
+  },
+  {
+    q: "O que acontece se eu atrasar o pagamento?",
+    a: "Você recebe lembretes 3 dias antes e no dia do vencimento. Se a mensalidade não for paga até o fim do dia do vencimento, a linha é bloqueada a partir do dia seguinte e desbloqueada após a confirmação do pagamento.",
+  },
+  {
+    q: "Qual a diferença entre eSIM e chip físico?",
+    a: "O eSIM é um chip digital, instalado direto no aparelho (o celular precisa ser compatível). O chip físico é o cartãozinho tradicional: você compra um chip Vivo lacrado em uma loja e nos informa o número impresso nele (ICCID).",
+  },
+  {
+    q: "Como descubro o IMEI e o EID do meu celular?",
+    a: "Abra o aplicativo Telefone e digite *#06#. Aparecem o IMEI e, em aparelhos compatíveis com eSIM, o EID. No iPhone também dá para ver em Ajustes > Geral > Sobre.",
+  },
+  {
+    q: "Por que preciso enviar documento e selfie?",
+    a: "Para confirmar que é você mesmo quem está contratando e evitar fraudes. A D4Sign, nossa plataforma de assinatura digital, pede a foto do documento e uma selfie na hora de assinar o contrato. Nunca pedimos documentos por e-mail ou WhatsApp.",
+  },
+  {
+    q: "Posso escolher o número da linha?",
+    a: "Não. O número é definido pela nossa equipe na hora da ativação, conforme a disponibilidade. Assim que a linha for ativada, você recebe o número por e-mail.",
+  },
+  {
+    q: "Posso usar o número da linha no WhatsApp ou no banco?",
+    a: "Não. Pelo contrato, o número fornecido não pode ser usado para cadastrar WhatsApp nem aplicativos bancários, chave PIX ou recuperação de senha.",
+  },
+  {
+    q: "Em quanto tempo a linha é ativada?",
+    a: "Depois do pagamento, do envio do ID do celular e da assinatura do contrato, você chama a gente no WhatsApp pelo formulário de ativação. Nossa equipe ativa a linha e você recebe o número por e-mail.",
+  },
+];
