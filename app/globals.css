@@ -118,3 +118,10 @@ body {
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
+
+/* "CHIP" do logo no verde-limão da paleta. No fundo branco ganha um contorno fino preto para ser lido. */
+.logo-lime {
+  color: var(--neon-lime);
+  -webkit-text-stroke: 0.6px var(--ink);
+  paint-order: stroke fill;
+}

@@ -45,13 +45,14 @@ function SectionLink({ id, children, onDone, className }: { id: string; children
 }
 
 function GlowButton({ className = "", onClick }: { className?: string; onClick?: () => void }) {
+  // Mesmo botão "com brilho pulsando" do EngajaEu, nas cores da Gigachip (verde-limão da logo)
   return (
     <span className={`relative inline-block ${className}`}>
-      <span aria-hidden className="absolute -inset-1 animate-pulse rounded-2xl bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 opacity-60 blur-md" />
+      <span aria-hidden className="absolute -inset-1 animate-pulse rounded-2xl bg-neon-lime opacity-70 blur-md" />
       <SectionLink
         id="planos"
         onDone={onClick}
-        className="relative inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl border-0 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 px-5 text-sm font-black text-white shadow-[0_10px_30px_-10px_rgba(16,185,129,0.6)] transition hover:brightness-110"
+        className="relative inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl border-0 bg-neon-lime px-5 text-sm font-black text-ink shadow-[0_10px_30px_-10px_rgb(216_253_13/0.8)] transition hover:brightness-95"
       >
         Ver planos <IconArrowRight className="h-4 w-4" />
       </SectionLink>
@@ -93,7 +94,7 @@ export function HeaderBar({ plans }: { plans: HeaderPlan[] }) {
     </Link>
   );
 
-  const link = "text-[13px] font-semibold uppercase tracking-wider text-slate-600 transition-colors hover:text-emerald-600";
+  const link = "text-[13px] font-semibold uppercase tracking-wider text-ink/60 transition-colors hover:text-ink";
 
   return (
     <nav
