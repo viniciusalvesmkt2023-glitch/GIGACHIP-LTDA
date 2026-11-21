@@ -1,32 +1,30 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { IconArrowRight, IconCheck } from "@/components/icons";
-import { PhoneMock } from "@/components/phone-mock";
+import {
+  IconArrowRight, IconArrowUpRight, IconCard, IconChevronDown, IconSignal, IconSignature, IconSmartphone, IconSparkle,
+} from "@/components/icons";
+import { PhoneHero } from "@/components/phone-hero";
 import { PlanCard, PlanGridSkeleton } from "@/components/plan-card";
-import { ButtonLink, Container, Destaque, ShineButton } from "@/components/ui";
 import { FAQ } from "@/lib/faq";
 import { listActivePlans } from "@/lib/server/catalog";
 
+/** Página inicial — layout do Lovable (screenshot-perfect), com fundo branco e chamada final azul. */
+
 const steps = [
-  { title: "Escolha o plano", text: "200GB, 300GB ou 400GB por mês." },
-  { title: "Cadastre-se e pague", text: "1ª mensalidade por PIX ou cartão." },
-  { title: "Envie o ID do celular", text: "Um print do *#06# e pronto." },
-  { title: "Assine o contrato", text: "Pelo e-mail, com documento e selfie." },
-  { title: "Linha ativada", text: "Você recebe o número por e-mail." },
+  { title: "Escolha seu plano", text: "200GB, 300GB ou 400GB. Escolha o que combina com você." },
+  { title: "Cadastre-se e pague", text: "Preencha seus dados e pague com PIX ou cartão." },
+  { title: "Envie o ID do celular", text: "Digite *#06# e envie um print dos dados do aparelho." },
+  { title: "Assine o contrato", text: "Tudo pelo e-mail, com seu documento e uma selfie." },
+  { title: "Pronto. Linha ativada!", text: "Você recebe seu número por e-mail. É só aproveitar." },
 ];
 
-const stats = [
-  { value: "até 400GB", label: "de internet por mês" },
-  { value: "Ilimitadas", label: "ligações para falar à vontade" },
-  { value: "Zero", label: "fidelidade ou multa para cancelar" },
-  { value: "100%", label: "online, direto pelo celular" },
-];
+const ticker = ["Internet pra viver sem limites", "Sem fidelidade", "Na rede Vivo", "100% online", "Muito mais gigas"];
 
 async function Plans() {
   const plans = await listActivePlans();
   const middle = Math.floor(plans.length / 2);
   return (
-    <div className="grid items-stretch gap-5 md:grid-cols-3">
+    <div className="plan-grid">
       {plans.map((plan, i) => (
         <PlanCard key={plan.id} plan={plan} highlight={plans.length >= 3 && i === middle} />
       ))}
@@ -34,131 +32,120 @@ async function Plans() {
   );
 }
 
-function Heading({ eyebrow, children, sub }: { eyebrow: string; children: React.ReactNode; sub?: string }) {
-  return (
-    <div className="max-w-2xl">
-      <p className="text-sm font-semibold text-ink/50">{eyebrow}</p>
-      <h2 className="font-heading mt-2 text-4xl font-extrabold text-ink sm:text-5xl">{children}</h2>
-      {sub && <p className="mt-4 text-lg text-ink/60">{sub}</p>}
-    </div>
-  );
-}
-
 export default function Home() {
   return (
     <>
-      {/* TOPO */}
-      <section className="overflow-hidden">
-        <Container className="grid gap-14 pb-20 pt-6 sm:pt-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:pb-28">
+      {/* TOPO (branco) */}
+      <section className="hero-section">
+        <div className="container-site hero-content">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-ink/10 px-3 py-1.5 text-xs font-semibold text-ink/70">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#1bb36a]" /> Na rede Vivo · sem fidelidade
-            </p>
-            <h1 className="font-heading mt-6 text-5xl font-extrabold leading-[1.02] text-ink sm:text-7xl">
-              Internet que dura <Destaque className="whitespace-nowrap">o mês inteiro</Destaque>.
+            <div className="hero-eyebrow">
+              <span className="status-dot" /> Na rede Vivo <span className="text-[var(--s-muted)]">·</span> sem fidelidade
+              <IconSignal className="h-3 w-3 text-[var(--s-brand)]" />
+            </div>
+            <h1 className="hero-title">
+              Internet que dura
+              <br /> <span className="highlight">o mês inteiro.</span>
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink/60 sm:text-xl">
+            <p className="hero-description">
               Planos de 200GB a 400GB com ligações ilimitadas. Contrate pelo celular em poucos minutos, sem fidelidade e sem papelada.
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <ButtonLink href="#planos" variant="ink" className="px-7 py-4 text-base">
-                Ver planos <IconArrowRight className="h-4 w-4" />
-              </ButtonLink>
-              <Link href="#como-funciona" className="text-base font-semibold text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-ink">
-                Como funciona
-              </Link>
+            <div className="hero-actions">
+              <Link href="#planos" className="btn btn-primary">Ver planos <IconArrowRight /></Link>
+              <Link href="#como-funciona" className="btn btn-dark-outline">Como funciona <IconArrowUpRight /></Link>
             </div>
-            <p className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink/60">
-              {["PIX ou cartão", "eSIM ou chip físico", "Contrato digital"].map((t) => (
-                <span key={t} className="inline-flex items-center gap-1.5"><IconCheck className="h-4 w-4 text-ink" />{t}</span>
-              ))}
-            </p>
+            <div className="hero-seals">
+              <span><IconCard /> PIX ou cartão</span>
+              <span><IconSmartphone /> eSIM ou chip físico</span>
+              <span><IconSignature /> Contrato digital</span>
+            </div>
           </div>
-          <PhoneMock />
-        </Container>
+          <PhoneHero />
+        </div>
       </section>
+
+      {/* FAIXA rolando */}
+      <div className="ticker" aria-label="Muito mais internet, sem fidelidade, na rede Vivo">
+        <div className="ticker-track" aria-hidden="true">
+          {Array.from({ length: 4 }, (_, i) => (
+            <span key={i}>
+              {ticker.map((t) => (
+                <span key={t}>{t.toUpperCase()} <IconSparkle /></span>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* NÚMEROS */}
-      <section className="border-y border-ink/[0.06] bg-surface">
-        <Container className="grid grid-cols-2 divide-ink/[0.08] py-2 lg:grid-cols-4 lg:divide-x">
-          {stats.map((s) => (
-            <div key={s.value} className="px-2 py-8 lg:px-8">
-              <p className="font-heading text-3xl font-extrabold text-ink sm:text-4xl">{s.value}</p>
-              <p className="mt-1 text-sm text-ink/55">{s.label}</p>
-            </div>
-          ))}
-        </Container>
-      </section>
+      <div className="container-site stats">
+        <div className="stat"><strong>Até 400GB</strong><span>de internet por mês</span></div>
+        <div className="stat"><strong>Ilimitadas</strong><span>ligações para falar à vontade</span></div>
+        <div className="stat"><strong>Zero fidelidade</strong><span>sem amarras. Sem multa.</span></div>
+        <div className="stat"><strong>100% online</strong><span>do seu jeito, pelo celular</span></div>
+      </div>
 
       {/* PLANOS */}
-      <section id="planos" className="scroll-mt-20 py-20 sm:py-28">
-        <Container>
-          <Heading eyebrow="Planos" sub="Todos com ligações ilimitadas, 100GB de bônus todo mês e sem fidelidade.">
-            Escolha quanto de internet você quer
-          </Heading>
-          <div className="mt-12">
-            <Suspense fallback={<PlanGridSkeleton />}>
-              <Plans />
-            </Suspense>
+      <section id="planos" className="section scroll-mt-24">
+        <div className="container-site">
+          <div className="text-center">
+            <p className="section-eyebrow">Seu mês pede mais gigas</p>
+            <h2 className="section-title">Um plano pra sua vida.<br />Não o contrário.</h2>
+            <p className="section-description">Escolha sua internet. A liberdade vem em todos os planos.</p>
           </div>
-        </Container>
+          <Suspense fallback={<PlanGridSkeleton />}>
+            <Plans />
+          </Suspense>
+          <p className="mt-7 text-center text-xs text-[var(--s-muted)]">Todos os planos na rede Vivo. Bônus de 100GB renovado todo mês.</p>
+        </div>
       </section>
 
       {/* COMO FUNCIONA */}
-      <section id="como-funciona" className="scroll-mt-20 bg-surface py-20 sm:py-28">
-        <Container>
-          <Heading eyebrow="Como funciona" sub="Da compra à linha ativa, sem sair de casa.">
-            Cinco passos, <Destaque>tudo pelo celular</Destaque>
-          </Heading>
-          <ol className="relative mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-5 lg:gap-6">
-            <span className="absolute left-0 right-0 top-5 hidden h-px bg-ink/10 lg:block" aria-hidden />
+      <section id="como-funciona" className="section section-soft scroll-mt-24">
+        <div className="container-site">
+          <p className="section-eyebrow">Do seu celular, sem complicação</p>
+          <h2 className="section-title">Poucos passos.<br />Muitos gigas.</h2>
+          <p className="section-description">Da escolha à ativação, tudo acontece online.</p>
+          <div className="steps-grid">
             {steps.map((s, i) => (
-              <li key={s.title} className="relative">
-                <span className="relative flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-white font-heading text-sm font-bold text-ink">
-                  {i + 1}
-                </span>
-                <h3 className="font-heading mt-5 text-lg font-bold text-ink">{s.title}</h3>
-                <p className="mt-1.5 text-[15px] leading-relaxed text-ink/60">{s.text}</p>
-              </li>
+              <div className="step" key={s.title}>
+                <span className="step-number">0{i + 1}</span>
+                <h3>{s.title}</h3>
+                <p>{s.text}</p>
+              </div>
             ))}
-          </ol>
-        </Container>
+          </div>
+        </div>
       </section>
 
       {/* DÚVIDAS */}
-      <section id="duvidas" className="scroll-mt-20 py-20 sm:py-28">
-        <Container className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+      <section id="duvidas" className="section scroll-mt-24">
+        <div className="container-site faq-grid">
           <div>
-            <Heading eyebrow="Dúvidas">Perguntas frequentes</Heading>
-            <Link href="/perguntas-frequentes" className="mt-6 inline-flex items-center gap-2 font-semibold text-ink underline decoration-ink/25 underline-offset-[6px] hover:decoration-ink">
-              Ver todas as perguntas <IconArrowRight className="h-4 w-4" />
-            </Link>
+            <p className="section-eyebrow">Tudo às claras</p>
+            <h2 className="section-title">Ficou com<br />alguma dúvida?</h2>
+            <p className="section-description">Sem letras miúdas. Veja o que você precisa saber antes de contratar.</p>
+            <Link href="/perguntas-frequentes" className="link-arrow">Todas as perguntas <IconArrowUpRight /></Link>
           </div>
-          <div className="divide-y divide-ink/[0.08] border-y border-ink/[0.08]">
+          <div>
             {FAQ.slice(0, 6).map((item) => (
-              <details key={item.q} className="group py-5">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-6 font-heading text-lg font-bold text-ink">
-                  {item.q}
-                  <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-ink/15 text-lg transition group-open:rotate-45">+</span>
-                </summary>
-                <p className="mt-3 max-w-2xl leading-relaxed text-ink/65">{item.a}</p>
+              <details key={item.q} className="faq-item">
+                <summary>{item.q}<IconChevronDown /></summary>
+                <p>{item.a}</p>
               </details>
             ))}
           </div>
-        </Container>
+        </div>
       </section>
 
-      {/* CHAMADA FINAL */}
-      <section className="pb-20 sm:pb-28">
-        <Container>
-          <div className="rounded-[32px] bg-ink px-7 py-14 text-white sm:px-14 sm:py-20">
-            <h2 className="font-heading max-w-3xl text-4xl font-extrabold leading-tight sm:text-6xl">
-              Chega de ficar sem internet no <Destaque dark>fim do mês</Destaque>.
-            </h2>
-            <p className="mt-5 max-w-xl text-lg text-white/60">Escolha o plano, pague por PIX ou cartão e acompanhe tudo pelo celular.</p>
-            <ShineButton href="#planos" size="lg" className="mt-9">Escolher meu plano</ShineButton>
-          </div>
-        </Container>
+      {/* CHAMADA FINAL (azul) */}
+      <section className="final-section">
+        <div className="container-site">
+          <p className="section-eyebrow">Mais internet. Menos preocupação.</p>
+          <h2 className="section-title">Chega de ficar sem internet<br className="hidden sm:block" /> no fim do mês.</h2>
+          <p className="final-sub">Escolha seu plano e contrate pelo celular em poucos minutos.</p>
+          <Link href="#planos" className="btn btn-white mt-8">Escolher meu plano <IconArrowRight /></Link>
+        </div>
       </section>
     </>
   );

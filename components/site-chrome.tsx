@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { formatBRL } from "@/lib/domain/money";
 import { listActivePlans } from "@/lib/server/catalog";
 import { HeaderBar } from "./header-bar";
-import { Container, Logo } from "./ui";
+import { Logo } from "./ui";
 import { whatsappLink } from "./whatsapp";
 
 async function HeaderWithPlans() {
@@ -46,31 +46,31 @@ export function WhatsappFloat() {
 export function SiteFooter() {
   const wa = whatsappLink("Olá! Quero falar com a Gigachip.");
   return (
-    <footer className="border-t border-ink/[0.06] bg-surface text-sm text-ink/60">
-      <Container className="grid gap-10 py-14 sm:grid-cols-[1.4fr_1fr_1fr]">
+    <footer className="border-t border-[var(--s-border)] bg-white">
+      <div className="container-site footer-grid">
         <div>
-          <Logo size={34} />
-          <p className="mt-4 max-w-xs leading-relaxed">
-            Empresa independente, parceira comercial da operadora Vivo. Este não é o site oficial da Vivo.
-          </p>
+          <Logo size={44} />
+          <p className="mt-4 max-w-sm">Empresa independente, parceira comercial da operadora Vivo. Este não é o site oficial da Vivo.</p>
         </div>
-        <div className="flex flex-col gap-2.5">
-          <p className="font-semibold text-ink">Gigachip</p>
-          <Link href="/#planos" className="transition hover:text-ink">Planos</Link>
-          <Link href="/perguntas-frequentes" className="transition hover:text-ink">Perguntas frequentes</Link>
-          <Link href="/termos" className="transition hover:text-ink">Termos de uso</Link>
-          <Link href="/privacidade" className="transition hover:text-ink">Privacidade</Link>
+        <div>
+          <h3>Explore</h3>
+          <div className="grid gap-1">
+            <Link href="/#planos">Planos</Link>
+            <Link href="/perguntas-frequentes">Perguntas frequentes</Link>
+            <Link href="/termos">Termos de uso</Link>
+            <Link href="/privacidade">Política de privacidade</Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-2.5">
-          <p className="font-semibold text-ink">Atendimento</p>
-          <a href={`mailto:${CONTACT_EMAIL}`} className="transition hover:text-ink">{CONTACT_EMAIL}</a>
-          {wa && <a href={wa} target="_blank" rel="noopener noreferrer" className="transition hover:text-ink">WhatsApp</a>}
-          <p>CNPJ 51.968.628/0001-16</p>
+        <div>
+          <h3>Fale com a Gigachip</h3>
+          <p><a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></p>
+          {wa && <p><a href={wa} target="_blank" rel="noopener noreferrer">WhatsApp</a></p>}
+          <p className="mt-2">CNPJ 51.968.628/0001-16</p>
         </div>
-      </Container>
-      <Container className="border-t border-ink/[0.06] py-5 text-xs text-ink/40">
+      </div>
+      <div className="container-site border-t border-[var(--s-border)] py-5 text-xs text-[var(--s-muted)]">
         © Gigachip Ltda. Preços e benefícios conforme condições vigentes. Vivo é marca registrada de seus respectivos titulares.
-      </Container>
+      </div>
     </footer>
   );
 }

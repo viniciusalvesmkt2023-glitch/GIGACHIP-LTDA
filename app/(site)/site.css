@@ -1,0 +1,200 @@
+/*
+ * Visual do site público, trazido do projeto do Lovable "screenshot-perfect" (só a maquete) e
+ * ajustado pelos sócios: topo e seções em fundo BRANCO, chamada final em AZUL e menu com efeito
+ * de vidro. Tudo dentro de .gc-site para não afetar o painel.
+ */
+.gc-site {
+  --s-fg: #04070d;
+  --s-muted: #6b7280;
+  --s-border: #e4e7ec;
+  --s-soft: #f6f6f3;
+  --s-primary: #0a82c7;       /* azul dos botões (texto branco legível) */
+  --s-primary-hover: #0873b0;
+  --s-brand: #1fb6f5;         /* azul da logo */
+  --s-accent: #e8f6fd;
+  --s-shadow-card: 0 12px 30px rgb(15 23 42 / 0.05);
+  color: var(--s-fg);
+}
+
+.gc-site .container-site { width: min(1180px, calc(100% - 64px)); margin-inline: auto; }
+
+/* ---------- botões (pílula) ---------- */
+.gc-site .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  border-radius: 9999px; font-weight: 500; font-size: 15px; padding: 0.9rem 1.6rem;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
+}
+.gc-site .btn svg { width: 1.05em; height: 1.05em; }
+.gc-site .btn-primary { background: var(--s-primary); color: #fff; }
+.gc-site .btn-primary:hover { background: var(--s-primary-hover); }
+.gc-site .btn-outline { border: 1px solid var(--s-border); background: #fff; color: var(--s-fg); box-shadow: 0 1px 2px rgb(0 0 0 / 0.04); }
+.gc-site .btn-outline:hover { border-color: var(--s-fg); }
+.gc-site .btn-dark-outline { border: 1px solid var(--s-fg); color: var(--s-fg); background: transparent; }
+.gc-site .btn-dark-outline:hover { background: var(--s-fg); color: #fff; }
+.gc-site .btn-white { background: #fff; color: var(--s-primary); box-shadow: 0 12px 30px -10px rgb(0 0 0 / 0.35); }
+.gc-site .btn-white:hover { transform: translateY(-1px); }
+
+/* ---------- topo (BRANCO) ---------- */
+.gc-site .hero-section { position: relative; overflow: hidden; background: #fff; margin-top: -6rem; }
+.gc-site .hero-section::before { /* brilho azul bem suave atrás do celular */
+  content: ""; position: absolute; right: -10%; top: 5%; width: 55%; height: 90%;
+  background: radial-gradient(closest-side, rgb(31 182 245 / 0.16), transparent);
+  pointer-events: none;
+}
+.gc-site .hero-content {
+  position: relative; display: grid; grid-template-columns: 1.1fr 0.9fr; align-items: center; gap: 40px;
+  padding-top: 150px; padding-bottom: 90px;
+}
+.gc-site .hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500;
+  padding: 7px 13px; border: 1px solid var(--s-border); border-radius: 99px; margin-bottom: 24px; background: #fff;
+}
+.gc-site .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--s-brand); }
+.gc-site .hero-title { font-size: 64px; line-height: 1.1; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+.gc-site .hero-title .highlight { color: var(--s-brand); }
+.gc-site .hero-description { max-width: 500px; font-size: 16px; line-height: 1.85; color: var(--s-muted); margin-top: 22px; }
+.gc-site .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.gc-site .hero-seals { display: flex; flex-wrap: wrap; gap: 22px; color: var(--s-muted); margin-top: 30px; font-size: 12px; }
+.gc-site .hero-seals span { display: flex; align-items: center; gap: 6px; }
+.gc-site .hero-seals svg { width: 15px; height: 15px; }
+
+/* ---------- faixa rolando ---------- */
+.gc-site .ticker { background: var(--s-brand); color: var(--s-fg); height: 46px; overflow: hidden; display: flex; align-items: center; }
+.gc-site .ticker-track {
+  display: flex; align-items: center; gap: 45px; width: max-content; white-space: nowrap;
+  animation: gc-ticker 35s linear infinite; font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+}
+.gc-site .ticker-track span { display: flex; align-items: center; gap: 45px; }
+.gc-site .ticker-track svg { width: 13px; height: 13px; }
+@keyframes gc-ticker { to { transform: translateX(-50%); } }
+
+/* ---------- números ---------- */
+.gc-site .stats { display: grid; grid-template-columns: repeat(4, 1fr); padding-block: 38px; border-bottom: 1px solid var(--s-border); }
+.gc-site .stat { padding-left: 30px; border-left: 1px solid var(--s-border); display: flex; flex-direction: column; gap: 4px; }
+.gc-site .stat:first-child { border: 0; padding-left: 0; }
+.gc-site .stat strong { font-weight: 700; font-size: 24px; }
+.gc-site .stat span { font-size: 12px; color: var(--s-muted); }
+
+/* ---------- seções ---------- */
+.gc-site .section { padding-block: 86px; }
+.gc-site .section-soft { background: var(--s-soft); }
+.gc-site .section-eyebrow { color: var(--s-primary); text-transform: uppercase; font-size: 11px; font-weight: 600; margin-bottom: 14px; letter-spacing: 0.04em; }
+.gc-site .section-title { font-size: 38px; font-weight: 700; line-height: 1.22; letter-spacing: -0.02em; }
+.gc-site .section-description { color: var(--s-muted); font-size: 15px; line-height: 1.85; margin-top: 13px; }
+
+/* ---------- planos ---------- */
+.gc-site .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 46px; align-items: stretch; }
+.gc-site .plan-card {
+  position: relative; display: flex; flex-direction: column; border: 1px solid var(--s-border); border-radius: 22px;
+  padding: 32px; background: #fff; box-shadow: var(--s-shadow-card);
+}
+.gc-site .plan-card.featured { border: 2px solid var(--s-primary); padding: 31px; }
+.gc-site .plan-badge {
+  position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--s-primary); color: #fff;
+  padding: 6px 18px; border-radius: 100px; white-space: nowrap; font-size: 11px; font-weight: 600; display: flex; gap: 6px; align-items: center;
+}
+.gc-site .plan-badge svg { width: 12px; height: 12px; }
+.gc-site .plan-title { font-size: 12px; color: var(--s-muted); font-weight: 500; letter-spacing: 0.04em; }
+.gc-site .plan-gb { font-size: 54px; font-weight: 700; line-height: 1.2; margin-block: 8px; letter-spacing: -0.02em; }
+.gc-site .plan-gb span { font-size: 28px; }
+.gc-site .plan-bonus { font-size: 13px; color: var(--s-muted); }
+.gc-site .plan-price { margin-block: 22px; font-size: 30px; font-weight: 700; }
+.gc-site .plan-price small { font-size: 12px; font-weight: 400; color: var(--s-muted); }
+.gc-site .benefit-list { display: grid; gap: 14px; padding-top: 22px; border-top: 1px solid var(--s-border); font-size: 13px; margin-bottom: 26px; flex: 1; }
+.gc-site .benefit-list li { display: flex; gap: 10px; align-items: center; }
+.gc-site .benefit-list svg { width: 16px; height: 16px; color: var(--s-primary); flex-shrink: 0; }
+.gc-site .plan-details { margin-top: 14px; display: block; text-align: center; font-size: 12px; font-weight: 500; color: var(--s-muted); }
+.gc-site .plan-details:hover { color: var(--s-primary); }
+
+/* ---------- passo a passo ---------- */
+.gc-site .steps-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 28px; margin-top: 44px; }
+.gc-site .step { position: relative; padding-top: 56px; }
+.gc-site .step-number { position: absolute; top: 0; left: 0; font-size: 76px; line-height: 1; font-weight: 700; color: #dfe3e8; }
+.gc-site .step h3 { position: relative; font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+.gc-site .step p { position: relative; color: var(--s-muted); font-size: 13px; line-height: 1.75; }
+
+/* ---------- dúvidas ---------- */
+.gc-site .faq-grid { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 100px; }
+.gc-site .faq-item { border-bottom: 1px solid var(--s-border); }
+.gc-site .faq-item summary {
+  list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding-block: 20px; font-size: 15px; font-weight: 500;
+}
+.gc-site .faq-item summary::-webkit-details-marker { display: none; }
+.gc-site .faq-item summary svg { width: 16px; height: 16px; flex-shrink: 0; transition: transform 0.2s; color: var(--s-muted); }
+.gc-site .faq-item[open] summary svg { transform: rotate(180deg); }
+.gc-site .faq-item p { font-size: 14px; line-height: 1.8; color: var(--s-muted); padding-bottom: 20px; max-width: 640px; }
+.gc-site .link-arrow { display: inline-flex; align-items: center; gap: 6px; margin-top: 22px; color: var(--s-primary); font-weight: 500; }
+.gc-site .link-arrow svg { width: 16px; height: 16px; }
+
+/* ---------- chamada final (AZUL) ---------- */
+.gc-site .final-section {
+  position: relative; overflow: hidden; text-align: center; padding-block: 80px; color: #fff;
+  background: radial-gradient(70% 120% at 50% 110%, #1fb6f5 0%, #0a82c7 55%, #0868a8 100%);
+}
+.gc-site .final-section .section-eyebrow { color: rgb(255 255 255 / 0.85); }
+.gc-site .final-section .section-title { font-size: 44px; }
+.gc-site .final-section p.final-sub { color: rgb(255 255 255 / 0.82); margin-top: 14px; font-size: 16px; }
+
+/* ---------- rodapé ---------- */
+.gc-site .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 60px; padding-block: 50px; }
+.gc-site .footer-grid p, .gc-site .footer-grid a:not(.brand-logo) { font-size: 13px; color: var(--s-muted); line-height: 1.9; }
+.gc-site .footer-grid a:not(.brand-logo):hover { color: var(--s-fg); }
+.gc-site .footer-grid h3 { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+
+/* ---------- celular do topo (desenhado em código) ---------- */
+.gc-site .phone-wrap { position: relative; justify-self: center; width: 300px; height: 560px; }
+.gc-site .phone {
+  position: absolute; inset: 0 30px 0 0; border-radius: 48px; background: #0b0f17; padding: 11px;
+  transform: rotate(-6deg); box-shadow: 0 40px 80px -30px rgb(4 7 13 / 0.45), inset 0 0 0 2px #2a3242;
+}
+.gc-site .phone-screen { height: 100%; border-radius: 38px; background: linear-gradient(180deg, #fbfdff, #eef5fa); overflow: hidden; display: flex; flex-direction: column; align-items: center; padding: 22px 20px; text-align: center; }
+.gc-site .phone-notch { width: 92px; height: 24px; border-radius: 99px; background: #0b0f17; }
+.gc-site .phone-g { margin-top: 26px; width: 44px; height: 44px; border-radius: 50%; background: #0b0f17; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 22px; font-style: italic; }
+.gc-site .phone-title { margin-top: 12px; font-size: 22px; font-weight: 600; }
+.gc-site .phone-sub { font-size: 11px; color: var(--s-muted); }
+.gc-site .gauge { position: relative; margin-top: 22px; width: 172px; height: 172px; }
+.gc-site .gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.gc-site .gauge-text { position: absolute; inset: 0; display: grid; place-content: center; }
+.gc-site .gauge-text strong { font-size: 46px; font-weight: 700; line-height: 1; }
+.gc-site .gauge-text span { font-size: 12px; color: var(--s-muted); margin-top: 4px; }
+.gc-site .phone-renew { margin-top: auto; width: 100%; border-radius: 14px; background: var(--s-accent); color: var(--s-fg); font-size: 13px; padding: 12px 14px; display: flex; gap: 8px; align-items: center; }
+.gc-site .phone-renew svg { width: 18px; height: 18px; color: var(--s-primary); }
+.gc-site .sim-card { position: absolute; right: -24px; bottom: 30px; width: 78px; transform: rotate(8deg); filter: drop-shadow(0 18px 24px rgb(4 7 13 / 0.25)); }
+
+/* ---------- celular (largura pequena) ---------- */
+@media (max-width: 1000px) {
+  .gc-site .hero-title { font-size: 52px; }
+  .gc-site .plan-card { padding: 24px; }
+  .gc-site .plan-card.featured { padding: 23px; }
+  .gc-site .faq-grid { gap: 40px; }
+  .gc-site .steps-grid { gap: 16px; }
+}
+@media (max-width: 767px) {
+  .gc-site .container-site { width: calc(100% - 36px); }
+  .gc-site .hero-content { grid-template-columns: 1fr; padding-top: 112px; padding-bottom: 56px; gap: 44px; }
+  .gc-site .hero-title { font-size: 38px; line-height: 1.13; }
+  .gc-site .hero-description { font-size: 14px; }
+  .gc-site .hero-seals { gap: 12px; font-size: 11px; }
+  .gc-site .phone-wrap { width: 250px; height: 470px; }
+  .gc-site .gauge { width: 140px; height: 140px; }
+  .gc-site .gauge-text strong { font-size: 38px; }
+  .gc-site .ticker { height: 40px; }
+  .gc-site .stats { grid-template-columns: 1fr 1fr; gap: 25px 15px; padding-block: 30px; }
+  .gc-site .stat { padding-left: 15px; }
+  .gc-site .stat:nth-child(3) { border: 0; padding-left: 0; }
+  .gc-site .stat strong { font-size: 20px; }
+  .gc-site .section { padding-block: 56px; }
+  .gc-site .section-title { font-size: 29px; }
+  .gc-site .final-section .section-title { font-size: 32px; }
+  .gc-site .plan-grid { grid-template-columns: 1fr; gap: 32px; margin-top: 36px; }
+  .gc-site .steps-grid { grid-template-columns: 1fr; gap: 26px; }
+  .gc-site .step { padding: 5px 0 5px 78px; min-height: 76px; }
+  .gc-site .step-number { font-size: 60px; }
+  .gc-site .faq-grid { grid-template-columns: 1fr; gap: 26px; }
+  .gc-site .footer-grid { grid-template-columns: 1fr 1fr; gap: 30px; }
+  .gc-site .footer-grid > div:first-child { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gc-site .ticker-track { animation: none; }
+}
