@@ -400,7 +400,8 @@ Agora (Painel → **Inadimplência**):
 
 O gestor usa a planilha, então ela **não** é substituída (revisa D26). O sistema acessa por um
 "usuário robô" (conta de serviço do Google) com quem a planilha é compartilhada como Editor.
-- **Lê** (de hora em hora e no botão "Ler planilha agora"): números sem cliente → disponíveis para
+- **Lê** (de hora em hora e no botão "Ler planilha agora"): números com "Disponível" (ou vazio) na
+  coluna Cliente → disponíveis para
   "Ativar linha"; linhas com cliente → clientes antigos (aparecem em Linhas e na Inadimplência).
   O gestor é quem coloca números novos quando o estoque acaba.
 - **Escreve**: na ativação, Cliente, ICCID, Smart-Dados, Ativação, Venda final, Valor e Vencimento;

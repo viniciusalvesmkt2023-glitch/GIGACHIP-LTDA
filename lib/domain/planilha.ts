@@ -86,6 +86,16 @@ const text = (v: unknown): string | null => {
   return s ? s : null;
 };
 
+/**
+ * Na planilha do gestor, número livre fica com "Disponível" na coluna Cliente (e as colunas da
+ * venda vazias). Também aceita variações comuns. Esses números são tratados como SEM cliente.
+ */
+export function isAvailableMarker(cliente: string | null): boolean {
+  if (!cliente) return true;
+  const n = normalizeHeader(cliente);
+  return n === "" || /^(disponive(l|is)|livre|estoque|vago|sem cliente|para venda|a venda)$/.test(n);
+}
+
 /** "20/11/2026", "20/11/26" ou "2026-11-20" → "2026-11-20". null se não for data. */
 export function parseSheetDate(v: string | null): string | null {
   if (!v) return null;
@@ -131,7 +141,7 @@ export function parseSheetRows(rows: string[][], header: { index: number; map: C
     out.push({
       rowNumber: i + 1,
       msisdn,
-      cliente: get(r, "cliente"),
+      cliente: isAvailableMarker(get(r, "cliente")) ? null : get(r, "cliente"),
       login: get(r, "login"),
       plano: get(r, "plano"),
       iccid: get(r, "iccid")?.replace(/\s/g, "") ?? null,

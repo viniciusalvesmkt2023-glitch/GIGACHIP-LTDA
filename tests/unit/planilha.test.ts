@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   columnLetter,
+  isAvailableMarker,
   findHeader,
   formatForSheet,
   mapHeader,
@@ -56,6 +57,20 @@ describe("findHeader + parseSheetRows", () => {
   it("número repetido fica marcado (o sistema não escreve nele)", () => {
     const { duplicates } = parseSheetRows(rows, findHeader(rows)!);
     expect([...duplicates.entries()]).toEqual([["+5511937336662", [4, 7]]]);
+  });
+});
+
+describe("número disponível", () => {
+  it("'Disponível' (com ou sem acento, maiúsculo) é número livre", () => {
+    for (const v of ["Disponível", "DISPONIVEL", " disponível ", "Livre", "", null]) expect(isAvailableMarker(v)).toBe(true);
+  });
+  it("nome de cliente não é número livre", () => {
+    expect(isAvailableMarker("Maria Disponível Souza")).toBe(false);
+    expect(isAvailableMarker("Cicero Rodrigues")).toBe(false);
+  });
+  it("na leitura, 'Disponível' vira linha sem cliente", () => {
+    const rows = [["Cliente", "Número", "ICCID"], ["Disponível", "11919908711", ""]];
+    expect(parseSheetRows(rows, findHeader(rows)!).rows[0].cliente).toBeNull();
   });
 });
 
