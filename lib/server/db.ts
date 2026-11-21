@@ -9,20 +9,68 @@ import { env } from "./env";
 
 type Sql = postgres.Sql;
 
-const globalForDb = globalThis as unknown as { __gcSql?: Sql };
+const globalForDb = globalThis as unknown as { __gcSql?: Sql; __gcRaw?: Sql };
+
+/** Tempo máximo de uma consulta e de uma transação antes de desistir (e trocar as conexões). */
+const QUERY_TIMEOUT_MS = 15_000;
+const TRANSACTION_TIMEOUT_MS = 30_000;
+
+export class DatabaseTimeoutError extends Error {}
+
+/**
+ * Já aconteceu, em produção, de uma conexão entre a Vercel e o Supabase ficar "pendurada" no meio
+ * de uma consulta (no banco aparece como ClientRead). As consultas seguintes ficavam na fila atrás
+ * dela e o painel ficava em "Carregando…" para sempre. Agora, se o banco não responder no tempo
+ * limite, a consulta falha com erro e TODAS as conexões são trocadas por novas — a próxima
+ * tentativa (ex.: atualizar a página) já funciona.
+ */
+function resetPool(reason: string) {
+  const old = globalForDb.__gcRaw;
+  globalForDb.__gcRaw = undefined;
+  globalForDb.__gcSql = undefined;
+  console.error(`[db] ${reason}: conexões descartadas e recriadas`);
+  old?.end({ timeout: 0 }).catch(() => undefined);
+}
+
+function withTimeout<T>(work: PromiseLike<T>, ms: number, what: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      resetPool(`${what} sem resposta em ${ms / 1000} s`);
+      reject(new DatabaseTimeoutError("O banco de dados não respondeu a tempo. Tente de novo."));
+    }, ms);
+  });
+  return Promise.race([Promise.resolve(work), timeout]).finally(() => clearTimeout(timer));
+}
+
+function guarded(raw: Sql): Sql {
+  return new Proxy(raw, {
+    // sql`...` → consulta com tempo limite
+    apply(target, thisArg, args) {
+      return withTimeout(Reflect.apply(target, thisArg, args) as PromiseLike<unknown>, QUERY_TIMEOUT_MS, "consulta");
+    },
+    get(target, prop, receiver) {
+      if (prop === "begin") {
+        return (...args: unknown[]) =>
+          withTimeout((target.begin as (...a: unknown[]) => PromiseLike<unknown>)(...args), TRANSACTION_TIMEOUT_MS, "transação");
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  }) as Sql;
+}
 
 export function sql(): Sql {
   if (!globalForDb.__gcSql) {
-    globalForDb.__gcSql = postgres(env().DATABASE_URL, {
+    globalForDb.__gcRaw = postgres(env().DATABASE_URL, {
       prepare: false,
       max: 5,
       idle_timeout: 20,
-      // Proteção contra conexão "presa" (ex.: painel em "Carregando…" para sempre): desiste de
-      // conectar após 10 s e renova cada conexão a cada 5 min em vez de reaproveitá-la indefinidamente.
+      // Desiste de conectar após 10 s e renova cada conexão a cada 5 min.
       connect_timeout: 10,
       max_lifetime: 60 * 5,
       types: { bigint: postgres.BigInt },
     });
+    globalForDb.__gcSql = guarded(globalForDb.__gcRaw);
   }
   return globalForDb.__gcSql;
 }
