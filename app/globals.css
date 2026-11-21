@@ -118,3 +118,32 @@ body {
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
+
+/* Pílula de vidro com borda clarinha brilhando nos cantos (do pacote de códigos, adaptada ao fundo claro) */
+.glass-pill {
+  position: relative;
+  background: rgb(255 255 255 / 0.6);
+  box-shadow: 0 6px 24px -12px rgb(4 7 13 / 0.18);
+  backdrop-filter: blur(12px);
+}
+.glass-pill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(-35deg, rgb(4 7 13 / 0.22), rgb(4 7 13 / 0.05), rgb(4 7 13 / 0.05), rgb(4 7 13 / 0.22));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+/* Entrada: desce do topo com desfoque */
+@keyframes gc-nav-in {
+  from { opacity: 0; filter: blur(7px); transform: translateY(-40px); }
+  to { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+.nav-in { animation: gc-nav-in 0.5s 0.15s ease both; }
+@media (prefers-reduced-motion: reduce) { .nav-in { animation: none; } }

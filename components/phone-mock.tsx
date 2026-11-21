@@ -16,7 +16,7 @@ export function PhoneMock() {
             <div className="rounded-3xl bg-white p-5 ring-1 ring-ink/[0.07]">
               <p className="text-xs font-medium text-ink/50">Internet do mês</p>
               <p className="font-heading mt-1 text-3xl font-extrabold text-ink">
-                228<span className="ml-1 text-base font-bold text-ink/40">GB restantes</span>
+                228<span className="ml-1 text-base font-bold tracking-normal text-ink/40">GB restantes</span>
               </p>
               <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-ink/[0.07]">
                 <div className="h-full w-[76%] rounded-full bg-ink" />

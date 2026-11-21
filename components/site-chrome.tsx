@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CONTACT_EMAIL } from "@/lib/site";
 import { IconWhatsapp } from "./icons";
+import { NavMobile, NavPill } from "./nav-pill";
 import { Container, Logo, buttonStyles } from "./ui";
 import { whatsappLink } from "./whatsapp";
 
@@ -12,17 +13,18 @@ const nav = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-ink/[0.06] bg-white/85 backdrop-blur-lg">
-      <Container className="flex h-16 items-center justify-between gap-4">
-        <Link href="/" aria-label="Gigachip — início" className="shrink-0">
+    <header className="sticky top-0 z-40 bg-white/75 backdrop-blur-lg">
+      <Container className="grid h-[72px] grid-cols-[1fr_auto_1fr] items-center gap-4">
+        <Link href="/" aria-label="Gigachip — início" className="justify-self-start">
           <Logo size={30} />
         </Link>
-        <nav className="hidden items-center gap-8 text-sm font-medium text-ink/65 md:flex">
-          {nav.map((item) => (
-            <Link key={item.href} href={item.href} className="transition hover:text-ink">{item.label}</Link>
-          ))}
+        <nav aria-label="Menu principal" className="hidden md:block">
+          <NavPill items={nav} />
         </nav>
-        <Link href="/#planos" className={`${buttonStyles.ink} px-5 py-2.5`}>Ver planos</Link>
+        <div className="flex items-center gap-2 justify-self-end">
+          <Link href="/#planos" className={`${buttonStyles.ink} px-5 py-2.5`}>Ver planos</Link>
+          <NavMobile items={nav} />
+        </div>
       </Container>
     </header>
   );
