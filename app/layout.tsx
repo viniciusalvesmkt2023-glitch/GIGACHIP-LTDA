@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Chakra_Petch, Geist, Geist_Mono } from "next/font/google";
+import { Chakra_Petch, Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,6 +13,13 @@ const display = Chakra_Petch({
   subsets: ["latin"],
   weight: ["600", "700"],
   style: ["normal", "italic"],
+});
+
+// Títulos grandes, fortes e "apertados" (estilo dos sites de referência)
+const heading = Plus_Jakarta_Sans({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
 });
 
 const geistMono = Geist_Mono({
@@ -29,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} ${heading.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

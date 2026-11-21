@@ -13,9 +13,11 @@ export const buttonStyles = {
   secondary: `${buttonBase} border border-border bg-white text-foreground hover:bg-surface`,
   whatsapp: `${buttonBase} bg-[#1f8f4e] text-white hover:bg-[#18733f]`,
   /** Botão principal do site: degradê da marca com texto preto (contraste alto) */
-  neon: `${buttonBase} bg-neon text-ink shadow-[0_0_24px_rgb(52_251_166/0.35)] hover:brightness-110`,
+  neon: `${buttonBase} rounded-full bg-neon text-ink shadow-[0_8px_30px_-6px_rgb(52_251_166/0.55)] hover:brightness-105`,
+  /** Botão escuro (pílula) para fundo claro */
+  ink: `${buttonBase} rounded-full bg-ink text-white hover:bg-ink-soft`,
   /** Botão secundário sobre fundo preto */
-  ghostDark: `${buttonBase} border border-white/25 text-white hover:bg-white/10`,
+  ghostDark: `${buttonBase} rounded-full border border-white/20 bg-white/5 text-white hover:bg-white/10`,
 };
 
 export function ButtonLink({
@@ -26,12 +28,14 @@ export function ButtonLink({
   return <Link {...props} className={`${buttonStyles[variant]} ${className}`} />;
 }
 
-export function SectionTitle({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: string }) {
+export function SectionTitle({ eyebrow, title, subtitle, align = "center", dark = false }: {
+  eyebrow?: string; title: ReactNode; subtitle?: string; align?: "center" | "left"; dark?: boolean;
+}) {
   return (
-    <div className="mx-auto max-w-2xl text-center">
-      {eyebrow && <p className="font-display text-sm font-semibold uppercase tracking-[0.2em] text-brand">{eyebrow}</p>}
-      <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">{title}</h2>
-      {subtitle && <p className="mt-3 text-muted">{subtitle}</p>}
+    <div className={align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
+      {eyebrow && <p className={`eyebrow ${dark ? "text-neon-green" : "text-brand"}`}>{eyebrow}</p>}
+      <h2 className={`font-heading mt-3 text-4xl font-extrabold sm:text-5xl ${dark ? "text-white" : "text-ink"}`}>{title}</h2>
+      {subtitle && <p className={`mt-4 text-lg ${dark ? "text-white/65" : "text-muted"}`}>{subtitle}</p>}
     </div>
   );
 }
