@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { IconArrowRight, IconCheck } from "@/components/icons";
 import { PhoneMock } from "@/components/phone-mock";
 import { PlanCard, PlanGridSkeleton } from "@/components/plan-card";
-import { ButtonLink, Container } from "@/components/ui";
+import { ButtonLink, Container, ShineButton } from "@/components/ui";
 import { FAQ } from "@/lib/faq";
 import { listActivePlans } from "@/lib/server/catalog";
 
@@ -156,9 +156,7 @@ export default function Home() {
               Chega de ficar sem internet no <span className="bg-neon-lime px-2 text-ink">fim do mês</span>.
             </h2>
             <p className="mt-5 max-w-xl text-lg text-white/60">Escolha o plano, pague por PIX ou cartão e acompanhe tudo pelo celular.</p>
-            <ButtonLink href="#planos" variant="lime" className="mt-9 px-8 py-4 text-base">
-              Escolher meu plano <IconArrowRight className="h-4 w-4" />
-            </ButtonLink>
+            <ShineButton href="#planos" size="lg" className="mt-9">Escolher meu plano</ShineButton>
           </div>
         </Container>
       </section>

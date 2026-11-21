@@ -1,7 +1,7 @@
 import { formatBRL } from "@/lib/domain/money";
 import type { PublicPlan } from "@/lib/server/catalog";
 import { IconArrowRight, IconCheck } from "./icons";
-import { ButtonLink } from "./ui";
+import { ButtonLink, ShineButton } from "./ui";
 
 export function PlanCard({ plan, highlight = false }: { plan: PublicPlan; highlight?: boolean }) {
   const dark = highlight;
@@ -38,9 +38,13 @@ export function PlanCard({ plan, highlight = false }: { plan: PublicPlan; highli
         ))}
       </ul>
 
-      <ButtonLink href={`/contratar/${plan.slug}`} variant={dark ? "lime" : "ink"} className="mt-8 w-full py-3.5 text-base">
-        Quero este plano <IconArrowRight className="h-4 w-4" />
-      </ButtonLink>
+      {dark ? (
+        <ShineButton href={`/contratar/${plan.slug}`} className="mt-8 w-full">Quero este plano</ShineButton>
+      ) : (
+        <ButtonLink href={`/contratar/${plan.slug}`} variant="ink" className="mt-8 w-full py-3.5 text-base">
+          Quero este plano <IconArrowRight className="h-4 w-4" />
+        </ButtonLink>
+      )}
       <a href={`/planos/${plan.slug}`} className={`mt-3 text-center text-sm underline-offset-4 hover:underline ${dark ? "text-white/60" : "text-ink/55"}`}>
         Ver detalhes do plano
       </a>

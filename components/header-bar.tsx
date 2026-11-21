@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { IconArrowRight, IconWifi } from "./icons";
-import { Logo } from "./ui";
+import { IconWifi } from "./icons";
+import { Logo, ShineInner } from "./ui";
 
 /**
  * Menu do topo — copiado do site EngajaEu (src/components/layout/Header.tsx) e adaptado:
@@ -45,16 +45,11 @@ function SectionLink({ id, children, onDone, className }: { id: string; children
 }
 
 function GlowButton({ className = "", onClick }: { className?: string; onClick?: () => void }) {
-  // Mesmo botão "com brilho pulsando" do EngajaEu, nas cores da Gigachip (verde-limão da logo)
+  // Botão verde-limão com anel de luz girando (efeito do pacote de códigos)
   return (
-    <span className={`relative inline-block ${className}`}>
-      <span aria-hidden className="absolute -inset-1 animate-pulse rounded-2xl bg-neon-lime opacity-70 blur-md" />
-      <SectionLink
-        id="planos"
-        onDone={onClick}
-        className="relative inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl border-0 bg-neon-lime px-5 text-sm font-black text-ink shadow-[0_10px_30px_-10px_rgb(216_253_13/0.8)] transition hover:brightness-95"
-      >
-        Ver planos <IconArrowRight className="h-4 w-4" />
+    <span className={`shine-wrap ${className}`}>
+      <SectionLink id="planos" onDone={onClick} className="shine px-5 py-2.5 text-sm">
+        <ShineInner>Ver planos</ShineInner>
       </SectionLink>
     </span>
   );

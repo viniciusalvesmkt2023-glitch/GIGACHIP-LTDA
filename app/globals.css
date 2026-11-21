@@ -119,9 +119,75 @@ body {
   box-decoration-break: clone;
 }
 
-/* "CHIP" do logo no verde-limão da paleta. No fundo branco ganha um contorno fino preto para ser lido. */
-.logo-lime {
-  color: var(--neon-lime);
-  -webkit-text-stroke: 0.6px var(--ink);
-  paint-order: stroke fill;
+/*
+ * Botão com anel de luz girando (do pacote de códigos, adaptado do azul para o verde-limão):
+ * .shine-wrap = moldura translúcida com brilho suave; .shine = botão; .shine-fill = preenchimento;
+ * a luz branca (.shine::before) gira por trás e só aparece no anel entre a borda e o preenchimento.
+ */
+.shine-wrap {
+  display: inline-flex;
+  padding: 5px;
+  border-radius: 9999px;
+  background: radial-gradient(68.5% 119.7% at 49.1% 100%, rgb(216 253 13 / 0.38) 0%, rgb(232 255 110 / 0.28) 100%);
+  box-shadow: 0 0 18px 0 rgb(216 253 13 / 0.28);
+  transition: box-shadow 0.4s ease;
 }
+.shine-wrap:hover { box-shadow: 0 0 34px 4px rgb(216 253 13 / 0.36); }
+.shine {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border-radius: 9999px;
+  color: var(--ink);
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.4s ease;
+}
+.shine:hover { transform: scale(0.98); }
+.shine::after { /* cor da borda */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: rgb(255 255 255 / 0.35);
+}
+.shine::before { /* luz girando */
+  content: "";
+  position: absolute;
+  top: -40%;
+  left: 50%;
+  z-index: 2;
+  width: 20px;
+  height: 180px;
+  border-radius: 8px;
+  background: #fff;
+  filter: blur(10px);
+  transform-origin: center bottom;
+  transform: translate(-50%, -50%);
+  animation: gc-shine-spin 5s linear infinite;
+}
+.shine-fill { /* cor de fundo */
+  position: absolute;
+  inset: 1.5px;
+  z-index: 3;
+  border-radius: inherit;
+  background: radial-gradient(53.6% 100% at 50% 100%, #f2ff8a 0%, var(--neon-lime) 100%);
+}
+.shine > :not(.shine-fill) { position: relative; z-index: 4; }
+@keyframes gc-shine-spin {
+  from { transform: translate(-50%, -50%) rotate(0); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+/* seta que sai e outra que entra */
+.shine-arrow { position: relative; display: inline-block; width: 1.15em; height: 1.15em; overflow: hidden; }
+.shine-arrow > svg { position: absolute; inset: 0; width: 100%; height: 100%; transition: transform 0.45s ease, opacity 0.45s ease; }
+.shine-arrow > svg:last-child { transform: translate(-120%, 120%); opacity: 0; }
+.shine:hover .shine-arrow > svg:first-child { transform: translate(120%, -120%); opacity: 0; }
+.shine:hover .shine-arrow > svg:last-child { transform: translate(0, 0); opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .shine::before { animation: none; opacity: 0; } }

@@ -51,8 +51,45 @@ export function Logo({ dark = false, size = 36 }: { dark?: boolean; size?: numbe
       {/* eslint-disable-next-line @next/next/no-img-element -- logo pequena e estática */}
       <img src="/brand/gigachip-logo-192.png" alt="" width={size} height={size} className="rounded-full" />
       <span className={`font-display text-xl font-bold italic tracking-tight ${dark ? "text-white" : "text-ink"}`}>
-        GIGA<span className={dark ? "text-neon-lime" : "logo-lime"}>CHIP</span>
+        GIGA<span className="text-neon-lime">CHIP</span>
       </span>
+    </span>
+  );
+}
+
+/** Seta ↗ (do pacote de códigos: "right-down" girada). */
+function ArrowUpRight() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <g transform="rotate(-90 12 12)">
+        <path d="M7.146 7.146a.75.75 0 0 1 1.061 0l8.5 8.5a.75.75 0 1 1-1.06 1.061l-8.5-8.5a.75.75 0 0 1 0-1.06z" />
+        <path d="M16.177 6.427a.75.75 0 0 1 .75.75v9a.75.75 0 0 1-.75.75h-9a.75.75 0 0 1 0-1.5h8.25v-8.25a.75.75 0 0 1 .75-.75z" />
+      </g>
+    </svg>
+  );
+}
+
+/** Conteúdo do botão com anel de luz (use dentro de um link com className "shine"). */
+export function ShineInner({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <span className="shine-fill" aria-hidden />
+      <span>{children}</span>
+      <span className="shine-arrow"><ArrowUpRight /><ArrowUpRight /></span>
+    </>
+  );
+}
+
+/** Botão verde-limão com anel de luz girando (efeito do pacote de códigos). */
+export function ShineButton({ href, children, size = "md", className = "" }: {
+  href: string; children: ReactNode; size?: "sm" | "md" | "lg"; className?: string;
+}) {
+  const pad = size === "sm" ? "px-5 py-2.5 text-sm" : size === "lg" ? "px-9 py-4 text-base" : "px-7 py-3.5 text-[15px]";
+  return (
+    <span className={`shine-wrap ${className}`}>
+      <Link href={href} className={`shine ${pad}`}>
+        <ShineInner>{children}</ShineInner>
+      </Link>
     </span>
   );
 }
