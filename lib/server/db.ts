@@ -17,6 +17,10 @@ export function sql(): Sql {
       prepare: false,
       max: 5,
       idle_timeout: 20,
+      // Proteção contra conexão "presa" (ex.: painel em "Carregando…" para sempre): desiste de
+      // conectar após 10 s e renova cada conexão a cada 5 min em vez de reaproveitá-la indefinidamente.
+      connect_timeout: 10,
+      max_lifetime: 60 * 5,
       types: { bigint: postgres.BigInt },
     });
   }
