@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Chakra_Petch, Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Bricolage_Grotesque, Chakra_Petch, Geist_Mono, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Textos do site e do painel (escolhida pelos sócios: opção A)
+const body = Instrument_Sans({
+  variable: "--font-body",
   subsets: ["latin"],
 });
 
@@ -15,11 +16,11 @@ const display = Chakra_Petch({
   style: ["normal", "italic"],
 });
 
-// Títulos grandes, fortes e "apertados" (estilo dos sites de referência)
-const heading = Plus_Jakarta_Sans({
+// Títulos (opção A): moderna, com personalidade — fonte variável, com ajuste óptico para tamanhos grandes
+const heading = Bricolage_Grotesque({
   variable: "--font-heading",
   subsets: ["latin"],
-  weight: ["600", "700", "800"],
+  axes: ["opsz"],
 });
 
 const geistMono = Geist_Mono({
@@ -36,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} ${heading.variable} h-full antialiased`}
+      className={`${body.variable} ${geistMono.variable} ${display.variable} ${heading.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

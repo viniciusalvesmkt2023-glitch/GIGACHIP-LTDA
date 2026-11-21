@@ -48,7 +48,7 @@
   --color-logo-blue-deep: var(--logo-blue-deep);
   --font-display: var(--font-display);
   --font-heading: var(--font-heading);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-body);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -77,7 +77,7 @@ body {
 }
 
 /* Títulos no estilo dos sites de referência: fortes e com letras mais juntas */
-.font-heading { font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif; letter-spacing: -0.035em; }
+.font-heading { font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif; letter-spacing: -0.03em; }
 
 /* Etiqueta pequena acima dos títulos ("PLANOS", "PASSO A PASSO") */
 .eyebrow {
