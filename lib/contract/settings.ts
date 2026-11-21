@@ -1,3 +1,4 @@
+import { CONTACT_EMAIL } from "@/lib/site";
 import { CONTRACT_TEMPLATE_VERSION, type ContractSettings } from "./template";
 
 /**
@@ -18,9 +19,9 @@ export function contractSettings(appUrl: string): ContractSettings {
     version: CONTRACT_TEMPLATE_VERSION,
     isTest: true, // vira false quando o advogado aprovar o texto
     whatsapp: formatWhatsapp(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER),
-    supportEmail: "suporte@gigachip.com.br",
+    supportEmail: CONTACT_EMAIL,
     privacyUrl: `${appUrl.replace(/\/$/, "")}/privacidade`,
-    dpoEmail: "suporte@gigachip.com.br",
+    dpoEmail: CONTACT_EMAIL,
     unblockTime: "24 (vinte e quatro) horas",
     blockedDaysBeforeCancel: BLOCKED_DAYS_BEFORE_CANCEL,
   };

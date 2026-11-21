@@ -15,9 +15,9 @@ const settings: ContractSettings = {
   version: CONTRACT_TEMPLATE_VERSION,
   isTest: true,
   whatsapp: null,
-  supportEmail: "suporte@gigachip.com.br",
+  supportEmail: "contato@gigachip.com.br",
   privacyUrl: "https://gigachip-ltda.vercel.app/privacidade",
-  dpoEmail: "suporte@gigachip.com.br",
+  dpoEmail: "contato@gigachip.com.br",
   unblockTime: "24 (vinte e quatro) horas",
   blockedDaysBeforeCancel: 5,
 };
@@ -49,14 +49,14 @@ describe("contrato", () => {
     expect(text).toContain("bloqueada por 5 (cinco) dias sem pagamento, o contrato será cancelado");
     expect(text).toContain("IPCA/IBGE");
     expect(text).toContain("poderá cancelar sem multa");
-    expect(text).toContain("suporte@gigachip.com.br");
+    expect(text).toContain("contato@gigachip.com.br");
     expect(text).toContain("assinado **eletronicamente** pelo CLIENTE");
   });
 
   it("sem WhatsApp usa só o e-mail; com WhatsApp mostra os dois", () => {
-    expect(text).toContain("Atendimento: e-mail suporte@gigachip.com.br.");
+    expect(text).toContain("Atendimento: e-mail contato@gigachip.com.br.");
     const comWa = buildContract(data, { ...settings, whatsapp: "(88) 90000-0000" }).map((b) => b.text).join("\n");
-    expect(comWa).toContain("e-mail suporte@gigachip.com.br e WhatsApp (88) 90000-0000");
+    expect(comWa).toContain("e-mail contato@gigachip.com.br e WhatsApp (88) 90000-0000");
   });
 
   it("chip físico e cartão mudam o texto", () => {

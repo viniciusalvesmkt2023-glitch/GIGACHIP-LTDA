@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CONTACT_EMAIL } from "@/lib/site";
 import { Container, buttonStyles } from "./ui";
 import { whatsappLink } from "./whatsapp";
 
@@ -46,6 +47,9 @@ export function SiteFooter() {
             giga<span className="text-brand">chip</span>
           </p>
           <p className="mt-2">Gigachip Ltda. · CNPJ 51.968.628/0001-16</p>
+          <p className="mt-1">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-foreground">{CONTACT_EMAIL}</a>
+          </p>
         </div>
         <div className="flex flex-col gap-2">
           <Link href="/planos" className="hover:text-foreground">Planos</Link>

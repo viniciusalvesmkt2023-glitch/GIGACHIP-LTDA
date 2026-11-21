@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { AutoRefresh } from "@/components/auto-refresh";
 import { Container, buttonStyles } from "@/components/ui";
 import { whatsappLink } from "@/components/whatsapp";
 import { formatBRL } from "@/lib/domain/money";
@@ -29,6 +30,9 @@ async function PixBox({ paymentId, invoiceUrl }: { paymentId: string; invoiceUrl
             Abrir página de pagamento
           </a>
         )}
+        <p className="text-xs text-muted">Tentando carregar o QR Code de novo…</p>
+        {/* O Asaas às vezes demora para gerar o QR Code da cobrança nova: tenta de novo sozinho */}
+        <AutoRefresh seconds={8} />
       </div>
     );
   }

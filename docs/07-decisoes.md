@@ -426,3 +426,9 @@ O gestor usa a planilha, então ela **não** é substituída (revisa D26). O sis
 - **Painel atualiza sozinho:** pedido "Em andamento" confere a cada 15 s (o "Ativar linha" aparece
   quando fica pronto); depois de ativar, confere a cada 3 s até a planilha ser preenchida. Com o
   pedido pronto para ativar, não atualiza (para não atrapalhar quem está digitando).
+
+## D31 — E-mail de contato: contato@gigachip.com.br (21/11/2026)
+
+Substitui o suporte@ (D19): atendimento e privacidade/LGPD passam a ser **contato@gigachip.com.br**
+(contrato v4 e rodapé do site). Os e-mails do site saem por esse endereço via Resend
+(`EMAIL_FROM="Gigachip <contato@gigachip.com.br>"`); respostas do cliente chegam na caixa normal.

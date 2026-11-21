@@ -8,7 +8,7 @@
  */
 import { formatBRL } from "@/lib/domain/money";
 
-export const CONTRACT_TEMPLATE_VERSION = "v3-teste-2026-11";
+export const CONTRACT_TEMPLATE_VERSION = "v4-teste-2026-11"; // v4: e-mail de atendimento/LGPD contato@
 
 export type ContractSettings = {
   version: string;
