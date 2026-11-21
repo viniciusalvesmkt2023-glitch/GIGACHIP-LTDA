@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   columnLetter,
   isAvailableMarker,
+  mirrorTextRuns,
   findHeader,
   formatForSheet,
   mapHeader,
@@ -110,5 +111,21 @@ describe("formatação", () => {
       "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789",
     );
     expect(spreadsheetIdFromUrl("não é link")).toBeNull();
+  });
+});
+
+describe("mirrorTextRuns (Smart-Dados com o número colorido)", () => {
+  const RED = { foregroundColorStyle: { rgbColor: { red: 1 } } };
+  const refRuns = [{ startIndex: 0, format: {} }, { startIndex: 12, format: RED }, { startIndex: 19, format: {} }];
+  it("pinta o trecho numérico como no modelo", () => {
+    expect(mirrorTextRuns("Franquia de 300+100GB", "Franquia de 100+100GB", refRuns)).toEqual([
+      { startIndex: 0, format: {} }, { startIndex: 12, format: RED }, { startIndex: 19, format: {} },
+    ]);
+  });
+  it("funciona com número de tamanho diferente", () => {
+    expect(mirrorTextRuns("Franquia de 1000+100GB", "Franquia de 100+100GB", refRuns)?.map((r) => r.startIndex)).toEqual([0, 12, 20]);
+  });
+  it("modelo sem formatação → texto simples", () => {
+    expect(mirrorTextRuns("Franquia de 300+100GB", "Franquia de 100+100GB", undefined)).toBeNull();
   });
 });

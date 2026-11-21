@@ -420,3 +420,9 @@ O gestor usa a planilha, então ela **não** é substituída (revisa D26). O sis
 - **Posição na planilha:** a tela Linhas mostra a coluna **"#"** com o número da linha na planilha
   (o mesmo 1, 2, 3 da lateral do Google Planilhas), na mesma ordem da planilha; clicar abre a
   planilha naquela linha. Botão "Abrir planilha" no topo. Atualizado a cada leitura.
+- **Mesmo estilo das outras linhas:** ao preencher a venda, o robô copia a formatação (fonte,
+  negrito, cor, alinhamento, bordas, formato de data e R$) da linha de cliente mais próxima, e no
+  Smart-Dados pinta o trecho numérico (ex.: "100+100") com a mesma cor do modelo.
+- **Painel atualiza sozinho:** pedido "Em andamento" confere a cada 15 s (o "Ativar linha" aparece
+  quando fica pronto); depois de ativar, confere a cada 3 s até a planilha ser preenchida. Com o
+  pedido pronto para ativar, não atualiza (para não atrapalhar quem está digitando).

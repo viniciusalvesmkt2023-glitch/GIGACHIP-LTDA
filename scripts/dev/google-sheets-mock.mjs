@@ -49,7 +49,11 @@ createServer(async (req, res) => {
     const body = JSON.parse(raw);
     books.set(m[1], {
       title: body.title ?? "Planilha", locale: body.locale ?? "pt_BR",
-      tabs: Object.entries(body.tabs).map(([title, values], i) => ({ sheetId: 1000 + i, title, values, colors: {} })),
+      tabs: Object.entries(body.tabs).map(([title, values], i) => ({
+        sheetId: 1000 + i, title, values, colors: {},
+        formats: body.formats?.[title] ?? {}, // "linha:coluna" (base 0) → formato da célula
+        runs: body.runs?.[title] ?? {},       // "linha:coluna" (base 0) → trechos formatados do texto
+      })),
     });
     return send(res, 200, { ok: true });
   }
@@ -62,6 +66,13 @@ createServer(async (req, res) => {
     const book = books.get(m[1]);
     if (!book) return send(res, 403, { error: { message: "The caller does not have permission" } });
     const rest = m[2];
+    if (req.method === "GET" && rest === "" && url.searchParams.get("ranges")) {
+      const r = parseRange(url.searchParams.get("ranges"));
+      const tab = r && book.tabs.find((t) => t.title === r.tab);
+      if (!tab) return send(res, 400, { error: { message: "Unable to parse range" } });
+      const k = `${r.row}:${r.col}`;
+      return send(res, 200, { sheets: [{ data: [{ rowData: [{ values: [{ formattedValue: tab.values[r.row]?.[r.col] ?? "", textFormatRuns: tab.runs[k] }] }] }] }] });
+    }
     if (req.method === "GET" && rest === "") {
       return send(res, 200, { properties: { title: book.title, locale: book.locale }, sheets: book.tabs.map((t) => ({ properties: { sheetId: t.sheetId, title: t.title } })) });
     }
@@ -89,9 +100,24 @@ createServer(async (req, res) => {
     if (req.method === "POST" && rest === ":batchUpdate") {
       const body = JSON.parse(raw);
       for (const rq of body.requests) {
-        const g = rq.repeatCell.range;
-        const tab = book.tabs.find((t) => t.sheetId === g.sheetId);
-        tab.colors[`${g.startRowIndex}:${g.startColumnIndex}`] = rq.repeatCell.cell.userEnteredFormat.textFormat.foregroundColor;
+        if (rq.repeatCell) {
+          const g = rq.repeatCell.range;
+          const tab = book.tabs.find((t) => t.sheetId === g.sheetId);
+          tab.colors[`${g.startRowIndex}:${g.startColumnIndex}`] = rq.repeatCell.cell.userEnteredFormat.textFormat.foregroundColor;
+        } else if (rq.copyPaste) {
+          const { source: a, destination: d, pasteType } = rq.copyPaste;
+          if (pasteType !== "PASTE_FORMAT") return send(res, 400, { error: { message: "só PASTE_FORMAT no mock" } });
+          const tab = book.tabs.find((t) => t.sheetId === a.sheetId);
+          tab.formats[`${d.startRowIndex}:${d.startColumnIndex}`] = tab.formats[`${a.startRowIndex}:${a.startColumnIndex}`] ?? null;
+        } else if (rq.updateCells) {
+          const { start, rows } = rq.updateCells;
+          const tab = book.tabs.find((t) => t.sheetId === start.sheetId);
+          const v = rows[0].values[0];
+          tab.values[start.rowIndex][start.columnIndex] = v.userEnteredValue.stringValue;
+          tab.runs[`${start.rowIndex}:${start.columnIndex}`] = v.textFormatRuns;
+        } else {
+          return send(res, 400, { error: { message: "pedido desconhecido no mock" } });
+        }
       }
       return send(res, 200, { replies: [] });
     }

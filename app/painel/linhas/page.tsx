@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { formatMsisdn } from "@/lib/domain/lines";
+import { AutoRefresh } from "@/components/auto-refresh";
 import { formatBRL } from "@/lib/domain/money";
 import { lineCounts, listLines } from "@/lib/server/lines";
 import { getSheetConfig, lastSheetRead, sheetEnabled, sheetQueueCounts } from "@/lib/server/planilha";
@@ -50,6 +51,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
         <strong>{counts.suspensa ?? 0}</strong>
       </p>
 
+      {queue && queue.pending > 0 && <AutoRefresh seconds={3} />}
       {sheetOn && (
         <div className="mt-4 flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border bg-white p-3 text-sm">
           <p className="text-muted">

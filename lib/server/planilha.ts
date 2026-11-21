@@ -6,6 +6,7 @@ import {
   findHeader,
   formatForSheet,
   isAvailableMarker,
+  mirrorTextRuns,
   parseSheetRows,
   quoteTab,
   WRITABLE_FIELDS,
@@ -13,7 +14,7 @@ import {
   type SheetField,
   type SheetRow,
 } from "@/lib/domain/planilha";
-import { sheets, sheetsConfigured, SheetsError } from "@/lib/integrations/google/sheets";
+import { sheetRequests, sheets, sheetsConfigured, SheetsError } from "@/lib/integrations/google/sheets";
 import { sql } from "./db";
 import type { Staff } from "./staff-auth";
 
@@ -302,10 +303,29 @@ export async function pushPendingToSheet(limit = 20) {
     }
     try {
       if (cells.length) await sheets.writeCells(sheet.spreadsheetId, cells);
+      const requests: unknown[] = [];
+      if (l.order_id) {
+        // Mesmo estilo das outras linhas: copia a formatação da linha de cliente mais próxima
+        const ref = referenceRow(tab, sheetRow);
+        if (ref) {
+          for (const f of WRITABLE_FIELDS) {
+            const col = tab.map[f];
+            if (col !== undefined) requests.push(sheetRequests.copyFormat(tab.sheetId, ref - 1, sheetRow - 1, col));
+          }
+          // Smart-Dados com o trecho numérico colorido como no modelo (ex.: "100+100" em vermelho)
+          const smartCol = tab.map.smart;
+          if (smartCol !== undefined && l.smart_dados) {
+            const model = await sheets.cellText(sheet.spreadsheetId, `${quoteTab(tab.title)}!${columnLetter(smartCol)}${ref}`);
+            const runs = mirrorTextRuns(l.smart_dados, model.text, model.runs);
+            if (runs) requests.push(sheetRequests.richText(tab.sheetId, sheetRow - 1, smartCol, l.smart_dados, runs));
+          }
+        }
+      }
       if (tab.map.cliente !== undefined) {
         const blocked = ["suspensa", "suspensao_pendente"].includes(l.status);
-        await sheets.setTextColor(sheet.spreadsheetId, [{ sheetId: tab.sheetId, row: sheetRow - 1, column: tab.map.cliente, color: blocked ? RED : BLACK }]);
+        requests.push(sheetRequests.textColor(tab.sheetId, sheetRow - 1, tab.map.cliente, blocked ? RED : BLACK));
       }
+      await sheets.batch(sheet.spreadsheetId, requests);
       await sql()`update public.lines set sheet_pending = false, sheet_error = null, sheet_synced_at = now() where id = ${l.id}`;
       written++;
     } catch (err) {
@@ -316,6 +336,15 @@ export async function pushPendingToSheet(limit = 20) {
     }
   }
   return { written, failed };
+}
+
+/** Linha de cliente mais próxima (de preferência com Smart-Dados) para servir de modelo de estilo. */
+function referenceRow(tab: TabData, target: number): number | null {
+  const candidates = tab.rows.filter((r) => r.kind === "cliente" && r.rowNumber !== target);
+  const pool = candidates.some((r) => r.smart) ? candidates.filter((r) => r.smart) : candidates;
+  let best: number | null = null;
+  for (const r of pool) if (best === null || Math.abs(r.rowNumber - target) < Math.abs(best - target)) best = r.rowNumber;
+  return best;
 }
 
 function saoPauloIso(d: Date): string {

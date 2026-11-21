@@ -8,6 +8,7 @@ import { getContractInfo } from "@/lib/server/contracts";
 import { getIdentityReview } from "@/lib/server/identity";
 import { activationDefaults, availableNumbers, lineForOrder } from "@/lib/server/lines";
 import { formatMsisdn } from "@/lib/domain/lines";
+import { AutoRefresh } from "@/components/auto-refresh";
 import { identityMode } from "@/lib/server/identity-mode";
 import { sheetEnabled } from "@/lib/server/planilha";
 import { requireStaff } from "@/lib/server/staff-auth";
@@ -47,6 +48,9 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
       <div className="mt-2 flex flex-wrap items-baseline gap-3">
         <h1 className="font-mono text-2xl font-bold">{o.code}</h1>
         <span className="rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand">{STATUS_LABEL[o.status] ?? o.status}</span>
+        {/* Atualiza sozinha: esperando o cliente (15 s) ou escrevendo na planilha (3 s). Pronto para ativar: não, para não atrapalhar quem digita. */}
+        {line?.sheet_pending && !line.sheet_error ? <AutoRefresh seconds={3} />
+          : ["aguardando_pagamento", "em_andamento"].includes(o.status) ? <AutoRefresh seconds={15} /> : null}
         {o.problem_reason && <span className="rounded-full bg-red-100 px-3 py-1 text-sm text-danger">{o.problem_reason}</span>}
       </div>
 
@@ -94,7 +98,7 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
                   {canSee && <HiddenFieldsButton action={retrySheetAction} fields={{ lineId: line.id }} label="Tentar de novo" />}
                 </div>
               ) : line.sheet_pending ? (
-                <p className="text-muted">Planilha: escrevendo… (atualize a página em alguns segundos)</p>
+                <p className="text-muted">Planilha: escrevendo… (a página atualiza sozinha)</p>
               ) : line.sheet_synced_at ? (
                 <p className="text-success">Planilha do gestor preenchida ✓ ({fmt(line.sheet_synced_at)})</p>
               ) : null}

@@ -240,3 +240,32 @@ export function spreadsheetIdFromUrl(input: string): string | null {
   if (m) return m[1];
   return /^[A-Za-z0-9_-]{20,}$/.test(s) ? s : null;
 }
+
+/** Trecho de texto com formatação própria (ex.: "100+100" em vermelho dentro do Smart-Dados). */
+export type TextRun = { startIndex?: number; format?: Record<string, unknown> };
+
+/**
+ * Copia o "desenho" da formatação de uma célula modelo para um texto novo: o trecho numérico
+ * (ex.: "100+100") recebe o formato que o trecho numérico tem no modelo, e o resto recebe o
+ * formato do começo do modelo. "Franquia de 100+100GB" (100+100 vermelho) → "Franquia de 300+100GB"
+ * com 300+100 vermelho. Sem trecho numérico ou sem formatação no modelo: null (texto simples).
+ */
+export function mirrorTextRuns(text: string, refText: string, refRuns: TextRun[] | undefined | null): TextRun[] | null {
+  if (!refRuns?.length) return null;
+  const formatAt = (i: number) => {
+    let f: Record<string, unknown> | undefined;
+    for (const r of [...refRuns].sort((a, b) => (a.startIndex ?? 0) - (b.startIndex ?? 0))) if ((r.startIndex ?? 0) <= i) f = r.format;
+    return f ?? {};
+  };
+  const ref = /\d[\d+.,]*\d|\d/.exec(refText);
+  const cur = /\d[\d+.,]*\d|\d/.exec(text);
+  if (!ref || !cur) return null;
+  const base = formatAt(0);
+  const digits = formatAt(ref.index);
+  const after = formatAt(ref.index + ref[0].length);
+  const runs: TextRun[] = [{ startIndex: 0, format: base }];
+  runs.push({ startIndex: cur.index, format: digits });
+  if (cur.index + cur[0].length < text.length) runs.push({ startIndex: cur.index + cur[0].length, format: after });
+  // Se o número está no começo, o primeiro trecho já é o numérico
+  return cur.index === 0 ? runs.slice(1) : runs;
+}

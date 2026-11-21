@@ -92,6 +92,34 @@ export type SpreadsheetMeta = {
 };
 
 export type RGB = { red: number; green: number; blue: number };
+export type TextRunApi = { startIndex?: number; format?: Record<string, unknown> };
+
+const cell = (sheetId: number, row: number, column: number) => ({
+  sheetId, startRowIndex: row, endRowIndex: row + 1, startColumnIndex: column, endColumnIndex: column + 1,
+});
+
+/** Pedidos (requests) do batchUpdate. Linhas e colunas começam em 0. */
+export const sheetRequests = {
+  /** Copia só a formatação (fonte, negrito, cor, alinhamento, bordas, formato de data/R$) de uma célula para outra. */
+  copyFormat: (sheetId: number, fromRow: number, toRow: number, column: number) => ({
+    copyPaste: { source: cell(sheetId, fromRow, column), destination: cell(sheetId, toRow, column), pasteType: "PASTE_FORMAT" },
+  }),
+  /** Escreve um texto com trechos formatados (ex.: número em vermelho). */
+  richText: (sheetId: number, row: number, column: number, text: string, runs: TextRunApi[]) => ({
+    updateCells: {
+      rows: [{ values: [{ userEnteredValue: { stringValue: text }, textFormatRuns: runs }] }],
+      fields: "userEnteredValue,textFormatRuns",
+      start: { sheetId, rowIndex: row, columnIndex: column },
+    },
+  }),
+  textColor: (sheetId: number, row: number, column: number, color: RGB) => ({
+    repeatCell: {
+      range: cell(sheetId, row, column),
+      cell: { userEnteredFormat: { textFormat: { foregroundColor: color } } },
+      fields: "userEnteredFormat.textFormat.foregroundColor",
+    },
+  }),
+};
 
 export const sheets = {
   meta(spreadsheetId: string) {
@@ -113,6 +141,22 @@ export const sheets = {
       valueInputOption: "USER_ENTERED",
       data: data.map((d) => ({ range: d.range, values: [[d.value]] })),
     });
+  },
+
+  /** Texto e trechos formatados de uma célula (para copiar o estilo de uma linha modelo). */
+  async cellText(spreadsheetId: string, range: string) {
+    const fields = encodeURIComponent("sheets(data(rowData(values(formattedValue,textFormatRuns))))");
+    const r = await request<{
+      sheets?: { data?: { rowData?: { values?: { formattedValue?: string; textFormatRuns?: TextRunApi[] }[] }[] }[] }[];
+    }>("GET", `/spreadsheets/${encodeURIComponent(spreadsheetId)}?ranges=${encodeURIComponent(range)}&fields=${fields}`);
+    const v = r.sheets?.[0]?.data?.[0]?.rowData?.[0]?.values?.[0];
+    return { text: v?.formattedValue ?? "", runs: v?.textFormatRuns ?? null };
+  },
+
+  /** Vários ajustes de uma vez (copiar formato, texto com trechos coloridos, cor do texto). */
+  batch(spreadsheetId: string, requests: unknown[]) {
+    if (!requests.length) return Promise.resolve({});
+    return request("POST", `/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`, { requests });
   },
 
   /** Cor do texto de células (ex.: nome em vermelho = linha bloqueada). */
