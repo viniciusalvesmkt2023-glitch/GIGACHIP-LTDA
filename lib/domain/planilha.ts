@@ -269,3 +269,81 @@ export function mirrorTextRuns(text: string, refText: string, refRuns: TextRun[]
   // Se o número está no começo, o primeiro trecho já é o numérico
   return cur.index === 0 ? runs.slice(1) : runs;
 }
+
+/* ------------------------------------------------------------------ */
+/* Situação da escrita na planilha (o que o painel mostra)             */
+/* ------------------------------------------------------------------ */
+
+/** Depois disso, uma linha pendente sem erro deixa de ser "escrevendo" e vira "na fila". */
+export const SHEET_STUCK_AFTER_MS = 2 * 60 * 1000;
+
+/**
+ * - erro: a última tentativa falhou (mostra o motivo e "Tentar de novo");
+ * - escrevendo: acabou de ser marcada (a página se atualiza sozinha);
+ * - na_fila: está pendente há mais de 2 min sem erro registrado (ex.: a escrita imediata caiu no
+ *   meio) — a rotina de 10 em 10 min tenta de novo;
+ * - ok: escrita com sucesso; nenhum: nunca foi escrita.
+ */
+export type SheetWriteState = "erro" | "escrevendo" | "na_fila" | "ok" | "nenhum";
+
+export function sheetWriteState(
+  l: { pending: boolean; error: string | null; syncedAt?: Date | string | null; updatedAt?: Date | string | null },
+  now: Date,
+): SheetWriteState {
+  if (l.error) return "erro";
+  if (l.pending) {
+    const since = l.updatedAt ? new Date(l.updatedAt).getTime() : NaN;
+    if (!Number.isFinite(since) || now.getTime() - since > SHEET_STUCK_AFTER_MS) return "na_fila";
+    return "escrevendo";
+  }
+  return l.syncedAt ? "ok" : "nenhum";
+}
+
+/** Erro do banco por coluna/tabela que não existe (migração não rodada no Supabase). */
+export function isMissingSchemaError(e: unknown): boolean {
+  const code = (e as { code?: unknown } | null)?.code;
+  if (code === "42703" || code === "42P01") return true;
+  const msg = e instanceof Error ? e.message : String(e ?? "");
+  return /(column|relation) .+ does not exist/i.test(msg);
+}
+
+/**
+ * Mensagem de erro que vai para sheet_error e para a tela: sem números longos (ICCID, IMEI, EID,
+ * CPF — dados sensíveis nunca aparecem) e, se faltar migração, já diz o que fazer.
+ */
+export function sheetErrorMessage(e: unknown): string {
+  const raw = (e instanceof Error ? e.message : String(e ?? "erro desconhecido")).replace(/\d{11,}/g, "•••");
+  const msg = raw.length > 300 ? `${raw.slice(0, 300)}…` : raw;
+  return isMissingSchemaError(e)
+    ? `Falta rodar uma migração no Supabase (veja Painel → Integrações). Detalhe: ${msg}`
+    : msg;
+}
+
+/* ------------------------------------------------------------------ */
+/* Migrações que o banco precisa ter (Painel → Integrações)            */
+/* ------------------------------------------------------------------ */
+
+/** Tabelas/colunas criadas por cada migração recente — usadas para avisar "migração pendente". */
+export const EXPECTED_SCHEMA: { file: string; objects: string[] }[] = [
+  {
+    file: "20261121000010_inadimplencia.sql",
+    objects: ["overdue_payments", "line_blocks", "lines.asaas_customer_id"],
+  },
+  { file: "20261121000011_planilha_google.sql", objects: ["lines.sheet_pending", "lines.sheet_error", "lines.sheet_synced_at"] },
+  { file: "20261121000012_posicao_na_planilha.sql", objects: ["lines.sheet_tab", "lines.sheet_gid", "lines.sheet_row"] },
+  { file: "20261121000013_redefinir_senha_equipe.sql", objects: ["staff_password_resets"] },
+  { file: "20261121000014_editar_linha.sql", objects: ["lines.sheet_overwrite"] },
+];
+
+/**
+ * Compara o esperado com o que existe no banco. `present` tem nomes de tabela ("line_blocks") e
+ * de coluna ("lines.sheet_overwrite"). Devolve só as migrações com algo faltando, na ordem.
+ */
+export function missingMigrations(
+  present: Set<string>,
+  expected = EXPECTED_SCHEMA,
+): { file: string; missing: string[] }[] {
+  return expected
+    .map((m) => ({ file: m.file, missing: m.objects.filter((o) => !present.has(o)) }))
+    .filter((m) => m.missing.length > 0);
+}

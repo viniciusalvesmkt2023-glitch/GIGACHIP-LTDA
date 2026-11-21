@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { AutoRefresh } from "@/components/auto-refresh";
 import { formatMsisdn } from "@/lib/domain/lines";
 import { getLine } from "@/lib/server/lines";
 import { getSheetConfig, sheetEnabled } from "@/lib/server/planilha";
 import { requireStaff } from "@/lib/server/staff-auth";
 import { updateLineAction } from "../../actions";
 import { LineEditForm } from "../../forms";
+import { SheetStatus } from "../../sheet-status";
 import { Card, PanelShell } from "../../shell";
 
 export const metadata: Metadata = { title: "Editar linha" };
@@ -29,7 +29,6 @@ async function Content({ params }: { params: PageProps<"/painel/linhas/[id]">["p
 
   return (
     <PanelShell staff={staff}>
-      {line.sheetPending && !line.sheetError && <AutoRefresh seconds={3} />}
       <Link href="/painel/linhas" className="text-sm text-brand">← Linhas</Link>
       <h1 className="mt-2 font-mono text-2xl font-bold">{formatMsisdn(line.msisdn)}</h1>
       <p className="mt-1 text-sm text-muted">
@@ -40,8 +39,16 @@ async function Content({ params }: { params: PageProps<"/painel/linhas/[id]">["p
         )}
       </p>
 
-      {sheetOn && line.sheetPending && !line.sheetError && <p className="mt-3 text-sm text-muted">Planilha: escrevendo a correção…</p>}
-      {sheetOn && line.sheetError && <p className="mt-3 rounded-lg bg-red-50 p-2 text-sm text-danger">Planilha: {line.sheetError}</p>}
+      {sheetOn && (line.sheetPending || line.sheetError) && (
+        <div className="mt-3 text-sm">
+          <SheetStatus
+            now={new Date()}
+            canRetry
+            writing="escrevendo a correção…"
+            line={{ id: line.id, pending: line.sheetPending, error: line.sheetError, syncedAt: line.sheetSyncedAt, updatedAt: line.updatedAt }}
+          />
+        </div>
+      )}
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card title="Corrigir dados">

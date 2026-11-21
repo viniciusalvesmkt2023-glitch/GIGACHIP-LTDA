@@ -4,6 +4,7 @@ import { d4signBudget, d4signConfigured } from "@/lib/integrations/d4sign/client
 import { env } from "@/lib/server/env";
 import { serviceAccountEmail, sheetsConfigured } from "@/lib/integrations/google/sheets";
 import { getSheetConfig } from "@/lib/server/planilha";
+import { pendingMigrations } from "@/lib/server/schema-check";
 import { requireStaff } from "@/lib/server/staff-auth";
 import { listSafesAction, testSheetAction } from "../actions";
 import { ActionButton } from "../forms";
@@ -19,10 +20,29 @@ async function Content() {
   const configured = d4signConfigured();
   const budget = configured ? await d4signBudget() : null;
   const robot = serviceAccountEmail();
-  const sheet = await getSheetConfig();
+  const [sheet, migrations] = await Promise.all([getSheetConfig(), pendingMigrations()]);
   return (
     <PanelShell staff={staff}>
       <h1 className="text-2xl font-bold">Integrações</h1>
+      {migrations.length > 0 ? (
+        <Card title="⚠ Migração pendente no banco" className="mt-4 border-danger ring-1 ring-danger">
+          <p className="text-sm">
+            Partes do sistema dependem destas mudanças no banco e vão falhar até elas serem aplicadas (ex.: a escrita na planilha
+            fica “na fila”). Abra o <strong>Supabase → SQL Editor</strong>, cole o conteúdo de cada arquivo abaixo, <strong>na ordem</strong>,
+            e clique em Run. Depois recarregue esta página.
+          </p>
+          <ul className="mt-3 space-y-2 text-sm">
+            {migrations.map((m) => (
+              <li key={m.file} className="rounded-lg bg-red-50 p-2">
+                <code className="select-all font-semibold">supabase/migrations/{m.file}</code>
+                <span className="block text-xs text-muted">Falta: {m.missing.join(", ")}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : (
+        <p className="mt-2 text-sm text-success">✅ Banco atualizado: todas as migrações recentes (até a 0014) foram aplicadas.</p>
+      )}
       <Card title="D4Sign (contratos)" className="mt-4">
         <ul className="space-y-1 text-sm">
           <li>Chaves (D4SIGN_TOKEN_API e D4SIGN_CRYPT_KEY): {ok(configured)}</li>

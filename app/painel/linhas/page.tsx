@@ -9,6 +9,8 @@ import { getSheetConfig, lastSheetRead, sheetEnabled, sheetQueueCounts } from "@
 import { requireStaff } from "@/lib/server/staff-auth";
 import { addNumbersAction, importSheetAction, retrySheetAction } from "../actions";
 import { ActionButton, AddNumbersForm, HiddenFieldsButton } from "../forms";
+import { sheetWriteState } from "@/lib/domain/planilha";
+import { sheetBadge } from "../sheet-status";
 import { Card, PanelShell } from "../shell";
 
 export const metadata: Metadata = { title: "Linhas" };
@@ -34,7 +36,12 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
   const [lastRead, queue, sheetCfg] = sheetOn ? await Promise.all([lastSheetRead(), sheetQueueCounts(), getSheetConfig()]) : [null, null, null];
   const sheetUrl = sheetCfg ? `https://docs.google.com/spreadsheets/d/${sheetCfg.spreadsheetId}/edit` : null;
   const rowUrl = (gid: number | null, row: number) => `${sheetUrl}#gid=${gid ?? 0}&range=A${row}`;
-  const sheetErrors = rows.filter((r) => r.sheetError);
+  const now = new Date();
+  const stateOf = (r: (typeof rows)[number]) =>
+    sheetWriteState({ pending: r.sheetPending, error: r.sheetError, syncedAt: r.sheetSyncedAt, updatedAt: r.updatedAt }, now);
+  // Com erro ou presas na fila (pendentes há mais de 2 min sem erro registrado)
+  const sheetErrors = rows.filter((r) => ["erro", "na_fila"].includes(stateOf(r)));
+  const writing = rows.some((r) => stateOf(r) === "escrevendo");
   const canAct = ["owner", "admin", "ativador"].includes(staff.role);
   const canEdit = ["owner", "admin"].includes(staff.role);
 
@@ -52,7 +59,8 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
         <strong>{counts.suspensa ?? 0}</strong>
       </p>
 
-      {queue && queue.pending > 0 && <AutoRefresh seconds={3} />}
+      {/* Atualiza sozinha só enquanto algo acabou de ir para a planilha (não para sempre) */}
+      {writing && <AutoRefresh seconds={3} />}
       {sheetOn && (
         <div className="mt-4 flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border bg-white p-3 text-sm">
           <p className="text-muted">
@@ -75,7 +83,14 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
           <ul className="space-y-3 text-sm">
             {sheetErrors.map((r) => (
               <li key={r.id} className="flex flex-wrap items-start justify-between gap-2">
-                <span><span className="font-mono">{formatMsisdn(r.msisdn)}</span> · {r.customer ?? "—"}: <span className="text-danger">{r.sheetError}</span></span>
+                <span>
+                  <span className="font-mono">{formatMsisdn(r.msisdn)}</span> · {r.customer ?? "—"}:{" "}
+                  {r.sheetError ? (
+                    <span className="text-danger">{r.sheetError}</span>
+                  ) : (
+                    <span className="text-amber-700">na fila — a rotina tenta de novo em até 10 minutos</span>
+                  )}
+                </span>
                 {canAct && <HiddenFieldsButton action={retrySheetAction} fields={{ lineId: r.id }} label="Tentar de novo" />}
               </li>
             ))}
@@ -127,7 +142,10 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
                 <td className="p-2">{r.paymentMethod}</td>
                 <td className="p-2">
                   {STATUS[r.status] ?? r.status}
-                  {sheetOn && r.sheetPending && <span className="block text-[10px] text-muted">escrevendo na planilha…</span>}
+                  {sheetOn && (() => {
+                    const b = sheetBadge(stateOf(r));
+                    return b && <span className={`block text-[10px] ${b.className}`}>{b.label}</span>;
+                  })()}
                 </td>
                 {canAct && (
                   <td className="p-2">

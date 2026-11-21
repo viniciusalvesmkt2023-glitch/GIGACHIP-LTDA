@@ -12,8 +12,9 @@ import { AutoRefresh } from "@/components/auto-refresh";
 import { identityMode } from "@/lib/server/identity-mode";
 import { sheetEnabled } from "@/lib/server/planilha";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { activateLineAction, changeEmailAction, decideIdentityAction, importSheetAction, retryContractAction, retrySheetAction, revealAction, syncContractAction } from "../../actions";
-import { ActionButton, ActivateLineForm, ChangeEmailForm, HiddenFieldsButton, IdentityDecisionForm, RevealButton } from "../../forms";
+import { activateLineAction, changeEmailAction, decideIdentityAction, importSheetAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
+import { ActionButton, ActivateLineForm, ChangeEmailForm, IdentityDecisionForm, RevealButton } from "../../forms";
+import { SheetStatus } from "../../sheet-status";
 import { Card, PanelShell } from "../../shell";
 
 export const metadata: Metadata = { title: "Pedido" };
@@ -48,9 +49,9 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
       <div className="mt-2 flex flex-wrap items-baseline gap-3">
         <h1 className="font-mono text-2xl font-bold">{o.code}</h1>
         <span className="rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand">{STATUS_LABEL[o.status] ?? o.status}</span>
-        {/* Atualiza sozinha: esperando o cliente (15 s) ou escrevendo na planilha (3 s). Pronto para ativar: não, para não atrapalhar quem digita. */}
-        {line?.sheet_pending && !line.sheet_error ? <AutoRefresh seconds={3} />
-          : ["aguardando_pagamento", "em_andamento"].includes(o.status) ? <AutoRefresh seconds={15} /> : null}
+        {/* Atualiza sozinha: esperando o cliente (15 s). Pronto para ativar: não, para não atrapalhar quem digita. */}
+        {/* (a situação "escrevendo" da planilha já atualiza a página sozinha — ver SheetStatus) */}
+        {["aguardando_pagamento", "em_andamento"].includes(o.status) ? <AutoRefresh seconds={15} /> : null}
         {o.problem_reason && <span className="rounded-full bg-red-100 px-3 py-1 text-sm text-danger">{o.problem_reason}</span>}
       </div>
 
@@ -92,16 +93,11 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
           </p>
           {sheetOn && (
             <div className="mt-2 text-sm">
-              {line.sheet_error ? (
-                <div className="space-y-2">
-                  <p className="rounded-lg bg-red-50 p-2 text-danger">Planilha: {line.sheet_error}</p>
-                  {canSee && <HiddenFieldsButton action={retrySheetAction} fields={{ lineId: line.id }} label="Tentar de novo" />}
-                </div>
-              ) : line.sheet_pending ? (
-                <p className="text-muted">Planilha: escrevendo… (a página atualiza sozinha)</p>
-              ) : line.sheet_synced_at ? (
-                <p className="text-success">Planilha do gestor preenchida ✓ ({fmt(line.sheet_synced_at)})</p>
-              ) : null}
+              <SheetStatus
+                now={new Date()}
+                canRetry={canSee}
+                line={{ id: line.id, pending: line.sheet_pending, error: line.sheet_error, syncedAt: line.sheet_synced_at, updatedAt: line.updated_at }}
+              />
             </div>
           )}
         </Card>
