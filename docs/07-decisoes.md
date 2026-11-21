@@ -432,3 +432,10 @@ O gestor usa a planilha, então ela **não** é substituída (revisa D26). O sis
 Substitui o suporte@ (D19): atendimento e privacidade/LGPD passam a ser **contato@gigachip.com.br**
 (contrato v4 e rodapé do site). Os e-mails do site saem por esse endereço via Resend
 (`EMAIL_FROM="Gigachip <contato@gigachip.com.br>"`); respostas do cliente chegam na caixa normal.
+
+## D32 — "Esqueci minha senha" no painel (21/11/2026)
+
+Na tela de entrar, "Esqueci minha senha" manda um link para o e-mail cadastrado da pessoa da
+equipe (pelo Resend). O link vale 30 minutos e uma vez só; até 3 pedidos por hora. A resposta é
+sempre a mesma (não revela quem é da equipe). Ao trocar a senha, todas as sessões abertas são
+encerradas e o 2FA continua sendo pedido. Migração 0013.

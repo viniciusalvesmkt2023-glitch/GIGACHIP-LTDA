@@ -74,6 +74,28 @@ export function renderActivatedEmail(p: { firstName: string; code: string; planN
   return { subject, html, text };
 }
 
+/** Envia um e-mail avulso na hora (ex.: redefinir senha do painel). */
+export async function sendEmailNow(to: string, content: { subject: string; html: string; text: string }) {
+  if (!emailConfigured()) throw new Error("e-mail ainda não configurado");
+  return sendViaResend(to, content);
+}
+
+const esc = (v: string) => v.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+
+export function renderPasswordResetEmail(p: { firstName: string; link: string }) {
+  const subject = "Redefinir sua senha do painel Gigachip";
+  const html = layout(
+    "Redefinir senha do painel",
+    `<p style="line-height:1.6">Olá, ${esc(p.firstName)}! Recebemos um pedido para redefinir a senha do painel.
+Clique no botão para criar uma senha nova. O link vale por <strong>30 minutos</strong> e só pode ser usado uma vez.</p>
+${button(p.link, "Criar senha nova")}
+<p style="font-size:13px;color:#64748b;line-height:1.6">Se não foi você, ignore este e-mail: sua senha continua a mesma.
+Para entrar, o código do aplicativo autenticador (2FA) continua sendo pedido.</p>`,
+  );
+  const text = `Olá, ${p.firstName}!\n\nPara criar uma senha nova do painel, abra o link (vale 30 minutos, uso único):\n${p.link}\n\nSe não foi você, ignore este e-mail.\n\nGigachip Ltda.`;
+  return { subject, html, text };
+}
+
 async function sendViaResend(to: string, content: { subject: string; html: string; text: string }) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",

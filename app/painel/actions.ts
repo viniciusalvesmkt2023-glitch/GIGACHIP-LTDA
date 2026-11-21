@@ -12,7 +12,7 @@ import { d4sign } from "@/lib/integrations/d4sign/client";
 import { redirect } from "next/navigation";
 import { revealSensitive, type SensitiveField } from "@/lib/server/admin";
 import { decideIdentity } from "@/lib/server/identity";
-import { createStaff, login, logout, requireStaff, staffCount, verifySecondFactor, type StaffRole } from "@/lib/server/staff-auth";
+import { createStaff, login, logout, requestPasswordReset, requireStaff, resetPassword, staffCount, verifySecondFactor, type StaffRole } from "@/lib/server/staff-auth";
 import { env } from "@/lib/server/env";
 import { blockCustomer, syncOverdue, unblockCustomer } from "@/lib/server/inadimplencia";
 import { describeSheet, importFromSheet, pushPendingToSheet, setSheetConfig } from "@/lib/server/planilha";
@@ -245,4 +245,25 @@ export async function retrySheetAction(_p: FormState, fd: FormData): Promise<For
   const r = await pushPendingToSheet();
   refresh();
   return "error" in r && r.error ? { message: r.error } : { ok: true, message: "Tentei escrever de novo na planilha." };
+}
+
+/** "Esqueci minha senha": resposta sempre igual (não revela se o e-mail é da equipe). */
+export async function forgotPasswordAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const email = str(fd, "email");
+  try {
+    await requestPasswordReset(email);
+  } catch (e) {
+    console.error(`[painel] falha ao enviar link de senha: ${e instanceof Error ? e.message : e}`);
+  }
+  return {
+    ok: true,
+    email,
+    message: "Se este e-mail for da equipe, enviamos um link para criar uma senha nova. Ele vale por 30 minutos — confira também o spam.",
+  };
+}
+
+export async function resetPasswordAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const r = await resetPassword(str(fd, "token"), str(fd, "password"), str(fd, "confirm"));
+  if (!r.ok) return { message: r.message };
+  redirect("/painel/entrar?senha=1");
 }

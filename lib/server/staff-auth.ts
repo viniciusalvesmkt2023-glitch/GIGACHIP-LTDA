@@ -177,3 +177,70 @@ export async function createStaff(input: {
   await audit(input.createdBy, "staff_criado", created.id, { role: input.role });
   return { ok: true };
 }
+
+// ------------------------------------------------------------------ esqueci minha senha
+
+const RESET_MINUTES = 30;
+const MAX_RESETS_PER_HOUR = 3;
+
+/**
+ * Manda o link de redefinição para o e-mail cadastrado. Sempre responde igual (não revela se o
+ * e-mail existe). Até 3 pedidos por hora por pessoa.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const { ip } = await requestMeta();
+  const normalized = email.trim().toLowerCase();
+  const [staff] = await sql()<{ id: string; name: string; email: string }[]>`
+    select id, name, email::text as email from public.staff where email = ${normalized} and is_active`;
+  if (!staff) {
+    await audit(null, "staff_redefinir_senha_email_desconhecido", null);
+    return;
+  }
+  const [{ n }] = await sql()<{ n: number }[]>`
+    select count(*)::int as n from public.staff_password_resets
+    where staff_id = ${staff.id} and created_at > now() - interval '1 hour'`;
+  if (n >= MAX_RESETS_PER_HOUR) return;
+  const token = randomBytes(32).toString("base64url");
+  await sql()`
+    insert into public.staff_password_resets (staff_id, token_hash, ip, expires_at)
+    values (${staff.id}, ${sha256(token)}, ${ip}, now() + make_interval(mins => ${RESET_MINUTES}))`;
+  const link = `${env().APP_URL.replace(/\/$/, "")}/painel/redefinir/${token}`;
+  const { renderPasswordResetEmail, sendEmailNow } = await import("./email");
+  await sendEmailNow(staff.email, renderPasswordResetEmail({ firstName: staff.name.split(/\s+/)[0], link }));
+  await audit(staff.id, "staff_redefinir_senha_pedido", staff.id);
+}
+
+const RESET_TOKEN = /^[A-Za-z0-9_-]{40,60}$/;
+
+/** O link ainda vale? (para a tela mostrar o formulário ou o aviso de link vencido) */
+export async function passwordResetValid(token: string): Promise<boolean> {
+  if (!RESET_TOKEN.test(token)) return false;
+  const [r] = await sql()`
+    select 1 from public.staff_password_resets
+    where token_hash = ${sha256(token)} and used_at is null and expires_at > now()`;
+  return Boolean(r);
+}
+
+/** Troca a senha pelo link. Encerra todas as sessões abertas; o 2FA continua o mesmo. */
+export async function resetPassword(token: string, password: string, confirm: string): Promise<LoginResult> {
+  if (password !== confirm) return { ok: false, message: "As duas senhas não são iguais." };
+  const problem = passwordProblem(password);
+  if (problem) return { ok: false, message: problem };
+  if (!RESET_TOKEN.test(token)) return { ok: false, message: "Link inválido. Peça um novo." };
+  const hash = await hashPassword(password);
+  const [r] = await sql()<{ staff_id: string; email: string }[]>`
+    with used as (
+      update public.staff_password_resets set used_at = now()
+      where token_hash = ${sha256(token)} and used_at is null and expires_at > now()
+      returning staff_id
+    )
+    update public.staff s set password_hash = ${hash}
+    from used where s.id = used.staff_id and s.is_active
+    returning s.id as staff_id, s.email::text as email`;
+  if (!r) return { ok: false, message: "Este link venceu ou já foi usado. Peça um novo." };
+  await sql()`update public.staff_sessions set revoked_at = now() where staff_id = ${r.staff_id} and revoked_at is null`;
+  // Libera o login (as tentativas erradas de antes não contam mais)
+  await sql()`delete from public.staff_login_attempts where email = ${r.email} and not success`;
+  await audit(r.staff_id, "staff_redefiniu_senha", r.staff_id);
+  return { ok: true };
+}
