@@ -43,6 +43,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Linhas</h1>
         {["owner", "admin", "financeiro"].includes(staff.role) && (
+          // eslint-disable-next-line @next/next/no-html-link-for-pages -- download de arquivo (route handler), não é página
           <a href="/painel/linhas/exportar" className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold">⬇ Baixar planilha (Excel)</a>
         )}
       </div>
@@ -95,7 +96,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
         <table className="w-full min-w-[1100px] text-left text-xs">
           <thead className="bg-[#3b0a5c] text-white">
             <tr>
-              {[...(sheetOn ? ["#"] : []), "Cliente", "Login Vivo", "Número", "ICCID atual", "Smart-Dados", "Plano PJ", "Ativação", "Venda final", "Valor", "Vencimento", "Pagamento", "Situação"].map((h) => (
+              {[...(sheetOn ? ["#"] : []), "Cliente", "Login Vivo", "Número", "ICCID atual", "Smart-Dados", "Plano PJ", "Ativação", "Venda final", "Valor", "Vencimento", "Pagamento", "Situação", ...(canAct ? [""] : [])].map((h) => (
                 <th key={h} className="p-2 font-semibold">{h}</th>
               ))}
             </tr>
@@ -128,9 +129,14 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
                   {STATUS[r.status] ?? r.status}
                   {sheetOn && r.sheetPending && <span className="block text-[10px] text-muted">escrevendo na planilha…</span>}
                 </td>
+                {canAct && (
+                  <td className="p-2">
+                    {r.status !== "disponivel" && <Link href={`/painel/linhas/${r.id}`} className="rounded-lg border border-border px-2 py-1 font-semibold text-brand hover:bg-brand-soft">Editar</Link>}
+                  </td>
+                )}
               </tr>
             ))}
-            {rows.length === 0 && <tr><td colSpan={sheetOn ? 13 : 12} className="p-6 text-center text-muted">Nenhuma linha. Cadastre os números disponíveis abaixo.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={(sheetOn ? 13 : 12) + (canAct ? 1 : 0)} className="p-6 text-center text-muted">Nenhuma linha. Cadastre os números disponíveis abaixo.</td></tr>}
           </tbody>
         </table>
       </Card>

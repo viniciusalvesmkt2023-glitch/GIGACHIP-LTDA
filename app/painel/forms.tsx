@@ -298,3 +298,46 @@ export function ResetPasswordForm({ action, token }: { action: Action; token: st
     </form>
   );
 }
+
+export function LineEditForm({ action, line, legacy }: {
+  action: Action;
+  legacy: boolean;
+  line: { id: string; customer: string; iccid: string; smartDados: string; activatedOn: string; salePrice: string; cost: string; dueDate: string; notes: string };
+}) {
+  const [s, a, pending] = useActionState(action, {});
+  return (
+    <form action={a} className="grid gap-3 sm:grid-cols-2">
+      <input type="hidden" name="lineId" value={line.id} />
+      <div className="sm:col-span-2"><Msg s={s} /></div>
+      {legacy && (
+        <label className="text-sm font-medium sm:col-span-2">Cliente
+          <input name="customer" required defaultValue={line.customer} className={input} />
+        </label>
+      )}
+      <label className="text-sm font-medium sm:col-span-2">ICCID atual
+        <input name="iccid" inputMode="numeric" defaultValue={line.iccid} className={`${input} font-mono`} />
+      </label>
+      <label className="text-sm font-medium">Smart-Dados
+        <input name="smartDados" defaultValue={line.smartDados} className={input} placeholder="Franquia de 100+100GB" />
+      </label>
+      <label className="text-sm font-medium">Ativação
+        <input name="activatedOn" type="date" defaultValue={line.activatedOn} className={input} />
+      </label>
+      <label className="text-sm font-medium">Venda final (R$)
+        <input name="salePrice" defaultValue={line.salePrice} className={input} placeholder="124,99" />
+      </label>
+      <label className="text-sm font-medium">Valor do gestor (R$)
+        <input name="cost" defaultValue={line.cost} className={input} placeholder="30,00" />
+      </label>
+      {legacy && (
+        <label className="text-sm font-medium">Vencimento
+          <input name="dueDate" type="date" defaultValue={line.dueDate} className={input} />
+        </label>
+      )}
+      <label className="text-sm font-medium sm:col-span-2">Observações (só no painel, não vai para a planilha)
+        <textarea name="notes" rows={3} defaultValue={line.notes} className={input} />
+      </label>
+      <button disabled={pending} className={`${buttonStyles.primary} py-3 sm:col-span-2`}>{pending ? "Salvando..." : "Salvar correção"}</button>
+    </form>
+  );
+}

@@ -227,9 +227,10 @@ export async function pushPendingToSheet(limit = 20) {
     {
       id: string; msisdn: string; status: string; order_id: string | null; customer: string | null; iccid: string | null;
       smart_dados: string | null; activated_at: Date | null; sale_price_cents: number | null; cost_cents: number | null; due: string | null;
+      sheet_overwrite: boolean;
     }[]
   >`
-    select l.id, l.msisdn, l.status::text, l.order_id, coalesce(c.full_name, l.legacy_customer_name) as customer, l.iccid,
+    select l.id, l.msisdn, l.status::text, l.order_id, l.sheet_overwrite, coalesce(c.full_name, l.legacy_customer_name) as customer, l.iccid,
            l.smart_dados, l.activated_at, l.sale_price_cents, l.cost_cents, coalesce(s.next_due_date, l.legacy_due_date)::text as due
     from public.lines l
     left join public.orders o on o.id = l.order_id
@@ -263,7 +264,7 @@ export async function pushPendingToSheet(limit = 20) {
   let failed = 0;
   const giveUp = async (id: string, msg: string) => {
     failed++;
-    await sql()`update public.lines set sheet_pending = false, sheet_error = ${msg} where id = ${id}`;
+    await sql()`update public.lines set sheet_pending = false, sheet_overwrite = false, sheet_error = ${msg} where id = ${id}`;
   };
   for (const l of pending) {
     const loc = where.get(l.msisdn);
@@ -280,13 +281,14 @@ export async function pushPendingToSheet(limit = 20) {
     const { tab, row } = loc;
     const sheetRow = row.rowNumber; // 1-based
     const cells: { range: string; value: string }[] = [];
-    if (l.order_id) {
-      // Venda pelo site: preenche as colunas da venda, sem passar por cima de outro cliente
-      if (row.kind === "inconsistente") {
+    // Venda pelo site, ou correção feita pela equipe no painel ("Editar"): preenche as colunas da venda
+    if (l.order_id || l.sheet_overwrite) {
+      // Sem passar por cima de outro cliente — a não ser que a equipe tenha corrigido no painel
+      if (!l.sheet_overwrite && row.kind === "inconsistente") {
         await giveUp(l.id, `na planilha a linha ${row.rowNumber} ${row.problem} — arrume a planilha e clique em Tentar de novo`);
         continue;
       }
-      if (row.kind === "cliente" && normalizeName(row.cliente ?? "") !== normalizeName(l.customer ?? "")) {
+      if (!l.sheet_overwrite && row.kind === "cliente" && normalizeName(row.cliente ?? "") !== normalizeName(l.customer ?? "")) {
         await giveUp(l.id, `na planilha este número já está com o cliente "${row.cliente}" — confira antes`);
         continue;
       }
@@ -304,7 +306,7 @@ export async function pushPendingToSheet(limit = 20) {
     try {
       if (cells.length) await sheets.writeCells(sheet.spreadsheetId, cells);
       const requests: unknown[] = [];
-      if (l.order_id) {
+      if (l.order_id || l.sheet_overwrite) {
         // Mesmo estilo das outras linhas: copia a formatação da linha de cliente mais próxima
         const ref = referenceRow(tab, sheetRow);
         if (ref) {
@@ -326,7 +328,7 @@ export async function pushPendingToSheet(limit = 20) {
         requests.push(sheetRequests.textColor(tab.sheetId, sheetRow - 1, tab.map.cliente, blocked ? RED : BLACK));
       }
       await sheets.batch(sheet.spreadsheetId, requests);
-      await sql()`update public.lines set sheet_pending = false, sheet_error = null, sheet_synced_at = now() where id = ${l.id}`;
+      await sql()`update public.lines set sheet_pending = false, sheet_overwrite = false, sheet_error = null, sheet_synced_at = now() where id = ${l.id}`;
       written++;
     } catch (err) {
       failed++;

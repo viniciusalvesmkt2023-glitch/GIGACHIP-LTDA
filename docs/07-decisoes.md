@@ -439,3 +439,12 @@ Na tela de entrar, "Esqueci minha senha" manda um link para o e-mail cadastrado 
 equipe (pelo Resend). O link vale 30 minutos e uma vez só; até 3 pedidos por hora. A resposta é
 sempre a mesma (não revela quem é da equipe). Ao trocar a senha, todas as sessões abertas são
 encerradas e o 2FA continua sendo pedido. Migração 0013.
+
+## D33 — Editar linha no painel (21/11/2026)
+
+Painel → Linhas → **Editar**: corrige Cliente (só clientes antigos), ICCID, Smart-Dados, Ativação,
+Venda final, Valor do gestor, Vencimento (só clientes antigos) e Observações (só no painel). Com a
+planilha ligada, a correção é escrita na planilha do gestor (passando por cima, no mesmo estilo) e
+não é desfeita pela leitura seguinte. Login, Número, Plano PJ e Forma de pagamento continuam sendo
+do gestor (mudar na planilha). Nome e vencimento dos clientes do site vêm do cadastro/assinatura.
+O histórico registra só quais campos mudaram (sem valores). Migração 0014.

@@ -241,3 +241,114 @@ export async function linesCsv(): Promise<string> {
   // BOM para o Excel abrir acentos corretamente
   return "﻿" + [header.map(csvCell).join(";"), ...lines].join("\r\n");
 }
+
+// ------------------------------------------------------------------ editar linha (painel)
+
+export type LineDetail = {
+  id: string;
+  msisdn: string;
+  status: string;
+  orderId: string | null;
+  orderCode: string | null;
+  customer: string | null;
+  vivoLogin: string | null;
+  planoPj: string | null;
+  paymentMethod: string | null;
+  iccid: string | null;
+  smartDados: string | null;
+  activatedOn: string | null; // YYYY-MM-DD (São Paulo)
+  salePriceCents: number | null;
+  costCents: number | null;
+  dueDate: string | null; // YYYY-MM-DD
+  notes: string | null;
+  sheetRow: number | null;
+  sheetPending: boolean;
+  sheetError: string | null;
+};
+
+export async function getLine(id: string): Promise<LineDetail | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const [r] = await sql()<{
+    id: string; msisdn: string; status: string; order_id: string | null; code: string | null; customer: string | null;
+    vivo_login: string | null; plano_pj: string | null; payment_method: string | null; iccid: string | null; smart_dados: string | null;
+    activated_on: string | null; sale_price_cents: number | null; cost_cents: number | null; due: string | null; notes: string | null;
+    sheet_row: number | null; sheet_pending: boolean; sheet_error: string | null;
+  }[]>`
+    select l.id, l.msisdn, l.status::text, l.order_id, o.code, coalesce(c.full_name, l.legacy_customer_name) as customer,
+           l.vivo_login, l.plano_pj, l.payment_method, l.iccid, l.smart_dados,
+           (l.activated_at at time zone 'America/Sao_Paulo')::date::text as activated_on,
+           l.sale_price_cents, l.cost_cents, coalesce(s.next_due_date, l.legacy_due_date)::text as due, l.notes, l.sheet_row,
+           l.sheet_pending, l.sheet_error
+    from public.lines l
+    left join public.orders o on o.id = l.order_id
+    left join public.customers c on c.id = o.customer_id
+    left join public.subscriptions s on s.order_id = o.id
+    where l.id = ${id}`;
+  if (!r) return null;
+  return {
+    id: r.id, msisdn: r.msisdn, status: r.status, orderId: r.order_id, orderCode: r.code, customer: r.customer,
+    vivoLogin: r.vivo_login, planoPj: r.plano_pj, paymentMethod: r.payment_method, iccid: r.iccid, smartDados: r.smart_dados,
+    activatedOn: r.activated_on, salePriceCents: r.sale_price_cents, costCents: r.cost_cents, dueDate: r.due, notes: r.notes,
+    sheetRow: r.sheet_row, sheetPending: r.sheet_pending, sheetError: r.sheet_error,
+  };
+}
+
+export type LineEdit = {
+  customer: string | null; // só linhas antigas (sem pedido): o nome do cliente do site vem do cadastro
+  iccid: string | null;
+  smartDados: string | null;
+  activatedOn: string | null;
+  salePriceCents: number | null;
+  costCents: number | null;
+  dueDate: string | null; // só linhas antigas: nas do site o vencimento vem da assinatura do Asaas
+  notes: string | null;
+};
+
+/**
+ * Correção feita pela equipe. Com a planilha ligada, a correção também vai para a planilha
+ * (Cliente, ICCID, Smart-Dados, Ativação, Venda final, Valor, Vencimento), passando por cima do
+ * que estiver lá. Login, Número, Plano PJ e Forma de pagamento são do gestor (só na planilha).
+ */
+export async function updateLine(staff: Staff, id: string, e: LineEdit, writeToSheet: boolean): Promise<{ ok: boolean; message: string }> {
+  const cur = await getLine(id);
+  if (!cur) return { ok: false, message: "Linha não encontrada." };
+  if (cur.status === "disponivel") return { ok: false, message: "Número disponível: para vender, use “Ativar linha” no pedido." };
+  if (e.iccid && !/^\d{18,22}$/.test(e.iccid)) return { ok: false, message: "ICCID inválido: 18 a 22 números." };
+  const legacy = !cur.orderId;
+  if (legacy && !e.customer?.trim()) return { ok: false, message: "Informe o nome do cliente." };
+
+  const changed: string[] = [];
+  const diff = (name: string, a: unknown, b: unknown) => { if ((a ?? null) !== (b ?? null)) changed.push(name); };
+  if (legacy) diff("cliente", cur.customer, e.customer?.trim());
+  diff("iccid", cur.iccid, e.iccid);
+  diff("smart_dados", cur.smartDados, e.smartDados);
+  diff("ativacao", cur.activatedOn, e.activatedOn);
+  diff("venda_final", cur.salePriceCents, e.salePriceCents);
+  diff("valor_gestor", cur.costCents, e.costCents);
+  if (legacy) diff("vencimento", cur.dueDate, e.dueDate);
+  diff("observacoes", cur.notes, e.notes);
+  if (!changed.length) return { ok: true, message: "Nada mudou." };
+  const sheetFields = changed.filter((c) => c !== "observacoes");
+
+  await withActor({ type: "staff", id: staff.id, reason: "linha corrigida no painel" }, async (tx) => {
+    await tx`
+      update public.lines
+      set legacy_customer_name = case when order_id is null then ${e.customer?.trim() ?? null} else legacy_customer_name end,
+          legacy_due_date = case when order_id is null then ${e.dueDate}::date else legacy_due_date end,
+          iccid = ${e.iccid}, smart_dados = ${e.smartDados},
+          activated_at = ${e.activatedOn ? `${e.activatedOn} 12:00:00-03` : null},
+          sale_price_cents = ${e.salePriceCents}, cost_cents = ${e.costCents}, notes = ${e.notes},
+          sheet_pending = sheet_pending or ${writeToSheet && sheetFields.length > 0},
+          sheet_overwrite = sheet_overwrite or ${writeToSheet && sheetFields.length > 0},
+          sheet_error = case when ${writeToSheet && sheetFields.length > 0} then null else sheet_error end
+      where id = ${id}`;
+    // Só os nomes dos campos (sem valores: ICCID não vai para o histórico)
+    await tx`
+      insert into public.audit_log (actor_id, action, entity, entity_id, metadata)
+      values (${staff.id}, 'editar_linha', 'lines', ${id}, ${tx.json({ campos: changed })})`;
+  });
+  return {
+    ok: true,
+    message: writeToSheet && sheetFields.length ? "Salvo. A planilha do gestor está sendo atualizada." : "Salvo.",
+  };
+}

@@ -7,7 +7,7 @@ import { processQueuedContracts, retryContract, syncContractByDocument } from "@
 import { changeCustomerEmail } from "@/lib/server/customer-admin";
 import { sql } from "@/lib/server/db";
 import { parseMoneyToCents, parseNumbersPaste } from "@/lib/domain/lines";
-import { activateOrder, addAvailableNumbers, setLineCostCents } from "@/lib/server/lines";
+import { activateOrder, addAvailableNumbers, setLineCostCents, updateLine } from "@/lib/server/lines";
 import { d4sign } from "@/lib/integrations/d4sign/client";
 import { redirect } from "next/navigation";
 import { revealSensitive, type SensitiveField } from "@/lib/server/admin";
@@ -16,7 +16,7 @@ import { createStaff, login, logout, requestPasswordReset, requireStaff, resetPa
 import { env } from "@/lib/server/env";
 import { blockCustomer, syncOverdue, unblockCustomer } from "@/lib/server/inadimplencia";
 import { processEmails } from "@/lib/server/email";
-import { describeSheet, importFromSheet, pushPendingToSheet, setSheetConfig } from "@/lib/server/planilha";
+import { describeSheet, importFromSheet, pushPendingToSheet, setSheetConfig, sheetEnabled } from "@/lib/server/planilha";
 import { spreadsheetIdFromUrl } from "@/lib/domain/planilha";
 
 export type FormState = { message?: string; ok?: boolean; value?: string; email?: string };
@@ -269,4 +269,38 @@ export async function resetPasswordAction(_p: FormState, fd: FormData): Promise<
   const r = await resetPassword(str(fd, "token"), str(fd, "password"), str(fd, "confirm"));
   if (!r.ok) return { message: r.message };
   redirect("/painel/entrar?senha=1");
+}
+
+export async function updateLineAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner", "admin", "ativador"]);
+  const money = (k: string) => {
+    const v = str(fd, k).trim();
+    return v ? parseMoneyToCents(v) : null;
+  };
+  const sale = money("salePrice");
+  const cost = money("cost");
+  if ((str(fd, "salePrice").trim() && sale === null) || (str(fd, "cost").trim() && cost === null)) {
+    return { message: "Confira os valores em R$ (ex.: 124,99)." };
+  }
+  const date = (k: string) => (/^\d{4}-\d{2}-\d{2}$/.test(str(fd, k)) ? str(fd, k) : null);
+  const text = (k: string) => str(fd, k).trim() || null;
+  const writeToSheet = await sheetEnabled();
+  const r = await updateLine(
+    me,
+    str(fd, "lineId"),
+    {
+      customer: text("customer"),
+      iccid: str(fd, "iccid").replace(/\s/g, "") || null,
+      smartDados: text("smartDados"),
+      activatedOn: date("activatedOn"),
+      salePriceCents: sale,
+      costCents: cost,
+      dueDate: date("dueDate"),
+      notes: text("notes"),
+    },
+    writeToSheet,
+  );
+  if (r.ok && writeToSheet) after(() => pushPendingToSheet().catch((e) => console.error(`[planilha] ${e instanceof Error ? e.message : e}`)));
+  refresh();
+  return { ok: r.ok, message: r.message };
 }
