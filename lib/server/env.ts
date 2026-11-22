@@ -12,7 +12,13 @@ const schema = z.object({
   ASAAS_API_URL: z.string().url(),
   ASAAS_API_KEY: z.string().min(1),
   ASAAS_WEBHOOK_TOKEN: z.string().min(32).max(255).regex(/^\S+$/),
-  APP_URL: z.string().url().default("http://localhost:3000"),
+  /**
+   * Endereço público do site (links dos e-mails, aviso da D4Sign). Sem a variável, usa o domínio
+   * de produção que a própria Vercel informa (VERCEL_PROJECT_PRODUCTION_URL); fora da Vercel, localhost.
+   */
+  APP_URL: z.string().url().default(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000",
+  ),
   /** Libera a criação do 1º usuário do painel (só funciona enquanto não houver ninguém na equipe). */
   ADMIN_SETUP_TOKEN: z.string().min(20).optional(),
   // D4Sign (opcional: sem estas variáveis o envio de contratos fica desligado)
