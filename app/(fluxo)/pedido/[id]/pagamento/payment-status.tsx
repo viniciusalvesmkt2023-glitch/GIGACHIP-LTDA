@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Check, Copy } from "lucide-react";
 
 /** Consulta o status a cada 5 s enquanto aguarda o pagamento (a confirmação vem do webhook). */
-export function PaymentStatusWatcher({ orderId, initialStatus }: { orderId: string; initialStatus: string }) {
+export function PaymentStatusWatcher({ orderId, initialStatus, texto }: { orderId: string; initialStatus: string; texto: string }) {
   const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
 
@@ -28,8 +29,8 @@ export function PaymentStatusWatcher({ orderId, initialStatus }: { orderId: stri
 
   if (status !== "aguardando_pagamento") return null;
   return (
-    <p className="flex items-center gap-2 text-sm text-muted" role="status">
-      <span className="h-2 w-2 animate-pulse rounded-full bg-accent" /> Aguardando confirmação do pagamento…
+    <p className="pg-wait" role="status">
+      <span className="pg-wait-dot" /> {texto}
     </p>
   );
 }
@@ -39,14 +40,18 @@ export function CopyButton({ text }: { text: string }) {
   return (
     <button
       type="button"
+      className={`ck-btn pg-copy-btn ${copied ? "is-copied" : ""}`}
       onClick={async () => {
-        await navigator.clipboard.writeText(text);
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          /* o código continua visível para copiar à mão */
+        }
         setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
+        window.setTimeout(() => setCopied(false), 2500);
       }}
-      className="w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white hover:bg-brand-strong"
     >
-      {copied ? "Código copiado!" : "Copiar código PIX"}
+      {copied ? <Check size={18} /> : <Copy size={18} />} {copied ? "Código copiado!" : "Copiar código Pix"}
     </button>
   );
 }

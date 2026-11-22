@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { formatBRL } from "@/lib/domain/money";
 import { submitCheckout, type CheckoutFormState } from "../actions";
+import { LinhaPedido } from "../../linha-pedido";
 
 /*
  * Contratação em 3 etapas (desenhada no Lovable, inspirada no checkout da Vivo):
@@ -231,16 +232,6 @@ function Resumo({ plan, plans, onTrocar }: { plan: CheckoutPlan; plans: Checkout
         </span>
       </div>
     </aside>
-  );
-}
-
-/** Linha discreta com o pedido (no lugar do cartão azul depois da 1ª etapa). */
-export function LinhaPedido({ texto }: { texto: string }) {
-  return (
-    <p className="ck-orderline">
-      <img src="/vivo-logo.png" alt="Rede Vivo" width={52} height={16} />
-      <span>{texto}</span>
-    </p>
   );
 }
 

@@ -119,6 +119,7 @@ export type PaymentView = {
   providerPaymentId: string | null;
   invoiceUrl: string | null;
   expiresAt: Date | null;
+  simType: "esim" | "physical";
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -137,9 +138,10 @@ export async function getPaymentView(orderId: string): Promise<PaymentView | nul
       provider_payment_id: string | null;
       invoice_url: string | null;
       expires_at: Date | null;
+      sim_type: "esim" | "physical";
     }[]
   >`
-    select o.code, o.status, o.payment_status, o.plan_snapshot->>'name' as plan_name,
+    select o.code, o.status, o.payment_status, o.plan_snapshot->>'name' as plan_name, o.sim_type::text as sim_type,
            o.monthly_price_cents, p.billing_type, p.provider_payment_id, p.invoice_url, o.expires_at
     from public.orders o
     left join public.payments p on p.order_id = o.id and p.is_first_payment
@@ -157,6 +159,7 @@ export async function getPaymentView(orderId: string): Promise<PaymentView | nul
     providerPaymentId: row.provider_payment_id,
     invoiceUrl: row.invoice_url,
     expiresAt: row.expires_at,
+    simType: row.sim_type,
   };
 }
 
