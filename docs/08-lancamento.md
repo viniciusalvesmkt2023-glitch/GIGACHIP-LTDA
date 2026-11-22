@@ -1,7 +1,8 @@
 # 08 — Roteiro de lançamento (versão 2 — atualizado em 22/11/2026, noite)
 
 > **Situação:** site e painel novos no ar; Asaas em produção; testes limpos; planilha oficial
-> conectada (122 números, 6 disponíveis). Os sócios decidiram esperar a **primeira venda real de
+> conectada (122 números, 6 disponíveis); domínio www.gigachip.com.br ligado (gigachip.com.br
+> redireciona); Vercel Pro; todas as integrações verdes. Os sócios decidiram esperar a **primeira venda real de
 > cliente** em vez de fazer uma compra de teste (Fase D): acompanhar essa venda passo a passo.
 
 Tudo o que falta para colocar o site e o painel novos no ar e **vender de verdade**.
@@ -58,19 +59,19 @@ Quem faz: **[Claude]** = eu, no código · **[Sócios]** = vocês (contas, pagam
   a caixinha de Termos/Privacidade. A LGPD exige informar o cliente sobre o uso dos dados (CPF,
   documento, selfie). O advogado diz se basta o que está no contrato da D4Sign ou se precisa de um
   aviso no site. Se precisar, eu coloco de volta de um jeito discreto.
-- [ ] ⚠️ **Vercel Pro** (US$ 20/mês). O plano grátis não pode ser usado para vender (regra da Vercel).
+- [x] ⚠️ **Vercel Pro** (US$ 20/mês). O plano grátis não pode ser usado para vender (regra da Vercel).
 - [ ] ⚠️ **Supabase Pro** (US$ 25/mês). Sem ele não há backup diário e o banco pausa se ficar parado.
 - [x] ✅ **WhatsApp de atendimento (85) 8129-0832** já está no sistema (contrato, site e ativação).
   Se existir `NEXT_PUBLIC_WHATSAPP_NUMBER` na Vercel com outro número, apagar ou trocar para
   `558581290832`.
-- [ ] **E-mails (Resend)**: conferir em Integrações que "E-mails" está **Configurado**
+- [x] **E-mails (Resend)**: conferir em Integrações que "E-mails" está **Configurado**
   (`RESEND_API_KEY` e `EMAIL_FROM` na Vercel). Sem isso, o cliente não recebe o link da ativação.
 - [ ] **D4Sign**: pedir aumento do limite de 10 chamadas por hora e confirmar se o reconhecimento
   facial gasta créditos.
-- [ ] **Domínio** `gigachip.com.br` apontando para a Vercel:
+- [x] **Domínio** `gigachip.com.br` apontando para a Vercel:
   - Vercel → Settings → Domains → adicionar `gigachip.com.br` e `www.gigachip.com.br`;
   - copiar os registros para o DNS **sem mexer** nos de e-mail (MX) nem nos do Resend.
-- [ ] **DMARC**, para os e-mails não caírem no spam: TXT `_dmarc` com
+- [x] **DMARC**, para os e-mails não caírem no spam: TXT `_dmarc` com
   `v=DMARC1; p=none; rua=mailto:contato@gigachip.com.br`.
 
 ## Fase B — Banco e Asaas de verdade (no dia) [Sócios, eu acompanho]
@@ -129,7 +130,7 @@ Quem faz: **[Claude]** = eu, no código · **[Sócios]** = vocês (contas, pagam
 ## Fase E — Segurança (no dia ou logo depois) [Sócios]
 
 - [ ] Cada pessoa da equipe com **login próprio** e **2FA** (Painel → Equipe). Ninguém compartilha senha.
-- [ ] Vercel: apagar `ADMIN_SETUP_TOKEN` (só servia para criar o primeiro acesso).
+- [x] Vercel: apagar `ADMIN_SETUP_TOKEN` (só servia para criar o primeiro acesso).
 - [ ] Trocar senhas e chaves que já apareceram em prints ou conversas.
 - [ ] Guardar num cofre de senhas (ex.: Bitwarden): chaves do Asaas, D4Sign, Resend e Google
   (arquivo do robô), CRON_SECRET e senha do banco.
