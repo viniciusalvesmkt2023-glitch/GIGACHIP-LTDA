@@ -18,6 +18,16 @@ describe("dados do aparelho", () => {
     const r = parseDeviceForm("physical", { imei: IMEI, iccid: ICCID, eid: "123" });
     expect(r).toEqual({ ok: true, value: { imei: IMEI, eid: null, iccid: ICCID, warnings: [] } });
   });
+  it("chip físico: só o ICCID basta (IMEI opcional — D38)", () => {
+    const r = parseDeviceForm("physical", { iccid: ICCID });
+    expect(r).toEqual({ ok: true, value: { imei: null, eid: null, iccid: ICCID, warnings: [] } });
+    const ruim = parseDeviceForm("physical", { imei: flip(IMEI), iccid: ICCID });
+    expect(!ruim.ok && ruim.errors.imei).toMatch(/IMEI inválido/);
+  });
+  it("eSIM continua exigindo o IMEI", () => {
+    const r = parseDeviceForm("esim", { eid: EID });
+    expect(!r.ok && r.errors.imei).toMatch(/IMEI inválido/);
+  });
   it("IMEI errado bloqueia", () => {
     const r = parseDeviceForm("esim", { imei: flip(IMEI), eid: EID });
     expect(r.ok).toBe(false);

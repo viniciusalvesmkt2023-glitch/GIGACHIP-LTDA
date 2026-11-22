@@ -152,7 +152,7 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
         <Card title="Aparelho / chip">
           {o.has_device ? (
             <dl className="space-y-1 text-sm">
-              <div><dt className="inline text-muted">IMEI: </dt><dd className="inline font-mono">•••• {o.imei_last4}</dd>{canSee && <> · <RevealButton action={revealAction} orderId={o.id} field="imei" label="ver" /></>}</div>
+              {o.imei_last4 && <div><dt className="inline text-muted">IMEI: </dt><dd className="inline font-mono">•••• {o.imei_last4}</dd>{canSee && <> · <RevealButton action={revealAction} orderId={o.id} field="imei" label="ver" /></>}</div>}
               {o.sim_type === "esim" ? (
                 <div><dt className="inline text-muted">EID: </dt>{canSee ? <RevealButton action={revealAction} orderId={o.id} field="eid" label="ver" /> : "•••"}</div>
               ) : (
@@ -161,9 +161,9 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
               {o.has_print && canSee && (
                 <div className="pt-2">
                   <a href={`/painel/prints/${o.id}`} target="_blank" rel="noopener noreferrer" className="font-medium text-brand underline">
-                    Ver print do *#06#
+                    {o.sim_type === "esim" ? "Ver print do registro do eSIM" : "Ver imagem enviada (chip)"}
                   </a>
-                  {o.device_source === "ocr_confirmed" && <span className="ml-2 text-xs text-muted">(números lidos do print e confirmados pelo cliente)</span>}
+                  {o.device_source === "ocr_confirmed" && <span className="ml-2 text-xs text-muted">(números lidos da imagem e confirmados pelo cliente)</span>}
                 </div>
               )}
               {o.checksum_warnings && o.checksum_warnings.length > 0 && (

@@ -24,7 +24,10 @@ export async function submitActivationDevice(formData: FormData): Promise<Activa
   };
   const print = formData.get("print");
   const screenshot = print instanceof File && print.size > 0 ? print : null;
-  if (!screenshot) return { errors: { print: "Envie o print da tela com os números (*#06#)." } };
+  const esim = view.simType === "esim";
+  if (!screenshot) {
+    return { errors: { print: esim ? "Envie o print do registro do eSIM (a tela do *#06#)." : "Envie a foto do verso da embalagem do chip." } };
+  }
 
   const parsed = parseDeviceForm(view.simType, {
     imei: get("imei"),
@@ -34,11 +37,15 @@ export async function submitActivationDevice(formData: FormData): Promise<Activa
   });
   if (!parsed.ok) return { errors: parsed.errors, needsConfirmation: parsed.needsConfirmation };
 
-  const r = await saveDevice(orderId, parsed.value, { screenshot, fromOcr: get("fromOcr") === "1" });
+  const r = await saveDevice(orderId, parsed.value, {
+    screenshot,
+    fromOcr: get("fromOcr") === "1",
+    imageKind: esim ? "print_esim" : "foto_embalagem",
+  });
   if (!r.ok) {
     return {
       errors: r.code === "print_invalido"
-        ? { print: "Não conseguimos ler esse arquivo. Envie o print como imagem (PNG ou JPG)." }
+        ? { print: "Não conseguimos abrir esse arquivo. Envie uma imagem (PNG ou JPG)." }
         : { form: "Este pedido já está em ativação. Para corrigir, fale com a gente." },
     };
   }

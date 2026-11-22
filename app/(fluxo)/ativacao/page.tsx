@@ -1,28 +1,138 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Container, buttonStyles } from "@/components/ui";
+import { ArrowRight, Check, Clock, FileSignature, Lock, Mail, MessageCircle } from "lucide-react";
 import { whatsappLink } from "@/components/whatsapp";
 import { currentOrderId } from "@/lib/server/customer-access";
-import { deviceForWhatsapp, getAreaView } from "@/lib/server/customer-area";
+import { deviceForWhatsapp, getAreaView, type AreaView } from "@/lib/server/customer-area";
 import { getIdentityReview } from "@/lib/server/identity";
 import { identityMode } from "@/lib/server/identity-mode";
+import { LinhaPedido } from "../linha-pedido";
 import { IdentityForm } from "../minha-area/identidade/identity-form";
-import { DeviceActivationForm } from "./device-activation-form";
 import { RefreshWhileWaiting } from "./refresh-while-waiting";
+import { RegistroEsim, RegistroFisico } from "./registro";
 
 export const metadata: Metadata = { title: "Formulário de ativação", robots: { index: false } };
 
-function Section({ n, title, done, children }: { n: number; title: string; done: boolean; children: React.ReactNode }) {
+/*
+ * Formulário de ativação (D28, desenho do Lovable):
+ *   1. Registro do chip — eSIM: print do registro do eSIM (*#06#); chip físico: foto do verso da embalagem
+ *   2. Contrato no e-mail (D4Sign, documento + selfie)
+ *   3. Ativação pelo WhatsApp (mensagem com os dados do pedido, sem CPF nem documentos)
+ * A etapa mostrada vem do estado do pedido no servidor; a página se atualiza enquanto espera a assinatura.
+ */
+
+function Etapas({ nomes, atual }: { nomes: string[]; atual: number }) {
   return (
-    <section className="rounded-2xl border border-border bg-white p-5">
-      <div className="flex items-center gap-3">
-        <span className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${done ? "bg-success text-white" : "bg-brand-soft text-brand"}`}>
-          {done ? "✓" : n}
-        </span>
-        <h2 className="text-lg font-semibold">{title}</h2>
+    <ol className="ck-steps" aria-label="Etapas da ativação">
+      {nomes.map((nome, i) => {
+        const n = i + 1;
+        const estado = n < atual ? "feito" : n === atual ? "atual" : "depois";
+        return (
+          <li key={nome} className={`ck-step is-${estado}`} aria-current={estado === "atual" ? "step" : undefined}>
+            <span className="ck-step-n">{estado === "feito" ? <Check size={14} /> : n}</span>
+            <span className="ck-step-label">{nome}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function Passo({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <li className="ac-how-item">
+      <span className="ac-how-n">{n}</span>
+      <span>{children}</span>
+    </li>
+  );
+}
+
+function Moldura({ v, children }: { v?: AreaView; children: React.ReactNode }) {
+  const gb = v ? /(\d+)\s*GB/i.exec(v.planName)?.[1] : null;
+  return (
+    <div className="ck-page">
+      <div className="container-site ck-grid is-single">
+        <div className="ck-card">
+          {v && (
+            <LinhaPedido texto={`Pedido ${v.code} · ${gb ? `Plano ${gb} GB` : v.planName} · ${v.simType === "esim" ? "eSIM" : "Chip físico"}`} />
+          )}
+          {children}
+          <p className="ck-trust">
+            <Lock size={14} /> Dados protegidos · nunca pedimos documentos por WhatsApp
+          </p>
+        </div>
       </div>
-      <div className="mt-4">{children}</div>
-    </section>
+    </div>
+  );
+}
+
+function Contrato({ v }: { v: AreaView }) {
+  const enviado = v.contractStatus === "sent";
+  return (
+    <div>
+      <p className="ck-kicker">Registro recebido ✓</p>
+      <h1 className="ck-title">Assine o contrato no seu e-mail</h1>
+      <p className="ck-sub">
+        {enviado ? (
+          <>
+            Enviamos o contrato para <b>{v.emailMasked}</b> pela D4Sign, plataforma de assinatura digital. Leva uns 3 minutos.
+          </>
+        ) : (
+          <>
+            Estamos preparando o seu contrato. Ele chega em <b>{v.emailMasked}</b> pela D4Sign em instantes.
+          </>
+        )}
+      </p>
+      <div className="ac-how">
+        <div>
+          <p className="ac-how-title">Como assinar</p>
+          <ol>
+            <Passo n={1}>
+              Abra o e-mail da <b>D4Sign</b> (se não achar, olhe o spam ou Promoções).
+            </Passo>
+            <Passo n={2}>
+              Clique em <b>Assinar</b> e leia o contrato.
+            </Passo>
+            <Passo n={3}>
+              Tire uma <b>foto do seu documento</b> (RG ou CNH) e uma <b>selfie</b> quando pedir.
+            </Passo>
+          </ol>
+        </div>
+        <div className="ac-code">
+          <FileSignature size={34} className="text-[#0a82c7]" />
+          <span className="ac-code-label">Assinatura com reconhecimento facial</span>
+          <span className="ac-safe">
+            <Lock size={13} /> Nunca pedimos documentos por WhatsApp
+          </span>
+        </div>
+      </div>
+      <p className="ac-wait">
+        <Clock size={15} /> Esta página avança sozinha quando a assinatura for concluída.
+      </p>
+      <RefreshWhileWaiting />
+    </div>
+  );
+}
+
+function Whatsapp({ wa }: { wa: string | null }) {
+  return (
+    <div>
+      <p className="ck-kicker">Contrato assinado ✓</p>
+      <h1 className="ck-title">Tudo pronto! Agora é só chamar a gente</h1>
+      <p className="ck-sub">
+        Clique no botão abaixo para enviar o seu pedido pelo WhatsApp. Nossa equipe ativa a linha e você recebe o número por e-mail.
+      </p>
+      {wa ? (
+        <a href={wa} target="_blank" rel="noopener noreferrer" className="ac-whats">
+          <MessageCircle size={22} /> Pedir ativação no WhatsApp <ArrowRight size={18} />
+        </a>
+      ) : (
+        <p className="ac-wait">Seu pedido já está na fila de ativação. Nossa equipe fala com você.</p>
+      )}
+      <p className="ac-wait">
+        <Clock size={15} /> A mensagem já vai com o número do pedido e os dados do chip. Não precisa mandar documentos.
+      </p>
+    </div>
   );
 }
 
@@ -32,12 +142,15 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ativacao">[
   const v = orderId ? await getAreaView(orderId) : null;
   if (!v || !orderId) {
     return (
-      <div className="mx-auto max-w-lg rounded-2xl border border-border p-6 text-center">
-        <h1 className="text-2xl font-bold">Formulário de ativação</h1>
-        <p className="mt-3 text-muted">
+      <Moldura>
+        <h1 className="ck-title">Formulário de ativação</h1>
+        <p className="ck-sub ac-sub-big">
           {sp.link === "invalido" ? "Este link expirou ou não é válido." : "Abra o link do formulário que enviamos para o seu e-mail."}
         </p>
-      </div>
+        <p className="ac-wait">
+          <Mail size={15} /> Procure o e-mail da Gigachip (confira também o spam).
+        </p>
+      </Moldura>
     );
   }
 
@@ -47,116 +160,75 @@ async function Content({ searchParams }: { searchParams: PageProps<"/ativacao">[
   const manualIdentity = identityMode() === "manual";
   const identityDone = ["in_review", "approved"].includes(v.identityStatus);
   const canSendIdentity = v.status === "em_andamento" && ["not_started", "pending_documents", "retry_required"].includes(v.identityStatus);
-  const review = manualIdentity && v.identityStatus === "retry_required" ? await getIdentityReview(orderId) : null;
-  // D28: 1) ID do celular → 2) assinar o contrato (com documento + selfie) → 3) chamar no WhatsApp
+  const editable = v.status === "em_andamento" || v.status === "pendencia";
+
+  // D28: 1) registro do chip → (documento, se manual) → 2) contrato → 3) WhatsApp
+  const nomes = manualIdentity ? ["Registro do chip", "Documento", "Contrato", "Ativação"] : ["Registro do chip", "Contrato", "Ativação"];
+  const etapa = !deviceDone ? 1 : manualIdentity && !identityDone ? 2 : !signed ? nomes.length - 1 : nomes.length;
+
   const readyForWhatsapp = deviceDone && signed && (manualIdentity ? identityDone : true);
   const device = readyForWhatsapp ? await deviceForWhatsapp(orderId) : null;
-  const waMessage = [
-    "Olá! Quero ativar minha linha Gigachip.",
-    `Pedido: ${v.code}`,
-    `Nome: ${v.fullName}`,
-    `Plano: ${v.planName} (${v.simType === "esim" ? "eSIM" : "chip físico"})`,
-    device ? `IMEI: ${device.imei}` : null,
-    device?.eid ? `EID: ${device.eid}` : null,
-    device?.iccid ? `ICCID: ${device.iccid}` : null,
-    "Contrato assinado ✅",
-  ].filter(Boolean).join("\n");
-  const wa = whatsappLink(waMessage);
-  const contractStep = manualIdentity ? 3 : 2;
+  const wa = whatsappLink(
+    [
+      "Olá! Quero ativar minha linha Gigachip.",
+      `Pedido: ${v.code}`,
+      `Nome: ${v.fullName}`,
+      `Plano: ${v.planName} (${v.simType === "esim" ? "eSIM" : "chip físico"})`,
+      device?.imei ? `IMEI: ${device.imei}` : null,
+      device?.eid ? `EID: ${device.eid}` : null,
+      device?.iccid ? `ICCID: ${device.iccid}` : null,
+      "Contrato assinado ✅",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  );
+  const ajuda = whatsappLink(`Olá! Preciso de ajuda para enviar o registro do eSIM. Pedido ${v.code}.`);
+  const review = manualIdentity && v.identityStatus === "retry_required" ? await getIdentityReview(orderId) : null;
 
   return (
-    <div className="mx-auto max-w-lg space-y-5">
-      <div>
-        <p className="text-sm text-muted">Pedido {v.code} · {v.planName} · {v.simType === "esim" ? "eSIM" : "Chip físico"}</p>
-        <h1 className="text-3xl font-bold">Formulário de ativação</h1>
-        <p className="mt-1 text-muted">Olá, {v.firstName}! Siga os passos abaixo para ativarmos sua linha.</p>
-      </div>
+    <Moldura v={v}>
+      <Etapas nomes={nomes} atual={paid ? etapa : 1} />
 
-      {!paid && <p className="rounded-xl bg-amber-50 p-4 text-sm">Assim que o pagamento for confirmado, este formulário é liberado.</p>}
-
-      {paid && (
-        <>
-          <Section n={1} title="Envie o ID do celular" done={deviceDone}>
-            {deviceDone ? (
-              <p className="text-sm text-muted">Recebido (IMEI final {v.imeiLast4}). Obrigado!</p>
-            ) : v.status === "em_andamento" || v.status === "pendencia" ? (
-              <DeviceActivationForm simType={v.simType} />
-            ) : (
-              <p className="text-sm text-muted">Esta etapa não está disponível agora.</p>
-            )}
-          </Section>
-
-          {manualIdentity && (
-            <Section n={2} title="Documento e selfie" done={identityDone}>
-              {review?.rejectionReason && (
-                <p className="mb-4 rounded-xl border border-accent bg-amber-50 p-3 text-sm"><strong>Precisamos de novas fotos:</strong> {review.rejectionReason}</p>
-              )}
-              {identityDone ? (
-                <p className="text-sm text-muted">{v.identityStatus === "approved" ? "Identidade confirmada." : "Recebemos suas fotos. Nossa equipe está conferindo."}</p>
-              ) : canSendIdentity ? (
-                <IdentityForm redirectTo="/ativacao" />
-              ) : (
-                <p className="text-sm text-muted">Esta etapa não está disponível agora.</p>
-              )}
-            </Section>
+      {!paid ? (
+        <div>
+          <h1 className="ck-title">Quase lá, {v.firstName}!</h1>
+          <p className="ck-sub ac-sub-big">Assim que o pagamento for confirmado, este formulário é liberado. Esta página se atualiza sozinha.</p>
+          <RefreshWhileWaiting />
+        </div>
+      ) : etapa === 1 ? (
+        editable ? (
+          v.simType === "esim" ? (
+            <RegistroEsim ajudaWhatsapp={ajuda} />
+          ) : (
+            <RegistroFisico />
+          )
+        ) : (
+          <p className="ck-sub">Esta etapa não está disponível agora. Fale com a gente pelo WhatsApp.</p>
+        )
+      ) : manualIdentity && etapa === 2 ? (
+        <div>
+          <p className="ck-kicker">Registro recebido ✓</p>
+          <h1 className="ck-title">Envie seu documento e uma selfie</h1>
+          {review?.rejectionReason && (
+            <p className="ck-alert">
+              <strong>Precisamos de novas fotos:</strong> {review.rejectionReason}
+            </p>
           )}
-
-          <Section n={contractStep} title="Assine o contrato no seu e-mail" done={signed}>
-            {signed ? (
-              <p className="text-sm text-muted">Contrato assinado. Obrigado!</p>
-            ) : !deviceDone ? (
-              <p className="text-sm text-muted">Disponível depois que você enviar o ID do celular.</p>
-            ) : (
-              <div className="space-y-3 text-sm">
-                <p>
-                  {v.contractStatus === "sent"
-                    ? "Enviamos o contrato para o seu e-mail pela D4Sign, nossa plataforma de assinatura digital. Abra o e-mail (confira também o spam) e assine."
-                    : "Estamos preparando o seu contrato. Ele chega no seu e-mail pela D4Sign em instantes."}
-                </p>
-                {!manualIdentity && (
-                  <p className="rounded-xl bg-surface p-3">
-                    🪪 Para assinar, a D4Sign vai pedir uma <strong>foto do seu documento (RG ou CNH)</strong> e uma <strong>selfie</strong>. Tenha o documento em mãos.
-                  </p>
-                )}
-                <p className="text-xs text-muted">Depois de assinar, volte para esta página — ela atualiza sozinha.</p>
-                <RefreshWhileWaiting />
-              </div>
-            )}
-          </Section>
-
-          <Section n={contractStep + 1} title="Chame a gente no WhatsApp" done={false}>
-            {readyForWhatsapp ? (
-              <div className="space-y-3 text-sm">
-                <p>Tudo certo! Toque no botão para nos enviar seus dados pelo WhatsApp. Nossa equipe ativa sua linha e fala com você.</p>
-                {wa ? (
-                  <a href={wa} target="_blank" rel="noopener noreferrer" className={`${buttonStyles.whatsapp} w-full py-4 text-base`}>
-                    Enviar dados e pedir ativação no WhatsApp
-                  </a>
-                ) : (
-                  <p className="rounded-xl bg-amber-50 p-3">Nosso WhatsApp será informado aqui em breve. Seu pedido já está na fila de ativação.</p>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-muted">Disponível depois que o contrato for assinado.</p>
-            )}
-          </Section>
-        </>
+          {canSendIdentity ? <IdentityForm redirectTo="/ativacao" /> : <p className="ck-sub">Esta etapa não está disponível agora.</p>}
+        </div>
+      ) : !signed ? (
+        <Contrato v={v} />
+      ) : (
+        <Whatsapp wa={wa} />
       )}
-
-      <p className="text-xs text-muted">
-        Seus dados e imagens são enviados direto para a nossa área segura, guardados de forma criptografada e vistos só pela
-        equipe autorizada. Nunca pedimos documentos por e-mail ou WhatsApp.
-      </p>
-    </div>
+    </Moldura>
   );
 }
 
 export default function AtivacaoPage({ searchParams }: PageProps<"/ativacao">) {
   return (
-    <Container className="py-10">
-      <Suspense fallback={<div className="mx-auto h-96 max-w-lg animate-pulse rounded-2xl bg-surface" />}>
-        <Content searchParams={searchParams} />
-      </Suspense>
-    </Container>
+    <Suspense fallback={<div className="ck-page" style={{ minHeight: 700 }} />}>
+      <Content searchParams={searchParams} />
+    </Suspense>
   );
 }

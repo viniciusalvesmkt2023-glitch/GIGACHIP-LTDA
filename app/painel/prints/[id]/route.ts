@@ -4,7 +4,7 @@ import { sql } from "@/lib/server/db";
 import { env } from "@/lib/server/env";
 import { requireStaff } from "@/lib/server/staff-auth";
 
-/** Print do *#06# enviado pelo cliente. [id] = id do pedido. Decifrado na hora e auditado. */
+/** Imagem enviada pelo cliente (print do registro do eSIM ou foto da embalagem do chip). [id] = id do pedido. Decifrado na hora e auditado. */
 export async function GET(_req: Request, ctx: RouteContext<"/painel/prints/[id]">) {
   const me = await requireStaff(["owner", "admin", "ativador"]);
   const { id } = await ctx.params;

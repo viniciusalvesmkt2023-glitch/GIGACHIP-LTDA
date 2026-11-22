@@ -1804,3 +1804,27 @@
   color: #0a82c7;
   text-decoration: underline;
 }
+
+/* ativação: confirmação de número com dígito estranho e erro no envio da imagem */
+.gc-site .ac-confirm {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid #fcd34d;
+  border-radius: 14px;
+  background: #fffbeb;
+  font-size: 14px;
+  color: #78350f;
+}
+.gc-site .ac-confirm label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-weight: 700;
+}
+.gc-site .ac-upload.has-error {
+  border-color: #ef4444;
+}
+.gc-site .eg-read .ck-field:first-of-type {
+  margin-top: 8px;
+}

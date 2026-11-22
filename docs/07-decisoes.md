@@ -513,3 +513,21 @@ Pedido do dono: poder mudar **o que** o sistema escreve em cada coluna na ativa�
   contrato, no botão do site e no último passo da ativação. Se a variável
   `NEXT_PUBLIC_WHATSAPP_NUMBER` existir na Vercel, ela vale por cima — deixar igual ou apagar.
 - Contratos já gerados antes desta mudança continuam com a versão da época (cada contrato grava a sua).
+
+## D38 — Contratação, pagamento e ativação novos (desenho do Lovable) (22/11/2026)
+
+- **Contratação em 3 etapas** (Seus dados · Sua linha · Pagamento), com máscaras, data de nascimento
+  digitada com "/" automática e resumo azul só na 1ª etapa. **Sem a caixinha de aceitar
+  Termos/Privacidade** (pedido dos sócios): o servidor não exige mais; só registra o "sim" opcional
+  aos avisos pelo WhatsApp.
+- **Pagamento**: PIX com QR Code, copia e cola e passo a passo; cartão pela página segura do Asaas;
+  tela "Pagamento confirmado" com os próximos passos. A confirmação continua vindo só do webhook.
+- **Ativação**:
+  - **eSIM** → passo a passo animado do *#06# (iPhone/Android, um passo por vez, botão de copiar o
+    código) e envio do **print do registro do eSIM** (IMEI + EID lidos da imagem no próprio celular);
+  - **chip físico** → **foto do verso da embalagem lacrada** e o número do chip (ICCID). O IMEI
+    deixou de ser pedido no chip físico (migração **0015**). Opção "Ainda não estou com o chip —
+    envio depois" (o cliente volta pelo mesmo link do e-mail).
+  - Depois: contrato no e-mail (D4Sign) → botão do WhatsApp (D28 continua igual).
+- As telas de contratação, pagamento, ativação e área do cliente usam o topo simples (logo +
+  "Ambiente seguro"), sem menu, para o cliente não sair no meio do caminho.

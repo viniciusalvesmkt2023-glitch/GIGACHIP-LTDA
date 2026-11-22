@@ -40,21 +40,29 @@ const button = (href: string, label: string) =>
   `<p style="margin:24px 0"><a href="${href}" style="background:#0e7490;color:#ffffff;text-decoration:none;padding:14px 22px;border-radius:12px;font-weight:bold;display:inline-block">${label}</a></p>`;
 
 export function renderActivationEmail(p: { firstName: string; code: string; planName: string; link: string; simType: "esim" | "physical" }) {
-  const deviceHint = p.simType === "esim" ? "o IMEI e o EID do celular" : "o IMEI do celular e o número do chip (ICCID)";
+  // D38: eSIM → print do registro do eSIM (*#06#); chip físico → foto do verso da embalagem lacrada
+  const step1Html =
+    p.simType === "esim"
+      ? "Envie o <strong>print do registro do eSIM</strong>: digite <strong>*#06#</strong> no discador do celular e tire um print — o formulário mostra o passo a passo e lê os números sozinho;"
+      : "Envie uma <strong>foto do verso da embalagem do chip Vivo lacrado</strong> — o formulário lê o número do chip sozinho. Ainda não está com o chip? Guarde este e-mail e envie quando estiver;";
+  const step1Text =
+    p.simType === "esim"
+      ? "Envie o print do registro do eSIM (digite *#06# no discador e tire um print)"
+      : "Envie a foto do verso da embalagem do chip Vivo lacrado";
   const subject = `Pagamento confirmado! Agora é só ativar sua linha (pedido ${p.code})`;
   const html = layout(
     `Pagamento confirmado, ${p.firstName}! 🎉`,
     `<p style="line-height:1.6">Recebemos o pagamento do <strong>${p.planName}</strong> (pedido <strong>${p.code}</strong>).</p>
 <p style="line-height:1.6">Para ativarmos sua linha, abra o <strong>formulário de ativação</strong> e siga os passos:</p>
 <ol style="line-height:1.8;padding-left:20px">
-<li>Digite <strong>*#06#</strong> no discador do celular, tire um <strong>print</strong> e envie no formulário — ele lê ${deviceHint} sozinho;</li>
+<li>${step1Html}</li>
 <li>Assine o <strong>contrato</strong> que chega no seu e-mail pela <strong>D4Sign</strong> (ela pede uma foto do documento e uma selfie);</li>
 <li>Toque em <strong>falar no WhatsApp</strong> para pedir a ativação.</li>
 </ol>
 ${button(p.link, "Abrir formulário de ativação")}
 <p style="font-size:13px;color:#64748b;line-height:1.6">O link é pessoal — não compartilhe. Se o botão não funcionar, copie e cole no navegador:<br>${p.link}</p>`,
   );
-  const text = `Pagamento confirmado, ${p.firstName}!\n\nPedido ${p.code} (${p.planName}).\nPreencha o formulário de ativação: ${p.link}\n\n1) Digite *#06# no discador, tire um print e envie no formulário\n2) Assine o contrato que chega pela D4Sign (com foto do documento e selfie)\n3) Fale com a gente no WhatsApp pelo formulário para ativar\n\nGigachip Ltda.`;
+  const text = `Pagamento confirmado, ${p.firstName}!\n\nPedido ${p.code} (${p.planName}).\nPreencha o formulário de ativação: ${p.link}\n\n1) ${step1Text}\n2) Assine o contrato que chega pela D4Sign (com foto do documento e selfie)\n3) Fale com a gente no WhatsApp pelo formulário para ativar\n\nGigachip Ltda.`;
   return { subject, html, text };
 }
 
