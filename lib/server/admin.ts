@@ -135,3 +135,32 @@ export async function revealSensitive(staff: Staff, orderId: string, field: Sens
     values (${staff.id}, ${"revelar_" + field}, 'orders', ${orderId}, '{}'::jsonb, ${ip})`;
   return decryptField(blob, key);
 }
+
+/**
+ * Vendas por dia (ou por hora, se for um dia só) no horário de São Paulo, para o gráfico da
+ * Visão geral. Receita = pagamentos confirmados no período (1ª mensalidade + renovações);
+ * vendas = pedidos novos pagos (1ª mensalidade).
+ */
+export async function salesSeries(staff: Staff, de: string, ate: string, agrupar: "hora" | "dia") {
+  void staff; // exige chamador autenticado (requireStaff)
+  const passo = agrupar === "hora" ? "1 hour" : "1 day";
+  const rows = await sql()<{ bucket: string; receita_cents: number; vendas: number }[]>`
+    with janela as (
+      select (${de}::date)::timestamp as ini, (${ate}::date + 1)::timestamp as fim
+    ), baldes as (
+      select generate_series(ini, fim - ${passo}::interval, ${passo}::interval) as b from janela
+    ), pagos as (
+      select date_trunc(${agrupar === "hora" ? "hour" : "day"}, paid_at at time zone 'America/Sao_Paulo') as b,
+             amount_cents, is_first_payment
+      from public.payments, janela
+      where status in ('confirmed', 'received')
+        and paid_at >= janela.ini at time zone 'America/Sao_Paulo'
+        and paid_at < janela.fim at time zone 'America/Sao_Paulo'
+    )
+    select to_char(baldes.b, 'YYYY-MM-DD"T"HH24') as bucket,
+           coalesce(sum(pagos.amount_cents), 0)::int as receita_cents,
+           count(*) filter (where pagos.is_first_payment)::int as vendas
+    from baldes left join pagos on pagos.b = baldes.b
+    group by baldes.b order by baldes.b`;
+  return rows.map((r) => ({ bucket: r.bucket, receitaCents: r.receita_cents, vendas: r.vendas }));
+}
