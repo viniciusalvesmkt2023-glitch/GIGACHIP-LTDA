@@ -24,11 +24,22 @@ export async function dashboardCounts(staff: Staff) {
   const rows = await sql()<{ status: string; n: number }[]>`
     select status::text, count(*)::int as n from public.orders group by status`;
   const byStatus = Object.fromEntries(rows.map((r) => [r.status, r.n])) as Record<string, number>;
-  const [extra] = await sql()<{ identity_review: number; revenue_cents: number; paid: number }[]>`
+  const [extra] = await sql()<{
+    identity_review: number; revenue_cents: number; paid: number;
+    revenue_month_cents: number; activated_month: number; new_orders_today: number;
+  }[]>`
     select
       (select count(*)::int from public.orders where identity_status = 'in_review') as identity_review,
       (select coalesce(sum(amount_cents), 0)::int from public.payments where status in ('confirmed', 'received')) as revenue_cents,
-      (select count(*)::int from public.payments where status in ('confirmed', 'received')) as paid`;
+      (select count(*)::int from public.payments where status in ('confirmed', 'received')) as paid,
+      -- mês e dia no horário de São Paulo
+      (select coalesce(sum(amount_cents), 0)::int from public.payments
+        where status in ('confirmed', 'received')
+          and paid_at >= date_trunc('month', now() at time zone 'America/Sao_Paulo') at time zone 'America/Sao_Paulo') as revenue_month_cents,
+      (select count(*)::int from public.orders
+        where activated_at >= date_trunc('month', now() at time zone 'America/Sao_Paulo') at time zone 'America/Sao_Paulo') as activated_month,
+      (select count(*)::int from public.orders
+        where created_at >= date_trunc('day', now() at time zone 'America/Sao_Paulo') at time zone 'America/Sao_Paulo') as new_orders_today`;
   return { byStatus, ...extra };
 }
 
