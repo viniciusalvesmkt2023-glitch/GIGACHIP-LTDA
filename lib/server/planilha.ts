@@ -15,6 +15,16 @@ import {
   type SheetField,
   type SheetRow,
 } from "@/lib/domain/planilha";
+import {
+  colorToRgb,
+  DEFAULT_RULES,
+  eventForLine,
+  parseRules,
+  ruleColumnIndex,
+  ruleConditionMatches,
+  ruleTextForSheet,
+  type SheetRule,
+} from "@/lib/domain/planilha-regras";
 import { sheetRequests, sheets, sheetsConfigured, SheetsError } from "@/lib/integrations/google/sheets";
 import { sql } from "./db";
 import type { Staff } from "./staff-auth";
@@ -29,8 +39,7 @@ import type { Staff } from "./staff-auth";
 const CONFIG_KEY = "planilha_google";
 const READ_KEY = "planilha_lida_em";
 const READ_EVERY_MINUTES = 55;
-const RED = { red: 0.8, green: 0, blue: 0 };
-const BLACK = { red: 0, green: 0, blue: 0 };
+const RULES_KEY = "planilha_regras";
 
 export type SheetConfig = { spreadsheetId: string; tab: string | null };
 
@@ -49,12 +58,30 @@ export async function setSheetConfig(staff: Staff, cfg: SheetConfig): Promise<vo
     values (${staff.id}, 'configurar_planilha', 'app_settings', ${CONFIG_KEY}, ${sql().json({ aba: cfg.tab })})`;
 }
 
+/** Regras da planilha (Configurações). Sem nada salvo: as de fábrica. */
+export async function getSheetRules(): Promise<SheetRule[]> {
+  const [row] = await sql()<{ value: unknown }[]>`select value from public.app_settings where key = ${RULES_KEY}`;
+  return row ? parseRules(row.value).rules : DEFAULT_RULES;
+}
+
+export async function setSheetRules(staff: Staff, rules: SheetRule[]): Promise<void> {
+  await sql()`
+    insert into public.app_settings (key, value, updated_by, updated_at)
+    values (${RULES_KEY}, ${sql().json(rules)}, ${staff.id}, now())
+    on conflict (key) do update set value = excluded.value, updated_by = excluded.updated_by, updated_at = now()`;
+  await sql()`
+    insert into public.audit_log (actor_id, action, entity, entity_id, metadata)
+    values (${staff.id}, 'regras_planilha', 'app_settings', ${RULES_KEY}, ${sql().json({ regras: rules.length })})`;
+}
+
 export async function sheetEnabled(): Promise<boolean> {
   return sheetsConfigured() && (await getSheetConfig()) !== null;
 }
 
 type TabData = {
   title: string; sheetId: number; headerIndex: number; map: ColumnMap; rows: SheetRow[]; invalid: number[]; duplicates: Map<string, number[]>;
+  /** Cabeçalho e valores como estão (para as regras de Configurações). */
+  header: string[]; values: string[][];
 };
 
 /** Lê todas as abas (ou só a configurada) que têm um cabeçalho com a coluna "Número". */
@@ -70,14 +97,18 @@ export async function readSheet() {
     const header = findHeader(values);
     if (!header) continue;
     const parsed = parseSheetRows(values, header);
-    tabs.push({ title: s.properties.title, sheetId: s.properties.sheetId, headerIndex: header.index, map: header.map, ...parsed });
+    tabs.push({
+      title: s.properties.title, sheetId: s.properties.sheetId, headerIndex: header.index, map: header.map, ...parsed,
+      header: (values[header.index] ?? []).map((c) => String(c ?? "")), values,
+    });
   }
   return { spreadsheetId: cfg.spreadsheetId, title: meta.properties.title, locale: meta.properties.locale ?? "pt_BR", tabs };
 }
 
 /** Teste do painel: mostra o que o sistema entendeu da planilha, sem escrever nada. */
 export async function describeSheet() {
-  const s = await readSheet();
+  const [s, rules] = await Promise.all([readSheet(), getSheetRules()]);
+  const ruleCols = [...new Set(rules.map((r) => r.coluna))];
   return {
     title: s.title,
     tabs: s.tabs.map((t) => ({
@@ -91,6 +122,7 @@ export async function describeSheet() {
       problems: t.rows.filter((r) => r.kind === "inconsistente").map((r) => `linha ${r.rowNumber}: ${r.problem}`),
       invalid: t.invalid.slice(0, 10),
       duplicates: [...t.duplicates.values()].slice(0, 10),
+      ruleColumnsMissing: ruleCols.filter((c) => ruleColumnIndex(t.header, c) === -1),
     })),
   };
 }
@@ -227,17 +259,17 @@ export async function pushPendingToSheet(limit = 20) {
   let pending: {
     id: string; msisdn: string; status: string; order_id: string | null; customer: string | null; iccid: string | null;
     smart_dados: string | null; activated_at: Date | null; sale_price_cents: number | null; cost_cents: number | null; due: string | null;
-    sheet_overwrite: boolean;
+    sheet_overwrite: boolean; reactivated_at: Date | null;
   }[];
   try {
     pending = await sql()<
     {
       id: string; msisdn: string; status: string; order_id: string | null; customer: string | null; iccid: string | null;
       smart_dados: string | null; activated_at: Date | null; sale_price_cents: number | null; cost_cents: number | null; due: string | null;
-      sheet_overwrite: boolean;
+      sheet_overwrite: boolean; reactivated_at: Date | null;
     }[]
   >`
-    select l.id, l.msisdn, l.status::text, l.order_id, l.sheet_overwrite, coalesce(c.full_name, l.legacy_customer_name) as customer, l.iccid,
+    select l.id, l.msisdn, l.status::text, l.order_id, l.sheet_overwrite, l.reactivated_at, coalesce(c.full_name, l.legacy_customer_name) as customer, l.iccid,
            l.smart_dados, l.activated_at, l.sale_price_cents, l.cost_cents, coalesce(s.next_due_date, l.legacy_due_date)::text as due
     from public.lines l
     left join public.orders o on o.id = l.order_id
@@ -256,8 +288,9 @@ export async function pushPendingToSheet(limit = 20) {
   if (!pending.length) return { written: 0, failed: 0 };
 
   let sheet: Awaited<ReturnType<typeof readSheet>>;
+  let rules: SheetRule[];
   try {
-    sheet = await readSheet();
+    [sheet, rules] = await Promise.all([readSheet(), getSheetRules()]);
   } catch (err) {
     const msg = sheetErrorMessage(err);
     await sql()`update public.lines set sheet_error = ${msg} where id = any(${pending.map((p) => p.id)})`;
@@ -318,6 +351,29 @@ export async function pushPendingToSheet(limit = 20) {
         cells.push({ range: `${quoteTab(tab.title)}!${columnLetter(col)}${sheetRow}`, value: formatForSheet(f, values, sheet.locale) });
       }
     }
+    // Regras de Configurações (ex.: Gestor → "Gestor Ativo"; nome em vermelho no bloqueio)
+    const event = eventForLine({
+      status: l.status, orderId: l.order_id, overwrite: l.sheet_overwrite, activatedAt: l.activated_at, reactivatedAt: l.reactivated_at,
+    });
+    // Correção no painel ("Editar linha") de linha ativa: só as cores da ativação (o estilo copiado
+    // da linha vizinha pode vir vermelho), sem mexer nos textos que o gestor já ajustou.
+    const colorsOnly = !event && l.sheet_overwrite && l.status === "ativa";
+    const ruleRequests: unknown[] = [];
+    const active = event ? rules.filter((x) => x.quando === event)
+      : colorsOnly ? rules.filter((x) => x.quando === "ativar").map((x) => ({ ...x, escrever: null })) : [];
+    for (const r of active) {
+      const col = ruleColumnIndex(tab.header, r.coluna);
+      if (col === -1) continue; // esta aba não tem a coluna: ignora
+      if (!ruleConditionMatches(r, tab.values[sheetRow - 1]?.[col])) continue;
+      const range = `${quoteTab(tab.title)}!${columnLetter(col)}${sheetRow}`;
+      if (r.escrever !== null) {
+        const i = cells.findIndex((c) => c.range === range);
+        if (i >= 0) cells.splice(i, 1);
+        cells.push({ range, value: ruleTextForSheet(r.escrever) });
+      }
+      if (r.corTexto) ruleRequests.push(sheetRequests.textColor(tab.sheetId, sheetRow - 1, col, colorToRgb(r.corTexto)));
+      if (r.corFundo) ruleRequests.push(sheetRequests.backgroundColor(tab.sheetId, sheetRow - 1, col, colorToRgb(r.corFundo)));
+    }
     try {
       if (cells.length) await sheets.writeCells(sheet.spreadsheetId, cells);
       const requests: unknown[] = [];
@@ -338,11 +394,9 @@ export async function pushPendingToSheet(limit = 20) {
           }
         }
       }
-      if (tab.map.cliente !== undefined) {
-        const blocked = ["suspensa", "suspensao_pendente"].includes(l.status);
-        requests.push(sheetRequests.textColor(tab.sheetId, sheetRow - 1, tab.map.cliente, blocked ? RED : BLACK));
-      }
-      await sheets.batch(sheet.spreadsheetId, requests);
+      // Depois de copiar o estilo, para a regra valer por cima
+      requests.push(...ruleRequests);
+      if (requests.length) await sheets.batch(sheet.spreadsheetId, requests);
       await sql()`update public.lines set sheet_pending = false, sheet_overwrite = false, sheet_error = null, sheet_synced_at = now() where id = ${l.id}`;
       written++;
     } catch (err) {

@@ -16,7 +16,8 @@ import { createStaff, login, logout, requestPasswordReset, requireStaff, resetPa
 import { env } from "@/lib/server/env";
 import { blockCustomer, syncOverdue, unblockCustomer } from "@/lib/server/inadimplencia";
 import { processEmails } from "@/lib/server/email";
-import { describeSheet, importFromSheet, pushPendingToSheet, setSheetConfig, sheetEnabled } from "@/lib/server/planilha";
+import { describeSheet, importFromSheet, pushPendingToSheet, setSheetConfig, setSheetRules, sheetEnabled } from "@/lib/server/planilha";
+import { parseRules } from "@/lib/domain/planilha-regras";
 import { spreadsheetIdFromUrl } from "@/lib/domain/planilha";
 
 export type FormState = { message?: string; ok?: boolean; value?: string; email?: string };
@@ -203,6 +204,21 @@ export async function setSheetConfigAction(_p: FormState, fd: FormData): Promise
   return { ok: true, message: "Planilha salva. Agora clique em “Testar planilha” em Integrações." };
 }
 
+export async function setSheetRulesAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner"]);
+  let raw: unknown;
+  try {
+    raw = JSON.parse(str(fd, "rules") || "[]");
+  } catch {
+    return { message: "Não consegui ler as regras. Recarregue a página e tente de novo." };
+  }
+  const { rules, errors } = parseRules(raw);
+  if (errors.length) return { message: errors.join(" ") };
+  await setSheetRules(me, rules);
+  refresh();
+  return { ok: true, message: `Regras salvas (${rules.length}). Valem a partir da próxima ativação, bloqueio ou desbloqueio.` };
+}
+
 export async function testSheetAction(): Promise<FormState> {
   await requireStaff(["owner"]);
   try {
@@ -217,6 +233,7 @@ export async function testSheetAction(): Promise<FormState> {
           `  ${t.total} números: ${t.disponiveis} disponíveis · ${t.clientes} com cliente${t.problems.length ? ` · ${t.problems.length} com problema` : ""}`,
           t.invalid.length ? `  ⚠ Número inválido nas linhas: ${t.invalid.join(", ")}` : null,
           t.problems.length ? `  ⚠ Fora da lista de disponíveis (arrume na planilha):\n${t.problems.slice(0, 15).map((x) => `     • ${x}`).join("\n")}${t.problems.length > 15 ? `\n     … e mais ${t.problems.length - 15}` : ""}` : null,
+          t.ruleColumnsMissing.length ? `  ⚠ Regras de Configurações: não achei a coluna ${t.ruleColumnsMissing.map((c) => `“${c}”`).join(", ")} nesta aba (a regra é ignorada aqui)` : null,
           t.duplicates.length ? `  ⚠ Número repetido (o sistema não escreve nele): linhas ${t.duplicates.map((d) => d.join(" e ")).join("; ")}` : null,
         ].filter(Boolean).join("\n"),
       )

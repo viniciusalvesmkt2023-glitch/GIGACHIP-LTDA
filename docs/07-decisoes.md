@@ -448,3 +448,21 @@ planilha ligada, a correção é escrita na planilha do gestor (passando por cim
 não é desfeita pela leitura seguinte. Login, Número, Plano PJ e Forma de pagamento continuam sendo
 do gestor (mudar na planilha). Nome e vencimento dos clientes do site vêm do cadastro/assinatura.
 O histórico registra só quais campos mudaram (sem valores). Migração 0014.
+
+## D34 — Regras da planilha editáveis no painel (coluna Gestor) (22/11/2026)
+
+Pedido do dono: os números disponíveis vêm com **"Falta Bloquear Gestor"** ou **"Gestor Bloqueio"**
+na coluna **Gestor**; ao ativar, ela passa para **"Gestor Ativo"**. E o dono quer mudar essas regras
+sozinho (ex.: o gestor pedir só "Ativo"), sem programador.
+- **Painel → Configurações → Regras da planilha** (só o dono). Cada regra: **quando** (ao ativar,
+  ao bloquear, ao desbloquear), **coluna** (nome do cabeçalho; maiúsculas e acentos não importam),
+  **o que fazer** (escrever um texto, cor do texto, cor do fundo — 8 cores fixas) e, opcional,
+  **"só se estiver escrito"** (um ou mais valores separados por ";"). Cada regra mostra a frase do
+  que vai fazer, para conferir antes de salvar. "Voltar ao padrão" restaura as de fábrica.
+- **De fábrica:** ao ativar, Gestor → "Gestor Ativo" e nome (Cliente) em preto; ao bloquear, nome
+  em vermelho; ao desbloquear, nome em preto (o que o sistema já fazia — D30 — virou regra).
+- A coluna **Número** não pode ter regra (é ela que liga a planilha ao sistema). Texto nunca vira
+  fórmula. Aba sem a coluna da regra: a regra é ignorada ali e o "Testar planilha" avisa.
+- "Editar linha" (D33) não aplica os textos das regras, só as cores da ativação. As regras valem
+  da próxima escrita em diante (não mudam o que já está na planilha).
+- Guardado em `app_settings` (`planilha_regras`), sem migração; quem mudou fica no histórico.

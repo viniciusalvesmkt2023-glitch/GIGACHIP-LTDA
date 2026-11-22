@@ -103,7 +103,10 @@ createServer(async (req, res) => {
         if (rq.repeatCell) {
           const g = rq.repeatCell.range;
           const tab = book.tabs.find((t) => t.sheetId === g.sheetId);
-          tab.colors[`${g.startRowIndex}:${g.startColumnIndex}`] = rq.repeatCell.cell.userEnteredFormat.textFormat.foregroundColor;
+          const fmt = rq.repeatCell.cell.userEnteredFormat;
+          tab.backgrounds ??= {};
+          if (fmt.textFormat?.foregroundColor) tab.colors[`${g.startRowIndex}:${g.startColumnIndex}`] = fmt.textFormat.foregroundColor;
+          if (fmt.backgroundColor) tab.backgrounds[`${g.startRowIndex}:${g.startColumnIndex}`] = fmt.backgroundColor;
         } else if (rq.copyPaste) {
           const { source: a, destination: d, pasteType } = rq.copyPaste;
           if (pasteType !== "PASTE_FORMAT") return send(res, 400, { error: { message: "só PASTE_FORMAT no mock" } });

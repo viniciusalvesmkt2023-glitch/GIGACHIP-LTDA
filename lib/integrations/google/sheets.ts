@@ -119,6 +119,13 @@ export const sheetRequests = {
       fields: "userEnteredFormat.textFormat.foregroundColor",
     },
   }),
+  backgroundColor: (sheetId: number, row: number, column: number, color: RGB) => ({
+    repeatCell: {
+      range: cell(sheetId, row, column),
+      cell: { userEnteredFormat: { backgroundColor: color } },
+      fields: "userEnteredFormat.backgroundColor",
+    },
+  }),
 };
 
 export const sheets = {
