@@ -117,6 +117,27 @@ export async function setTemplates(staff: Staff, templates: Templates): Promise<
     values (${staff.id}, 'modelos_planilha', 'app_settings', ${TEMPLATES_KEY}, ${sql().json({ campos: Object.keys(templates) })})`;
 }
 
+/**
+ * Tudo o que a tela Configurações mostra, numa consulta só (antes eram 5 idas ao banco).
+ * `custo_linha_gestor_cents` é o valor do gestor (mesma regra de getLineCostCents).
+ */
+export async function configPageSettings() {
+  const COST = "custo_linha_gestor_cents";
+  const rows = await sql()<{ key: string; value: unknown }[]>`
+    select key, value from public.app_settings
+    where key = any(${[COST, CONFIG_KEY, RULES_KEY, NAMES_KEY, TEMPLATES_KEY]})`;
+  const v = new Map(rows.map((r) => [r.key, r.value]));
+  const cost = Number(v.get(COST));
+  const sheet = v.get(CONFIG_KEY) as SheetConfig | undefined;
+  return {
+    costCents: Number.isFinite(cost) && cost >= 0 ? cost : 3000,
+    sheet: sheet?.spreadsheetId ? sheet : null,
+    rules: v.has(RULES_KEY) ? parseRules(v.get(RULES_KEY)).rules : DEFAULT_RULES,
+    names: v.has(NAMES_KEY) ? parseColumnNames(v.get(NAMES_KEY)).names : {},
+    templates: v.has(TEMPLATES_KEY) ? parseTemplates(v.get(TEMPLATES_KEY)).templates : {},
+  };
+}
+
 export async function sheetEnabled(): Promise<boolean> {
   return sheetsConfigured() && (await getSheetConfig()) !== null;
 }

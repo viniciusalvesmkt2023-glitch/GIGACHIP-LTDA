@@ -5,7 +5,7 @@ import { ChevronRight, FileSignature, IdCard, Search, Smartphone } from "lucide-
 import { shortOrderNumber } from "@/lib/domain/money";
 import { listOrders, orderStatusCounts, STATUS_LABEL } from "@/lib/server/admin";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { PanelShell } from "../shell";
+import { PanelShell, PanelLoading } from "../shell";
 import { StatusBadge } from "../status-badge";
 
 export const metadata: Metadata = { title: "Pedidos" };
@@ -122,7 +122,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/pedi
 
 export default function PedidosPage({ searchParams }: PageProps<"/painel/pedidos">) {
   return (
-    <Suspense fallback={<div className="p-8">Carregando…</div>}>
+    <Suspense fallback={<PanelLoading />}>
       <Content searchParams={searchParams} />
     </Suspense>
   );

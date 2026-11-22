@@ -8,7 +8,7 @@ import { lastOverdueSync, overdueBoard, type BoardRow } from "@/lib/server/inadi
 import { requireStaff } from "@/lib/server/staff-auth";
 import { blockCustomerAction, syncOverdueAction, unblockCustomerAction } from "../actions";
 import { ActionButton, BlockForm, HiddenFieldsButton } from "../forms";
-import { PanelShell } from "../shell";
+import { PanelShell, PanelLoading } from "../shell";
 
 export const metadata: Metadata = { title: "Inadimplência" };
 
@@ -216,7 +216,7 @@ async function Content() {
 
 export default function InadimplenciaPage() {
   return (
-    <Suspense fallback={<div className="p-8">Carregando…</div>}>
+    <Suspense fallback={<PanelLoading />}>
       <Content />
     </Suspense>
   );

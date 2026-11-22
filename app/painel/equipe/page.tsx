@@ -5,7 +5,7 @@ import { sql } from "@/lib/server/db";
 import { requireStaff } from "@/lib/server/staff-auth";
 import { createStaffAction } from "../actions";
 import { NewStaffForm } from "../forms";
-import { PanelShell } from "../shell";
+import { PanelShell, PanelLoading } from "../shell";
 
 export const metadata: Metadata = { title: "Equipe" };
 
@@ -104,7 +104,7 @@ async function Content() {
 
 export default function EquipePage() {
   return (
-    <Suspense fallback={<div className="p-8">Carregando…</div>}>
+    <Suspense fallback={<PanelLoading />}>
       <Content />
     </Suspense>
   );

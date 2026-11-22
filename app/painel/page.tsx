@@ -21,7 +21,7 @@ import { PeriodoPersonalizado, SalesChart } from "./sales-chart";
 import { overdueCounts } from "@/lib/server/inadimplencia";
 import { lineCounts } from "@/lib/server/lines";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { PanelShell } from "./shell";
+import { PanelShell, PanelLoading } from "./shell";
 
 export const metadata: Metadata = { title: "Visão geral" };
 
@@ -182,7 +182,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel">["s
 
 export default function PainelPage({ searchParams }: PageProps<"/painel">) {
   return (
-    <Suspense fallback={<div className="p-8">Carregando…</div>}>
+    <Suspense fallback={<PanelLoading />}>
       <Content searchParams={searchParams} />
     </Suspense>
   );

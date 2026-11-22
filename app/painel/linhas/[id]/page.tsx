@@ -9,7 +9,7 @@ import { requireStaff } from "@/lib/server/staff-auth";
 import { updateLineAction } from "../../actions";
 import { LineEditForm } from "../../forms";
 import { SheetStatus } from "../../sheet-status";
-import { Card, PanelShell } from "../../shell";
+import { Card, PanelShell, PanelLoading } from "../../shell";
 import { LineBadge } from "../../status-badge";
 
 export const metadata: Metadata = { title: "Editar linha" };
@@ -86,5 +86,5 @@ async function Content({ params }: { params: PageProps<"/painel/linhas/[id]">["p
 }
 
 export default function EditarLinhaPage({ params }: PageProps<"/painel/linhas/[id]">) {
-  return <Suspense fallback={<div className="p-8">Carregando…</div>}><Content params={params} /></Suspense>;
+  return <Suspense fallback={<PanelLoading />}><Content params={params} /></Suspense>;
 }

@@ -2140,3 +2140,23 @@ a.in-kpi:hover {
     justify-self: start;
   }
 }
+
+/* ---------- espera (skeleton) ---------- */
+.pn-sk {
+  border-radius: 14px;
+  background: linear-gradient(90deg, #eef2f6 0%, #f8fafc 40%, #eef2f6 80%);
+  background-size: 200% 100%;
+  animation: pn-sk 1.2s ease-in-out infinite;
+}
+.pn-sk-title { width: 260px; max-width: 70%; height: 34px; }
+.pn-sk-sub { width: 380px; max-width: 90%; height: 16px; margin-top: 12px; }
+.pn-sk-block { height: 220px; margin-top: 24px; border-radius: 20px; }
+.pn-sk-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.pn-sk-card { height: 110px; border-radius: 18px; }
+.pn-sk-user { height: 58px; }
+@keyframes pn-sk {
+  to { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pn-sk { animation: none; }
+}

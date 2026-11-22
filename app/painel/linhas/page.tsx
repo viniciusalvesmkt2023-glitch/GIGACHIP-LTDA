@@ -12,7 +12,7 @@ import { requireStaff } from "@/lib/server/staff-auth";
 import { addNumbersAction, importSheetAction, retrySheetAction } from "../actions";
 import { ActionButton, AddNumbersForm, HiddenFieldsButton } from "../forms";
 import { sheetBadge } from "../sheet-status";
-import { PanelShell } from "../shell";
+import { PanelShell, PanelLoading } from "../shell";
 import { LineBadge, LINE_STATUS } from "../status-badge";
 
 export const metadata: Metadata = { title: "Linhas" };
@@ -240,7 +240,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
 
 export default function LinhasPage({ searchParams }: PageProps<"/painel/linhas">) {
   return (
-    <Suspense fallback={<div className="p-8">Carregando…</div>}>
+    <Suspense fallback={<PanelLoading />}>
       <Content searchParams={searchParams} />
     </Suspense>
   );

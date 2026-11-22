@@ -11,7 +11,7 @@ import { pendingMigrations } from "@/lib/server/schema-check";
 import { requireStaff } from "@/lib/server/staff-auth";
 import { listSafesAction, testSheetAction } from "../actions";
 import { ActionButton } from "../forms";
-import { PanelShell } from "../shell";
+import { PanelShell, PanelLoading } from "../shell";
 
 export const metadata: Metadata = { title: "Integrações" };
 
@@ -194,7 +194,7 @@ async function Content() {
 
 export default function IntegracoesPage() {
   return (
-    <Suspense fallback={<div className="p-8">Carregando…</div>}>
+    <Suspense fallback={<PanelLoading />}>
       <Content />
     </Suspense>
   );

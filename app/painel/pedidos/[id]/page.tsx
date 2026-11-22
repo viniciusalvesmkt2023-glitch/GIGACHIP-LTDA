@@ -15,7 +15,7 @@ import { requireStaff } from "@/lib/server/staff-auth";
 import { activateLineAction, changeEmailAction, decideIdentityAction, importSheetAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
 import { ActionButton, ActivateLineForm, ChangeEmailForm, IdentityDecisionForm, RevealButton } from "../../forms";
 import { SheetStatus } from "../../sheet-status";
-import { Card, PanelShell } from "../../shell";
+import { Card, PanelShell, PanelLoading } from "../../shell";
 import { StatusBadge } from "../../status-badge";
 
 export const metadata: Metadata = { title: "Pedido" };
@@ -271,5 +271,5 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
 }
 
 export default function PedidoPage({ params }: PageProps<"/painel/pedidos/[id]">) {
-  return <Suspense fallback={<div className="p-8">Carregando…</div>}><Content params={params} /></Suspense>;
+  return <Suspense fallback={<PanelLoading />}><Content params={params} /></Suspense>;
 }

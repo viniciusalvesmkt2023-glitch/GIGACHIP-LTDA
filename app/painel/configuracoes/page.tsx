@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getLineCostCents } from "@/lib/server/lines";
-import { getColumnNames, getSheetConfig, getSheetRules, getTemplates } from "@/lib/server/planilha";
+import { configPageSettings } from "@/lib/server/planilha";
 import { effectiveTemplates } from "@/lib/domain/planilha-modelos";
 import { requireStaff } from "@/lib/server/staff-auth";
 import { setColumnNamesAction, setCostAction, setSheetConfigAction, setSheetRulesAction, setTemplatesAction } from "../actions";
 import { CostForm, SheetConfigForm } from "../forms";
-import { Card, PanelShell } from "../shell";
+import { Card, PanelShell, PanelLoading } from "../shell";
 import { SheetRulesEditor } from "./regras-planilha";
 import { ColumnNamesForm } from "./nomes-colunas";
 import { TemplatesForm } from "./modelos-planilha";
@@ -15,9 +14,7 @@ export const metadata: Metadata = { title: "Configurações" };
 
 async function Content() {
   const staff = await requireStaff(["owner"]);
-  const [cost, sheet, rules, names, templates] = await Promise.all([
-    getLineCostCents(), getSheetConfig(), getSheetRules(), getColumnNames(), getTemplates(),
-  ]);
+  const { costCents: cost, sheet, rules, names, templates } = await configPageSettings();
   return (
     <PanelShell staff={staff}>
       <div className="pn-head">
@@ -74,5 +71,5 @@ async function Content() {
 }
 
 export default function ConfiguracoesPage() {
-  return <Suspense fallback={<div className="p-8">Carregando…</div>}><Content /></Suspense>;
+  return <Suspense fallback={<PanelLoading />}><Content /></Suspense>;
 }
