@@ -37,17 +37,6 @@ export function SiteFooterBar({ whatsapp }: { whatsapp: string | null }) {
           </a>
         </div>
 
-        <nav aria-label="Informações legais">
-          <h3>Legal</h3>
-          <ul>
-            <li><Link href="/termos">Termos de uso</Link></li>
-            <li><Link href="/privacidade">Política de privacidade</Link></li>
-            <li>
-              <a href={RECLAME_AQUI} target="_blank" rel="noopener noreferrer">Reclame Aqui</a>
-            </li>
-          </ul>
-        </nav>
-
         <div>
           <h3>Fale com a gente</h3>
           <ul>

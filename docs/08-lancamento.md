@@ -71,6 +71,7 @@ Quem faz: **[Claude]** = eu, no código · **[Sócios]** = vocês (contas, pagam
 
 ## Fase B — Banco e Asaas de verdade (no dia) [Sócios, eu acompanho]
 
+- [x] ✅ Migração **0015** (chip físico sem IMEI) rodada no Supabase em 22/11.
 - [ ] ⚠️ Painel → **Integrações**: se aparecer "Migração pendente", rodar no Supabase → SQL Editor
   os arquivos indicados, na ordem.
 - [ ] ⚠️ Na conta **real** do Asaas (não o sandbox):

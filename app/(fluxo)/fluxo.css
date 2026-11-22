@@ -1828,3 +1828,170 @@
 .gc-site .eg-read .ck-field:first-of-type {
   margin-top: 8px;
 }
+
+/* ========== área do cliente ========== */
+.gc-site .cl-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.gc-site .cl-sair {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+}
+.gc-site .cl-sair:hover {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.gc-site .cl-ativa {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid #bbf7d0;
+  border-radius: 18px;
+  background: linear-gradient(90deg, #f0fdf4, #fff);
+}
+.gc-site .cl-ativa > span {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #fff;
+}
+.gc-site .cl-ativa b {
+  display: block;
+  font-size: 17px;
+}
+.gc-site .cl-ativa small {
+  font-size: 14px;
+  color: #475569;
+}
+.gc-site .cl-steps {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 22px;
+}
+.gc-site .cl-step {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e6ebf1;
+  border-radius: 16px;
+  background: #fff;
+}
+.gc-site .cl-step-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+.gc-site .cl-step-body b {
+  display: block;
+  font-size: 15px;
+}
+.gc-site .cl-step-body small {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #5b6b7d;
+}
+.gc-site .cl-step-tag {
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: #f1f5f9;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  white-space: nowrap;
+}
+.gc-site .cl-step.is-feito .cl-step-icon {
+  background: #16a34a;
+  color: #fff;
+}
+.gc-site .cl-step.is-feito .cl-step-tag {
+  background: #dcfce7;
+  color: #15803d;
+}
+.gc-site .cl-step.is-agora {
+  border-color: #7dd3fc;
+  box-shadow: 0 10px 26px -20px rgb(10 130 199 / 0.7);
+}
+.gc-site .cl-step.is-agora .cl-step-icon {
+  background: linear-gradient(135deg, #22c4ff, #0a6fc2);
+  color: #fff;
+}
+.gc-site .cl-step.is-agora .cl-step-tag {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.gc-site .cl-step.is-espera .cl-step-icon {
+  background: #fef3c7;
+  color: #b45309;
+}
+.gc-site .cl-step.is-espera .cl-step-tag {
+  background: #fef3c7;
+  color: #b45309;
+}
+.gc-site .cl-help {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0a82c7;
+}
+.gc-site .cl-help:hover {
+  text-decoration: underline;
+}
+.gc-site .cl-empty {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.gc-site .cl-empty .ck-btn {
+  margin-top: 14px;
+}
+.gc-site .cl-empty-icon {
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 10px;
+  border-radius: 18px;
+  background: #e0f2fe;
+  color: #0a82c7;
+}
+@media (max-width: 560px) {
+  .gc-site .cl-step {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+  .gc-site .cl-step-tag {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

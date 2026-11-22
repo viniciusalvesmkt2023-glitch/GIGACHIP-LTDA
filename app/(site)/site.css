@@ -1942,7 +1942,7 @@ html:has(.gc-site) {
 .gc-site .gc-footer-grid {
   position: relative;
   display: grid;
-  grid-template-columns: 2fr 1fr 1.2fr;
+  grid-template-columns: 2fr 1.2fr;
   gap: 48px;
   padding-block: 64px 48px;
 }
