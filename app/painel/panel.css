@@ -1861,3 +1861,131 @@ a.in-kpi:hover {
 .in-sec.is-green .in-act button:hover {
   background: #15803d;
 }
+
+/* ---------- equipe ---------- */
+.eq-list {
+  margin-top: 18px;
+}
+.eq-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1.4fr) 170px 140px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--pn-line);
+}
+.eq-row:first-child {
+  border-top: 0;
+}
+.eq-row.is-off {
+  opacity: 0.55;
+}
+.eq-avatar {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 800;
+}
+.eq-avatar.is-blue { background: #e0f2fe; color: #0369a1; }
+.eq-avatar.is-green { background: #dcfce7; color: #15803d; }
+.eq-avatar.is-amber { background: #fef3c7; color: #b45309; }
+.eq-avatar.is-gray { background: #f1f5f9; color: #475569; }
+.eq-main {
+  min-width: 0;
+}
+.eq-main strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.eq-main em {
+  padding: 1px 8px;
+  border-radius: 99px;
+  background: #eef2f6;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  color: #64748b;
+}
+.eq-main small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: #64748b;
+}
+.eq-role {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.eq-2fa span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.eq-ok { color: #15803d; }
+.eq-wait { color: #b45309; }
+.eq-last span {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+.eq-last b {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.eq-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  margin-top: 18px;
+}
+.eq-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.eq-funcs {
+  display: grid;
+  gap: 12px;
+}
+.eq-funcs p {
+  margin-top: 4px;
+  font-size: 13.5px;
+  color: #475569;
+}
+@media (max-width: 1100px) {
+  .eq-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 900px) {
+  .eq-row {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: 8px 12px;
+  }
+  .eq-role {
+    grid-column: 3;
+    grid-row: 1;
+    justify-content: flex-end;
+  }
+  .eq-2fa {
+    grid-column: 2;
+  }
+  .eq-last {
+    grid-column: 2 / -1;
+  }
+}
