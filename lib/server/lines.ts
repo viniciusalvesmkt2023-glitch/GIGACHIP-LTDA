@@ -140,11 +140,11 @@ export async function activationDefaults(orderId: string) {
   const [o] = await sql()<
     {
       status: string; sim_type: string; full_name: string; plan: { dataBaseGb: number; dataBonusGb: number; name: string };
-      monthly_price_cents: number; next_due_date: string | null; billing_type: string | null; iccid_enc: Uint8Array | null; line_id: string | null;
+      monthly_price_cents: number; next_due_date: string | null; billing_type: string | null; iccid_enc: Uint8Array | null; eid_enc: Uint8Array | null; line_id: string | null;
     }[]
   >`
     select o.status::text, o.sim_type::text, c.full_name, o.plan_snapshot as plan, o.monthly_price_cents,
-           s.next_due_date::text as next_due_date, s.billing_type::text as billing_type, d.iccid_encrypted as iccid_enc,
+           s.next_due_date::text as next_due_date, s.billing_type::text as billing_type, d.iccid_encrypted as iccid_enc, d.eid_encrypted as eid_enc,
            (select id from public.lines where order_id = o.id) as line_id
     from public.orders o
     join public.customers c on c.id = o.customer_id
@@ -162,9 +162,19 @@ export async function activationDefaults(orderId: string) {
     costCents: await getLineCostCents(),
     nextDueDate: o.next_due_date,
     paymentMethod: paymentMethodText(o.billing_type),
-    // Chip físico: o ICCID que o cliente informou já vem preenchido (o dono confere)
-    iccidSuggestion: o.sim_type === "physical" && o.iccid_enc ? decryptField(o.iccid_enc, env().FIELD_ENCRYPTION_KEY) : "",
+    simType: o.sim_type as "esim" | "physical",
+    // Já vem preenchido com o que o cliente mandou (o dono confere): chip físico → ICCID da
+    // embalagem; eSIM → EID do aparelho (é ele que vai na coluna "ICCID" da planilha no eSIM)
+    iccidSuggestion:
+      o.sim_type === "physical"
+        ? o.iccid_enc ? decryptField(o.iccid_enc, env().FIELD_ENCRYPTION_KEY) : ""
+        : o.eid_enc ? decryptField(o.eid_enc, env().FIELD_ENCRYPTION_KEY) : "",
   };
+}
+
+/** Coluna "ICCID" da planilha: ICCID do chip físico (18 a 22 números) ou EID do eSIM (32 números). */
+export function isChipNumber(v: string): boolean {
+  return /^(\d{18,22}|\d{32})$/.test(v.replace(/\s/g, ""));
 }
 
 export type ActivateInput = { lineId: string; iccid: string; smartDados: string; salePriceCents: number; costCents: number };
@@ -172,7 +182,7 @@ export type ActivateInput = { lineId: string; iccid: string; smartDados: string;
 /** Ativação: vincula o número do estoque ao pedido e preenche as colunas da "planilha". */
 export async function activateOrder(staff: Staff, orderId: string, input: ActivateInput): Promise<{ ok: boolean; message: string }> {
   const iccid = input.iccid.replace(/\s/g, "");
-  if (!/^\d{18,22}$/.test(iccid)) return { ok: false, message: "ICCID inválido: digite os números do chip (18 a 22 dígitos)." };
+  if (!isChipNumber(iccid)) return { ok: false, message: "Número inválido: ICCID do chip (18 a 22 números) ou EID do eSIM (32 números)." };
   const defaults = await activationDefaults(orderId);
   if (!defaults) return { ok: false, message: "Pedido não encontrado." };
 
@@ -322,7 +332,7 @@ export async function updateLine(staff: Staff, id: string, e: LineEdit, writeToS
   const cur = await getLine(id);
   if (!cur) return { ok: false, message: "Linha não encontrada." };
   if (cur.status === "disponivel") return { ok: false, message: "Número disponível: para vender, use “Ativar linha” no pedido." };
-  if (e.iccid && !/^\d{18,22}$/.test(e.iccid)) return { ok: false, message: "ICCID inválido: 18 a 22 números." };
+  if (e.iccid && !isChipNumber(e.iccid)) return { ok: false, message: "Número inválido: ICCID (18 a 22 números) ou EID do eSIM (32 números)." };
   const legacy = !cur.orderId;
   if (legacy && !e.customer?.trim()) return { ok: false, message: "Informe o nome do cliente." };
 

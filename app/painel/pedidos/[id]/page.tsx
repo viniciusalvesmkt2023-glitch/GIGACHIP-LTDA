@@ -93,6 +93,7 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
             defaults={{
               customer: act.customer,
               iccid: act.iccidSuggestion,
+              simType: act.simType,
               smartDados: act.smartDados,
               salePrice: brMoney(act.salePriceCents),
               cost: brMoney(act.costCents),

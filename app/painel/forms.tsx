@@ -121,7 +121,7 @@ export function ActivateLineForm({
   action: Action;
   orderId: string;
   numbers: { id: string; label: string }[];
-  defaults: { iccid: string; smartDados: string; salePrice: string; cost: string; nextDue: string; customer: string };
+  defaults: { iccid: string; smartDados: string; salePrice: string; cost: string; nextDue: string; customer: string; simType?: "esim" | "physical" };
 }) {
   const [s, a, pending] = useActionState(action, {});
   if (s.ok) return <Msg s={s} />;
@@ -136,8 +136,12 @@ export function ActivateLineForm({
           {numbers.map((n) => <option key={n.id} value={n.id}>{n.label}</option>)}
         </select>
       </label>
-      <label className="text-sm font-medium sm:col-span-2">ICCID atual
-        <input name="iccid" required inputMode="numeric" defaultValue={defaults.iccid} placeholder="Digite o ICCID" className={`${input} font-mono`} />
+      <label className="text-sm font-medium sm:col-span-2">{defaults.simType === "esim" ? "EID do eSIM (vai na coluna ICCID da planilha)" : "ICCID do chip"}
+        <input name="iccid" required inputMode="numeric" maxLength={40} defaultValue={defaults.iccid}
+          placeholder={defaults.simType === "esim" ? "32 números do EID" : "Digite o ICCID"} className={`${input} font-mono`} />
+        <span className="mt-1 block text-xs font-normal text-muted">
+          {defaults.iccid ? "Preenchido com o que o cliente enviou — confira antes de confirmar." : defaults.simType === "esim" ? "EID: 32 números, começa com 89." : "ICCID: 18 a 22 números, começa com 89."}
+        </span>
       </label>
       <label className="text-sm font-medium">Smart-Dados
         <input name="smartDados" required defaultValue={defaults.smartDados} className={input} />
