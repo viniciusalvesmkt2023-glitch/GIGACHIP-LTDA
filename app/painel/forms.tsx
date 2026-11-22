@@ -13,32 +13,6 @@ function Msg({ s }: { s: FormState }) {
   return <p role="alert" className={`rounded-xl p-3 text-sm ${s.ok ? "bg-green-50 text-success" : "bg-red-50 text-danger"}`}>{s.message}</p>;
 }
 
-export function LoginForm({ action }: { action: Action }) {
-  const [s, a, pending] = useActionState(action, {});
-  return (
-    <form action={a} className="space-y-4">
-      <Msg s={s} />
-      <label className="block text-sm font-medium">E-mail<input name="email" type="email" autoComplete="username" required defaultValue={s.email} className={input} /></label>
-      <label className="block text-sm font-medium">Senha<input name="password" type="password" autoComplete="current-password" required className={input} /></label>
-      <button disabled={pending} className={`${buttonStyles.primary} w-full`}>{pending ? "Entrando..." : "Entrar"}</button>
-    </form>
-  );
-}
-
-export function TotpForm({ action }: { action: Action }) {
-  const [s, a, pending] = useActionState(action, {});
-  return (
-    <form action={a} className="space-y-4">
-      <Msg s={s} />
-      <label className="block text-sm font-medium">
-        Código de 6 números do aplicativo
-        <input name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required className={`${input} text-center font-mono text-2xl tracking-[0.5em]`} />
-      </label>
-      <button disabled={pending} className={`${buttonStyles.primary} w-full`}>{pending ? "Conferindo..." : "Confirmar"}</button>
-    </form>
-  );
-}
-
 export function SetupForm({ action }: { action: Action }) {
   const [s, a, pending] = useActionState(action, {});
   return (
@@ -270,31 +244,6 @@ export function SheetConfigForm({ action, url, tab }: { action: Action; url: str
       </label>
       <button disabled={pending} className={`${buttonStyles.primary} py-2`}>{pending ? "Salvando..." : "Salvar"}</button>
       <Msg s={s} />
-    </form>
-  );
-}
-
-export function ForgotPasswordForm({ action }: { action: Action }) {
-  const [s, a, pending] = useActionState(action, {});
-  return (
-    <form action={a} className="space-y-4">
-      <Msg s={s} />
-      <label className="block text-sm font-medium">E-mail da equipe<input name="email" type="email" autoComplete="username" required defaultValue={s.email} className={input} /></label>
-      <button disabled={pending} className={`${buttonStyles.primary} w-full`}>{pending ? "Enviando..." : "Enviar link para criar senha nova"}</button>
-    </form>
-  );
-}
-
-export function ResetPasswordForm({ action, token }: { action: Action; token: string }) {
-  const [s, a, pending] = useActionState(action, {});
-  return (
-    <form action={a} className="space-y-4">
-      <input type="hidden" name="token" value={token} />
-      <Msg s={s} />
-      <label className="block text-sm font-medium">Senha nova<input name="password" type="password" autoComplete="new-password" required minLength={12} className={input} /></label>
-      <label className="block text-sm font-medium">Repita a senha nova<input name="confirm" type="password" autoComplete="new-password" required minLength={12} className={input} /></label>
-      <p className="text-xs text-muted">Pelo menos 12 caracteres, com letras e números. Guarde num gerenciador de senhas.</p>
-      <button disabled={pending} className={`${buttonStyles.primary} w-full`}>{pending ? "Salvando..." : "Salvar senha nova"}</button>
     </form>
   );
 }
