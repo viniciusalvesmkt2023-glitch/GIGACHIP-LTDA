@@ -1,26 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { Download, ExternalLink, FileSpreadsheet, Pencil, Plus, Search, TriangleAlert } from "lucide-react";
 import { formatMsisdn } from "@/lib/domain/lines";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { formatBRL } from "@/lib/domain/money";
+import { sheetWriteState } from "@/lib/domain/planilha";
 import { lineCounts, listLines } from "@/lib/server/lines";
 import { getSheetConfig, lastSheetRead, sheetEnabled, sheetQueueCounts } from "@/lib/server/planilha";
 import { requireStaff } from "@/lib/server/staff-auth";
 import { addNumbersAction, importSheetAction, retrySheetAction } from "../actions";
 import { ActionButton, AddNumbersForm, HiddenFieldsButton } from "../forms";
-import { sheetWriteState } from "@/lib/domain/planilha";
 import { sheetBadge } from "../sheet-status";
-import { Card, PanelShell } from "../shell";
+import { PanelShell } from "../shell";
+import { LineBadge, LINE_STATUS } from "../status-badge";
 
 export const metadata: Metadata = { title: "Linhas" };
 
-const STATUS: Record<string, string> = {
-  disponivel: "Disponível", ativa: "Ativa", suspensao_pendente: "Bloquear na Vivo", suspensa: "Bloqueada",
-  reativacao_pendente: "Desbloquear na Vivo", cancelamento_pendente: "Cancelar na Vivo", cancelada: "Cancelada",
-};
+const STATUS = LINE_STATUS;
+/** Filtros rápidos, na ordem do dia a dia. */
+const CHIPS = ["ativa", "disponivel", "suspensao_pendente", "reativacao_pendente", "cancelamento_pendente", "suspensa", "cancelada"];
+const TAREFA = new Set(["suspensao_pendente", "reativacao_pendente", "cancelamento_pendente"]);
+
 const brDate = (d: Date | string | null) => {
-  if (!d) return "";
+  if (!d) return "—";
   // Data de calendário em São Paulo (ativação às 22h do dia 20 continua sendo dia 20)
   const iso = typeof d === "string" ? d : new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(d);
   const [y, m, day] = iso.slice(0, 10).split("-");
@@ -30,7 +33,7 @@ const brDate = (d: Date | string | null) => {
 async function Content({ searchParams }: { searchParams: PageProps<"/painel/linhas">["searchParams"] }) {
   const staff = await requireStaff();
   const sp = await searchParams;
-  const status = typeof sp.status === "string" ? sp.status : undefined;
+  const status = typeof sp.status === "string" && STATUS[sp.status] ? sp.status : undefined;
   const q = typeof sp.q === "string" ? sp.q : undefined;
   const [rows, counts, sheetOn] = await Promise.all([listLines({ status, q }), lineCounts(), sheetEnabled()]);
   const [lastRead, queue, sheetCfg] = sheetOn ? await Promise.all([lastSheetRead(), sheetQueueCounts(), getSheetConfig()]) : [null, null, null];
@@ -44,130 +47,201 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/linh
   const writing = rows.some((r) => stateOf(r) === "escrevendo");
   const canAct = ["owner", "admin", "ativador"].includes(staff.role);
   const canEdit = ["owner", "admin"].includes(staff.role);
+  const canExport = ["owner", "admin", "financeiro"].includes(staff.role);
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const href = (s?: string) => {
+    const u = new URLSearchParams();
+    if (s) u.set("status", s);
+    if (q) u.set("q", q);
+    const t = u.toString();
+    return `/painel/linhas${t ? `?${t}` : ""}`;
+  };
+  const lida = lastRead
+    ? lastRead.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  const erroItem = (r: (typeof rows)[number]) => (
+    <li key={r.id}>
+      <p>
+        <b>{formatMsisdn(r.msisdn)}</b> · {r.customer ?? "—"}
+        <span className={r.sheetError ? "text-danger" : "text-amber-700"}>
+          {r.sheetError ?? "Na fila — a rotina tenta de novo em até 10 minutos."}
+        </span>
+      </p>
+      {canAct && <HiddenFieldsButton action={retrySheetAction} fields={{ lineId: r.id }} label="Tentar de novo" />}
+    </li>
+  );
 
   return (
     <PanelShell staff={staff}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Linhas</h1>
-        {["owner", "admin", "financeiro"].includes(staff.role) && (
+      <div className="ln-top">
+        <div className="pn-head">
+          <h1>Linhas</h1>
+          <p>
+            {counts.ativa ?? 0} ativas · {counts.disponivel ?? 0} números disponíveis · {counts.suspensa ?? 0} bloqueadas
+          </p>
+        </div>
+        {canExport && (
           // eslint-disable-next-line @next/next/no-html-link-for-pages -- download de arquivo (route handler), não é página
-          <a href="/painel/linhas/exportar" className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold">⬇ Baixar planilha (Excel)</a>
+          <a href="/painel/linhas/exportar" className="ln-btn">
+            <Download size={16} /> Baixar Excel
+          </a>
         )}
       </div>
-      <p className="mt-1 text-sm text-muted">
-        Disponíveis: <strong>{counts.disponivel ?? 0}</strong> · Ativas: <strong>{counts.ativa ?? 0}</strong> · Bloqueadas:{" "}
-        <strong>{counts.suspensa ?? 0}</strong>
-      </p>
 
       {/* Atualiza sozinha só enquanto algo acabou de ir para a planilha (não para sempre) */}
       {writing && <AutoRefresh seconds={3} />}
       {sheetOn && (
-        <div className="mt-4 flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border bg-white p-3 text-sm">
-          <p className="text-muted">
-            📗 Planilha do gestor conectada · lida {lastRead ? lastRead.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "ainda não"}
-            {queue && queue.pending > 0 && <> · {queue.pending} para escrever</>}
-            {queue && queue.errors > 0 && <span className="text-danger"> · {queue.errors} com aviso</span>}
+        <div className="ln-sheet">
+          <span className="ln-sheet-icon">
+            <FileSpreadsheet size={20} />
+          </span>
+          <p>
+            <strong>Planilha do gestor conectada</strong>
+            <small>
+              {lida ? `Lida em ${lida}` : "Ainda não foi lida"}
+              {queue && queue.pending > 0 && <> · {queue.pending} para escrever</>}
+              {queue && queue.errors > 0 && <b> · {queue.errors} com aviso</b>}
+            </small>
           </p>
-          <div className="flex flex-wrap items-start gap-2">
+          <div className="ln-sheet-actions">
             {sheetUrl && (
-              <a href={sheetUrl} target="_blank" rel="noopener noreferrer" className="rounded-xl border border-border bg-white px-4 py-2 font-semibold">
-                Abrir planilha ↗
+              <a href={sheetUrl} target="_blank" rel="noopener noreferrer" className="ln-btn">
+                Abrir planilha <ExternalLink size={14} />
               </a>
             )}
             {canAct && <ActionButton action={importSheetAction} label="Ler planilha agora" />}
           </div>
         </div>
       )}
+
       {sheetErrors.length > 0 && (
-        <Card title="⚠ Não consegui escrever na planilha" className="mt-4 border-danger">
-          <ul className="space-y-3 text-sm">
-            {sheetErrors.map((r) => (
-              <li key={r.id} className="flex flex-wrap items-start justify-between gap-2">
-                <span>
-                  <span className="font-mono">{formatMsisdn(r.msisdn)}</span> · {r.customer ?? "—"}:{" "}
-                  {r.sheetError ? (
-                    <span className="text-danger">{r.sheetError}</span>
-                  ) : (
-                    <span className="text-amber-700">na fila — a rotina tenta de novo em até 10 minutos</span>
-                  )}
-                </span>
-                {canAct && <HiddenFieldsButton action={retrySheetAction} fields={{ lineId: r.id }} label="Tentar de novo" />}
-              </li>
-            ))}
-          </ul>
-        </Card>
+        <div className="ln-alert" role="alert">
+          <p className="ln-alert-title">
+            <TriangleAlert size={18} /> {sheetErrors.length === 1 ? "1 linha não foi escrita na planilha" : `${sheetErrors.length} linhas não foram escritas na planilha`}
+          </p>
+          <ul>{sheetErrors.slice(0, 3).map(erroItem)}</ul>
+          {sheetErrors.length > 3 && (
+            <details>
+              <summary>Ver mais {sheetErrors.length - 3}</summary>
+              <ul>{sheetErrors.slice(3).map(erroItem)}</ul>
+            </details>
+          )}
+        </div>
       )}
 
-      <form className="mt-4 flex flex-wrap gap-2">
-        <input name="q" defaultValue={q} placeholder="Cliente, número, ICCID ou pedido" className="min-w-60 flex-1 rounded-xl border border-border bg-white px-4 py-2" />
-        <select name="status" defaultValue={status ?? ""} className="rounded-xl border border-border bg-white px-3 py-2">
-          <option value="">Todas</option>
-          {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-        <button className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white">Filtrar</button>
+      <form className="pd-search">
+        <Search size={18} aria-hidden="true" />
+        <input name="q" defaultValue={q} placeholder="Buscar por número, cliente, ICCID ou pedido" aria-label="Buscar linhas" />
+        {status && <input type="hidden" name="status" value={status} />}
+        <button>Buscar</button>
       </form>
 
-      <Card className="mt-4 overflow-x-auto p-0">
-        <table className="w-full min-w-[1100px] text-left text-xs">
-          <thead className="bg-[#3b0a5c] text-white">
-            <tr>
-              {[...(sheetOn ? ["#"] : []), "Cliente", "Login Vivo", "Número", "ICCID atual", "Smart-Dados", "Plano PJ", "Ativação", "Venda final", "Valor", "Vencimento", "Pagamento", "Situação", ...(canAct ? [""] : [])].map((h) => (
-                <th key={h} className="p-2 font-semibold">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-border hover:bg-surface">
-                {sheetOn && (
-                  <td className="p-2 text-muted" title={r.sheetTab ? `Aba “${r.sheetTab}”, linha ${r.sheetRow}` : "Não está na planilha"}>
-                    {r.sheetRow && sheetUrl ? (
-                      <a href={rowUrl(r.sheetGid, r.sheetRow)} target="_blank" rel="noopener noreferrer" className="font-mono underline">{r.sheetRow}</a>
-                    ) : "—"}
-                  </td>
+      <div className="pd-chips" role="group" aria-label="Filtrar por situação">
+        <Link href={href()} className={`sc-chip ${!status ? "is-on" : ""}`}>
+          Todas <em>{total}</em>
+        </Link>
+        {CHIPS.filter((s) => !TAREFA.has(s) || counts[s] || status === s).map((s) => (
+          <Link key={s} href={href(s)} className={`sc-chip ${status === s ? "is-on" : ""} ${TAREFA.has(s) && counts[s] ? "is-hot" : ""}`}>
+            {STATUS[s]!.label} <em>{counts[s] ?? 0}</em>
+          </Link>
+        ))}
+      </div>
+
+      <div className="pd-list ln-list">
+        <div className="ln-row pd-row-head" aria-hidden="true">
+          <span>Número</span>
+          <span>Cliente</span>
+          <span>Plano</span>
+          <span>Ativação</span>
+          <span>Venda</span>
+          <span>Vencimento</span>
+          <span>Situação</span>
+          <span />
+        </div>
+        {rows.map((r) => {
+          const badge = sheetOn ? sheetBadge(stateOf(r)) : null;
+          const livre = r.status === "disponivel";
+          return (
+            <div key={r.id} className={`ln-row ${TAREFA.has(r.status) ? "is-hot" : ""} ${livre ? "is-free" : ""}`}>
+              <span className="ln-num">
+                <strong>{formatMsisdn(r.msisdn)}</strong>
+                <small>
+                  {r.iccid ? `ICCID ${r.iccid}` : "Sem ICCID"}
+                  {r.sheetRow && sheetUrl && (
+                    <>
+                      {" · "}
+                      <a href={rowUrl(r.sheetGid, r.sheetRow)} target="_blank" rel="noopener noreferrer" title={r.sheetTab ? `Aba “${r.sheetTab}”, linha ${r.sheetRow}` : undefined}>
+                        planilha L{r.sheetRow}
+                      </a>
+                    </>
+                  )}
+                </small>
+              </span>
+              <span className="ln-cell">
+                {livre ? (
+                  <strong className="ln-free">Livre para vender</strong>
+                ) : r.orderId ? (
+                  <Link href={`/painel/pedidos/${r.orderId}`} className="ln-client">
+                    {r.customer}
+                  </Link>
+                ) : (
+                  <strong>{r.customer ?? "—"}</strong>
                 )}
-                <td className="p-2 font-medium">
-                  {r.status === "disponivel" ? <span className="text-brand">Disponível</span>
-                    : r.orderId ? <Link href={`/painel/pedidos/${r.orderId}`} className="underline">{r.customer}</Link> : r.customer}
-                </td>
-                <td className="p-2">{r.vivoLogin}</td>
-                <td className="p-2 font-mono">{formatMsisdn(r.msisdn)}</td>
-                <td className="p-2 font-mono">{r.iccid}</td>
-                <td className="p-2">{r.smartDados}</td>
-                <td className="p-2">{r.planoPj}</td>
-                <td className="p-2">{brDate(r.activatedAt)}</td>
-                <td className="p-2">{r.salePriceCents !== null ? formatBRL(r.salePriceCents) : ""}</td>
-                <td className="p-2">{r.costCents !== null ? formatBRL(r.costCents) : ""}</td>
-                <td className="p-2">{brDate(r.dueDate)}</td>
-                <td className="p-2">{r.paymentMethod}</td>
-                <td className="p-2">
-                  {STATUS[r.status] ?? r.status}
-                  {sheetOn && (() => {
-                    const b = sheetBadge(stateOf(r));
-                    return b && <span className={`block text-[10px] ${b.className}`}>{b.label}</span>;
-                  })()}
-                </td>
-                {canAct && (
-                  <td className="p-2">
-                    {r.status !== "disponivel" && <Link href={`/painel/linhas/${r.id}`} className="rounded-lg border border-border px-2 py-1 font-semibold text-brand hover:bg-brand-soft">Editar</Link>}
-                  </td>
+                <small>
+                  {[r.orderCode && `Pedido ${r.orderCode}`, r.vivoLogin && `Login ${r.vivoLogin}`].filter(Boolean).join(" · ") || "—"}
+                </small>
+              </span>
+              <span className="ln-cell">
+                <strong className="ln-wrap">{r.smartDados || r.planoPj || "—"}</strong>
+                {r.smartDados && r.planoPj && <small title={r.planoPj}>{r.planoPj}</small>}
+              </span>
+              <span className="ln-cell" data-label="Ativação">
+                <strong>{livre ? "—" : brDate(r.activatedAt)}</strong>
+              </span>
+              <span className="ln-cell" data-label="Venda">
+                <strong>{r.salePriceCents !== null ? formatBRL(r.salePriceCents) : "—"}</strong>
+                {r.costCents !== null && <small>gestor {formatBRL(r.costCents)}</small>}
+              </span>
+              <span className="ln-cell" data-label="Vencimento">
+                <strong>{livre ? "—" : brDate(r.dueDate)}</strong>
+                {r.paymentMethod && <small>{r.paymentMethod}</small>}
+              </span>
+              <span className="ln-status">
+                <LineBadge status={r.status} />
+                {badge && <small className={badge.className}>{badge.label}</small>}
+              </span>
+              <span className="ln-act">
+                {canAct && !livre && (
+                  <Link href={`/painel/linhas/${r.id}`} className="ln-edit" aria-label={`Editar a linha ${formatMsisdn(r.msisdn)}`} title="Editar">
+                    <Pencil size={15} />
+                  </Link>
                 )}
-              </tr>
-            ))}
-            {rows.length === 0 && <tr><td colSpan={(sheetOn ? 13 : 12) + (canAct ? 1 : 0)} className="p-6 text-center text-muted">Nenhuma linha. Cadastre os números disponíveis abaixo.</td></tr>}
-          </tbody>
-        </table>
-      </Card>
+              </span>
+            </div>
+          );
+        })}
+        {rows.length === 0 && <p className="pd-empty">Nenhuma linha encontrada.</p>}
+      </div>
 
       {canEdit && (
-        <Card title={sheetOn ? "Adicionar números à mão (normalmente vêm da planilha)" : "Adicionar números disponíveis ao estoque"} className="mt-4">
-          <AddNumbersForm action={addNumbersAction} />
-        </Card>
+        <details className="pn-card ln-add">
+          <summary>
+            <Plus size={18} /> {sheetOn ? "Adicionar números à mão (normalmente vêm da planilha)" : "Adicionar números disponíveis ao estoque"}
+          </summary>
+          <div className="mt-4">
+            <AddNumbersForm action={addNumbersAction} />
+          </div>
+        </details>
       )}
     </PanelShell>
   );
 }
 
 export default function LinhasPage({ searchParams }: PageProps<"/painel/linhas">) {
-  return <Suspense fallback={<div className="p-8">Carregando…</div>}><Content searchParams={searchParams} /></Suspense>;
+  return (
+    <Suspense fallback={<div className="p-8">Carregando…</div>}>
+      <Content searchParams={searchParams} />
+    </Suspense>
+  );
 }

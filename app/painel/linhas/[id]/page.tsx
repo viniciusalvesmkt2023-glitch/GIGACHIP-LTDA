@@ -10,14 +10,11 @@ import { updateLineAction } from "../../actions";
 import { LineEditForm } from "../../forms";
 import { SheetStatus } from "../../sheet-status";
 import { Card, PanelShell } from "../../shell";
+import { LineBadge } from "../../status-badge";
 
 export const metadata: Metadata = { title: "Editar linha" };
 
 const money = (c: number | null) => (c === null ? "" : (c / 100).toFixed(2).replace(".", ","));
-const STATUS: Record<string, string> = {
-  disponivel: "Disponível", ativa: "Ativa", suspensao_pendente: "Bloquear na Vivo", suspensa: "Bloqueada",
-  reativacao_pendente: "Desbloquear na Vivo", cancelamento_pendente: "Cancelar na Vivo", cancelada: "Cancelada",
-};
 
 async function Content({ params }: { params: PageProps<"/painel/linhas/[id]">["params"] }) {
   const staff = await requireStaff(["owner", "admin", "ativador"]);
@@ -29,15 +26,18 @@ async function Content({ params }: { params: PageProps<"/painel/linhas/[id]">["p
 
   return (
     <PanelShell staff={staff}>
-      <Link href="/painel/linhas" className="text-sm text-brand">← Linhas</Link>
-      <h1 className="mt-2 font-mono text-2xl font-bold">{formatMsisdn(line.msisdn)}</h1>
-      <p className="mt-1 text-sm text-muted">
-        {STATUS[line.status] ?? line.status}
-        {line.orderCode && <> · pedido <Link href={`/painel/pedidos/${line.orderId}`} className="underline">{line.orderCode}</Link></>}
-        {line.sheetRow && cfg && (
-          <> · <a href={`https://docs.google.com/spreadsheets/d/${cfg.spreadsheetId}/edit#range=A${line.sheetRow}`} target="_blank" rel="noopener noreferrer" className="underline">linha {line.sheetRow} da planilha ↗</a></>
-        )}
-      </p>
+      <Link href="/painel/linhas" className="od-back">← Linhas</Link>
+      <div className="od-head">
+        <h1>{formatMsisdn(line.msisdn)}</h1>
+        <LineBadge status={line.status} />
+        <span className="od-sub">
+          {line.customer ?? "Sem cliente"}
+          {line.orderCode && <> · <Link href={`/painel/pedidos/${line.orderId}`} className="underline">pedido {line.orderCode}</Link></>}
+          {line.sheetRow && cfg && (
+            <> · <a href={`https://docs.google.com/spreadsheets/d/${cfg.spreadsheetId}/edit#range=A${line.sheetRow}`} target="_blank" rel="noopener noreferrer" className="underline">linha {line.sheetRow} da planilha ↗</a></>
+          )}
+        </span>
+      </div>
 
       {sheetOn && (line.sheetPending || line.sheetError) && (
         <div className="mt-3 text-sm">
@@ -50,7 +50,7 @@ async function Content({ params }: { params: PageProps<"/painel/linhas/[id]">["p
         </div>
       )}
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="mt-6 grid items-start gap-4 lg:grid-cols-[1fr_320px]">
         <Card title="Corrigir dados">
           {line.status === "disponivel" ? (
             <p className="text-sm text-muted">Número disponível — para vender, use “Ativar linha” no pedido.</p>
