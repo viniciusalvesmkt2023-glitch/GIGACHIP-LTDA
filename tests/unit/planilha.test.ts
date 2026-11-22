@@ -6,6 +6,7 @@ import {
   findHeader,
   formatForSheet,
   mapHeader,
+  parseColumnNames,
   parseSheetDate,
   parseSheetRows,
   quoteTab,
@@ -127,5 +128,34 @@ describe("mirrorTextRuns (Smart-Dados com o número colorido)", () => {
   });
   it("modelo sem formatação → texto simples", () => {
     expect(mirrorTextRuns("Franquia de 300+100GB", "Franquia de 100+100GB", undefined)).toBeNull();
+  });
+});
+
+describe("nomes das colunas escolhidos no painel", () => {
+  it("o gestor renomeou ICCID para CD: acha pela escolha do dono", () => {
+    const row = ["Cliente", "Número", "CD", "Smart-Dados"];
+    expect(mapHeader(row)?.iccid).toBeUndefined();
+    expect(mapHeader(row, { iccid: "cd" })).toEqual({ cliente: 0, numero: 1, iccid: 2, smart: 3 });
+  });
+
+  it("aceita vários nomes (abas diferentes) e cai no automático se o nome não existir", () => {
+    expect(mapHeader(["Linha Vivo", "Cliente"], { numero: "Tel; Linha Vivo" })?.numero).toBe(0);
+    expect(mapHeader(["Número", "ICCID"], { iccid: "CD" })?.iccid).toBe(1);
+  });
+
+  it("coluna escolhida não é reaproveitada pelo automático", () => {
+    // "Valor Venda" escolhido como Venda final: não pode virar também o Valor do gestor
+    expect(mapHeader(["Número", "Valor Venda", "Custo"], { venda: "Valor Venda", valor: "Custo" })).toEqual({ numero: 0, venda: 1, valor: 2 });
+  });
+
+  it("valida: mesmo nome em dois campos é recusado; campos desconhecidos somem", () => {
+    expect(parseColumnNames({ iccid: " CD ", xyz: "a" }).names).toEqual({ iccid: "CD" });
+    expect(parseColumnNames({ iccid: "CD", smart: "cd" }).errors).toHaveLength(1);
+  });
+
+  it("findHeader usa os nomes escolhidos", () => {
+    const rows = [["Controle"], ["Tel", "Nome", "Chip"], ["11 91000-0001", "Disponível", ""]];
+    expect(findHeader(rows)).toBeNull();
+    expect(findHeader(rows, 10, { numero: "Tel", cliente: "Nome", iccid: "Chip" })).toEqual({ index: 1, map: { numero: 0, cliente: 1, iccid: 2 } });
   });
 });

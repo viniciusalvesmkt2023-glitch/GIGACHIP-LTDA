@@ -47,20 +47,67 @@ function fieldForHeader(h: string): SheetField | null {
   return null;
 }
 
-/** Mapa coluna→campo de uma linha de cabeçalho. Precisa ter pelo menos a coluna Número. */
-export function mapHeader(row: string[]): ColumnMap | null {
+/**
+ * Nomes das colunas escolhidos pelo dono (Configurações → Nomes das colunas — D35). Ex.: o gestor
+ * renomeou "ICCID" para "CD" → { iccid: "CD" }. Vários nomes separados por ";". Campo sem nome:
+ * o sistema reconhece sozinho pelos nomes de sempre.
+ */
+export type ColumnNames = Partial<Record<SheetField, string>>;
+
+const splitNames = (v: string | undefined) => (v ?? "").split(";").map((x) => normalizeHeader(x)).filter(Boolean);
+
+/** Valida os nomes vindos do formulário ou do banco (só campos conhecidos, até 120 letras). */
+export function parseColumnNames(input: unknown): { names: ColumnNames; errors: string[] } {
+  const obj = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
+  const names: ColumnNames = {};
+  const errors: string[] = [];
+  const owner = new Map<string, SheetField>();
+  for (const f of SHEET_FIELDS) {
+    const v = String(obj[f] ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
+    if (!v) continue;
+    for (const n of splitNames(v)) {
+      const other = owner.get(n);
+      if (other) errors.push(`O nome “${n}” está em ${FIELD_LABEL[other]} e em ${FIELD_LABEL[f]} — cada coluna só pode ter um uso.`);
+      owner.set(n, f);
+    }
+    names[f] = v;
+  }
+  return { names, errors };
+}
+
+/**
+ * Mapa coluna→campo de uma linha de cabeçalho. Precisa ter pelo menos a coluna Número.
+ * Primeiro os nomes escolhidos no painel; o que faltar, pelos nomes de sempre (nas colunas que
+ * sobraram). Se o nome escolhido não estiver na planilha, também cai nos nomes de sempre.
+ */
+export function mapHeader(row: string[], names: ColumnNames = {}): ColumnMap | null {
   const map: ColumnMap = {};
+  const used = new Set<number>();
+  const cells = row.map((c) => normalizeHeader(String(c ?? "")));
+  for (const f of SHEET_FIELDS) {
+    const want = splitNames(names[f]);
+    if (!want.length) continue;
+    const i = cells.findIndex((c, idx) => !used.has(idx) && want.includes(c));
+    if (i >= 0) {
+      map[f] = i;
+      used.add(i);
+    }
+  }
   row.forEach((cell, i) => {
+    if (used.has(i)) return;
     const f = fieldForHeader(String(cell ?? ""));
-    if (f && map[f] === undefined) map[f] = i;
+    if (f && map[f] === undefined) {
+      map[f] = i;
+      used.add(i);
+    }
   });
   return map.numero === undefined ? null : map;
 }
 
 /** Procura o cabeçalho nas primeiras linhas da aba. */
-export function findHeader(rows: string[][], maxScan = 10): { index: number; map: ColumnMap } | null {
+export function findHeader(rows: string[][], maxScan = 10, names: ColumnNames = {}): { index: number; map: ColumnMap } | null {
   for (let i = 0; i < Math.min(rows.length, maxScan); i++) {
-    const map = mapHeader(rows[i] ?? []);
+    const map = mapHeader(rows[i] ?? [], names);
     if (map && Object.keys(map).length >= 3) return { index: i, map };
   }
   return null;

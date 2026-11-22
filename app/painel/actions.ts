@@ -16,9 +16,9 @@ import { createStaff, login, logout, requestPasswordReset, requireStaff, resetPa
 import { env } from "@/lib/server/env";
 import { blockCustomer, syncOverdue, unblockCustomer } from "@/lib/server/inadimplencia";
 import { processEmails } from "@/lib/server/email";
-import { describeSheet, importFromSheet, pushPendingToSheet, setSheetConfig, setSheetRules, sheetEnabled } from "@/lib/server/planilha";
+import { describeSheet, importFromSheet, pushPendingToSheet, setColumnNames, setSheetConfig, setSheetRules, sheetEnabled } from "@/lib/server/planilha";
 import { parseRules } from "@/lib/domain/planilha-regras";
-import { spreadsheetIdFromUrl } from "@/lib/domain/planilha";
+import { parseColumnNames, SHEET_FIELDS, spreadsheetIdFromUrl } from "@/lib/domain/planilha";
 
 export type FormState = { message?: string; ok?: boolean; value?: string; email?: string };
 
@@ -219,17 +219,26 @@ export async function setSheetRulesAction(_p: FormState, fd: FormData): Promise<
   return { ok: true, message: `Regras salvas (${rules.length}). Valem a partir da próxima ativação, bloqueio ou desbloqueio.` };
 }
 
+export async function setColumnNamesAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner"]);
+  const { names, errors } = parseColumnNames(Object.fromEntries(SHEET_FIELDS.map((f) => [f, str(fd, f)])));
+  if (errors.length) return { message: errors.join(" ") };
+  await setColumnNames(me, names);
+  refresh();
+  return { ok: true, message: "Nomes salvos. Confira em Integrações → “Testar planilha” se cada coluna foi achada." };
+}
+
 export async function testSheetAction(): Promise<FormState> {
   await requireStaff(["owner"]);
   try {
     const d = await describeSheet();
-    if (!d.tabs.length) return { message: `Abri a planilha “${d.title}”, mas não achei nenhuma aba com a coluna “Número” no cabeçalho.` };
+    if (!d.tabs.length) return { message: `Abri a planilha “${d.title}”, mas não achei nenhuma aba com a coluna “Número” no cabeçalho. Se o gestor mudou o nome dessa coluna, informe o nome novo em Configurações → Nomes das colunas.` };
     const text = d.tabs
       .map((t) =>
         [
           `Aba “${t.title}” (cabeçalho na linha ${t.headerRow})`,
           `  ${t.columns.join(" · ")}`,
-          t.missing.length ? `  ⚠ Não achei: ${t.missing.join(", ")} (essas colunas não serão preenchidas)` : null,
+          t.missing.length ? `  ⚠ Não achei: ${t.missing.join(", ")} (essas colunas não serão preenchidas — se o gestor mudou o nome, ajuste em Configurações → Nomes das colunas)` : null,
           `  ${t.total} números: ${t.disponiveis} disponíveis · ${t.clientes} com cliente${t.problems.length ? ` · ${t.problems.length} com problema` : ""}`,
           t.invalid.length ? `  ⚠ Número inválido nas linhas: ${t.invalid.join(", ")}` : null,
           t.problems.length ? `  ⚠ Fora da lista de disponíveis (arrume na planilha):\n${t.problems.slice(0, 15).map((x) => `     • ${x}`).join("\n")}${t.problems.length > 15 ? `\n     … e mais ${t.problems.length - 15}` : ""}` : null,

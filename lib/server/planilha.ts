@@ -11,7 +11,9 @@ import {
   quoteTab,
   sheetErrorMessage,
   WRITABLE_FIELDS,
+  parseColumnNames,
   type ColumnMap,
+  type ColumnNames,
   type SheetField,
   type SheetRow,
 } from "@/lib/domain/planilha";
@@ -40,6 +42,7 @@ const CONFIG_KEY = "planilha_google";
 const READ_KEY = "planilha_lida_em";
 const READ_EVERY_MINUTES = 55;
 const RULES_KEY = "planilha_regras";
+const NAMES_KEY = "planilha_colunas";
 
 export type SheetConfig = { spreadsheetId: string; tab: string | null };
 
@@ -74,6 +77,22 @@ export async function setSheetRules(staff: Staff, rules: SheetRule[]): Promise<v
     values (${staff.id}, 'regras_planilha', 'app_settings', ${RULES_KEY}, ${sql().json({ regras: rules.length })})`;
 }
 
+/** Nomes das colunas escolhidos no painel (vazio = reconhece sozinho). */
+export async function getColumnNames(): Promise<ColumnNames> {
+  const [row] = await sql()<{ value: unknown }[]>`select value from public.app_settings where key = ${NAMES_KEY}`;
+  return row ? parseColumnNames(row.value).names : {};
+}
+
+export async function setColumnNames(staff: Staff, names: ColumnNames): Promise<void> {
+  await sql()`
+    insert into public.app_settings (key, value, updated_by, updated_at)
+    values (${NAMES_KEY}, ${sql().json(names)}, ${staff.id}, now())
+    on conflict (key) do update set value = excluded.value, updated_by = excluded.updated_by, updated_at = now()`;
+  await sql()`
+    insert into public.audit_log (actor_id, action, entity, entity_id, metadata)
+    values (${staff.id}, 'nomes_colunas_planilha', 'app_settings', ${NAMES_KEY}, ${sql().json({ campos: Object.keys(names) })})`;
+}
+
 export async function sheetEnabled(): Promise<boolean> {
   return sheetsConfigured() && (await getSheetConfig()) !== null;
 }
@@ -91,10 +110,11 @@ export async function readSheet() {
   const meta = await sheets.meta(cfg.spreadsheetId);
   const wanted = cfg.tab ? meta.sheets.filter((s) => s.properties.title === cfg.tab) : meta.sheets;
   if (cfg.tab && !wanted.length) throw new Error(`Aba "${cfg.tab}" não encontrada na planilha`);
+  const names = await getColumnNames();
   const tabs: TabData[] = [];
   for (const s of wanted) {
     const { values = [] } = await sheets.values(cfg.spreadsheetId, `${quoteTab(s.properties.title)}!A1:AZ5000`);
-    const header = findHeader(values);
+    const header = findHeader(values, 10, names);
     if (!header) continue;
     const parsed = parseSheetRows(values, header);
     tabs.push({
@@ -293,6 +313,12 @@ export async function pushPendingToSheet(limit = 20) {
     [sheet, rules] = await Promise.all([readSheet(), getSheetRules()]);
   } catch (err) {
     const msg = sheetErrorMessage(err);
+    await sql()`update public.lines set sheet_error = ${msg} where id = any(${pending.map((p) => p.id)})`;
+    return { written: 0, failed: pending.length, error: msg };
+  }
+  if (!sheet.tabs.length) {
+    // Nenhuma aba com a coluna Número: provavelmente o gestor mudou o nome do cabeçalho
+    const msg = "não achei a coluna Número em nenhuma aba da planilha — se o gestor mudou o nome, informe o nome novo em Configurações → Nomes das colunas";
     await sql()`update public.lines set sheet_error = ${msg} where id = any(${pending.map((p) => p.id)})`;
     return { written: 0, failed: pending.length, error: msg };
   }

@@ -1525,3 +1525,13 @@ a.pd-row:hover {
     display: inline;
   }
 }
+.cn-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+@media (max-width: 960px) {
+  .cn-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -466,3 +466,20 @@ sozinho (ex.: o gestor pedir só "Ativo"), sem programador.
 - "Editar linha" (D33) não aplica os textos das regras, só as cores da ativação. As regras valem
   da próxima escrita em diante (não mudam o que já está na planilha).
 - Guardado em `app_settings` (`planilha_regras`), sem migração; quem mudou fica no histórico.
+
+## D35 — Nomes das colunas da planilha editáveis no painel (22/11/2026)
+
+Pedido do dono: se o gestor mudar o nome de uma coluna (ex.: **ICCID** virar **CD**), a planilha
+tem que continuar funcionando sem programador.
+- **Painel → Configurações → Nomes das colunas da planilha** (só o dono): para cada campo (Cliente,
+  Login Vivo, Número, ICCID, Smart-Dados, Plano PJ, Ativação, Venda final, Valor, Vencimento, Forma
+  de pagamento), o nome do cabeçalho na planilha. Em branco = reconhece sozinho pelos nomes de
+  sempre. Vários nomes separados por ";" (abas com nomes diferentes). Maiúsculas e acentos não
+  importam. O mesmo nome não pode estar em dois campos.
+- O sistema procura primeiro o nome escolhido; se não achar, usa os nomes de sempre. Coluna
+  escolhida para um campo não é usada por outro.
+- Sem a coluna Número o sistema não reconhece a aba: o painel avisa para ajustar o nome.
+  "Testar planilha" mostra qual coluna foi achada para cada campo.
+- As regras (D34) usam o nome da coluna escrito na própria regra (ex.: Gestor): se o gestor
+  renomear essa coluna, muda-se a regra.
+- Guardado em `app_settings` (`planilha_colunas`), sem migração; quem mudou fica no histórico.

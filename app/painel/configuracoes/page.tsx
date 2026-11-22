@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getLineCostCents } from "@/lib/server/lines";
-import { getSheetConfig, getSheetRules } from "@/lib/server/planilha";
+import { getColumnNames, getSheetConfig, getSheetRules } from "@/lib/server/planilha";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { setCostAction, setSheetConfigAction, setSheetRulesAction } from "../actions";
+import { setColumnNamesAction, setCostAction, setSheetConfigAction, setSheetRulesAction } from "../actions";
 import { CostForm, SheetConfigForm } from "../forms";
 import { Card, PanelShell } from "../shell";
 import { SheetRulesEditor } from "./regras-planilha";
+import { ColumnNamesForm } from "./nomes-colunas";
 
 export const metadata: Metadata = { title: "Configurações" };
 
 async function Content() {
   const staff = await requireStaff(["owner"]);
-  const [cost, sheet, rules] = await Promise.all([getLineCostCents(), getSheetConfig(), getSheetRules()]);
+  const [cost, sheet, rules, names] = await Promise.all([getLineCostCents(), getSheetConfig(), getSheetRules(), getColumnNames()]);
   return (
     <PanelShell staff={staff}>
       <div className="pn-head">
@@ -37,6 +38,15 @@ async function Content() {
           url={sheet ? `https://docs.google.com/spreadsheets/d/${sheet.spreadsheetId}/edit` : ""}
           tab={sheet?.tab ?? ""}
         />
+      </Card>
+      <Card title="Nomes das colunas da planilha" className="mt-4">
+        <p className="mb-4 text-sm text-muted">
+          O sistema acha cada coluna pelo nome do cabeçalho. Se o gestor mudar um nome (ex.: <b>ICCID</b> virou <b>CD</b>),
+          escreva aqui o nome novo e a planilha continua funcionando. Em branco = o sistema reconhece sozinho pelos nomes de
+          sempre. Se a coluna tiver nomes diferentes em abas diferentes, separe com “;”. Depois de salvar, confira em
+          Integrações → “Testar planilha”.
+        </p>
+        <ColumnNamesForm action={setColumnNamesAction} initial={names} />
       </Card>
       <Card title="Regras da planilha" className="mt-4">
         <p className="mb-4 text-sm text-muted">
