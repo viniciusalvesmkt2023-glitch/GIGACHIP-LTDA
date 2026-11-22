@@ -219,9 +219,9 @@ export function BlockForm({ action, customerId, name, lines, suggestedLineId }: 
       <input type="hidden" name="customerId" value={customerId} />
       {lines && lines.length > 0 && (
         <label className="block text-xs text-muted">
-          Qual número é? (da planilha — opcional)
+          Qual número é? (opcional)
           <select name="lineId" defaultValue={suggestedLineId ?? ""} className="mt-1 w-full rounded-lg border border-border bg-white px-2 py-2 text-sm text-foreground">
-            <option value="">Não sei / não está no sistema</option>
+            <option value="">Não sei qual é</option>
             {lines.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
           </select>
         </label>

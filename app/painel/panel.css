@@ -2160,3 +2160,8 @@ a.in-kpi:hover {
 @media (prefers-reduced-motion: reduce) {
   .pn-sk { animation: none; }
 }
+.in-act select {
+  width: 100%;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
