@@ -46,6 +46,8 @@ export type LineRow = {
   orderCode: string | null;
   sheetPending: boolean;
   sheetError: string | null;
+  sheetSyncedAt: Date | null;
+  updatedAt: Date | null;
   sheetRow: number | null;
   sheetGid: number | null;
   sheetTab: string | null;
@@ -60,12 +62,13 @@ export async function listLines(filter: { status?: string; q?: string }): Promis
       smart_dados: string | null; plano_pj: string | null; activated_at: Date | null; sale_price_cents: number | null;
       cost_cents: number | null; due_date: string | null; payment_method: string | null; order_id: string | null; code: string | null;
       sheet_pending: boolean; sheet_error: string | null; sheet_row: number | null; sheet_gid: number | null; sheet_tab: string | null;
+      sheet_synced_at: Date | null; updated_at: Date | null;
     }[]
   >`
     select l.id, l.status::text, coalesce(c.full_name, l.legacy_customer_name) as customer, l.vivo_login, l.msisdn, l.iccid,
            l.smart_dados, l.plano_pj, l.activated_at, l.sale_price_cents, l.cost_cents,
            coalesce(s.next_due_date, l.legacy_due_date)::text as due_date, l.payment_method, l.order_id, o.code,
-           l.sheet_pending, l.sheet_error, l.sheet_row, l.sheet_gid, l.sheet_tab
+           l.sheet_pending, l.sheet_error, l.sheet_row, l.sheet_gid, l.sheet_tab, l.sheet_synced_at, l.updated_at
     from public.lines l
     left join public.orders o on o.id = l.order_id
     left join public.customers c on c.id = o.customer_id
@@ -94,6 +97,8 @@ export async function listLines(filter: { status?: string; q?: string }): Promis
     orderCode: r.code ? shortOrderNumber(r.code) : null,
     sheetPending: r.sheet_pending,
     sheetError: r.sheet_error,
+    sheetSyncedAt: r.sheet_synced_at,
+    updatedAt: r.updated_at,
     sheetRow: r.sheet_row,
     sheetGid: r.sheet_gid,
     sheetTab: r.sheet_tab,
@@ -203,9 +208,9 @@ export async function activateOrder(staff: Staff, orderId: string, input: Activa
 export async function lineForOrder(orderId: string) {
   const [l] = await sql()<{
     id: string; msisdn: string; iccid: string | null; status: string; activated_at: Date | null;
-    sheet_pending: boolean; sheet_error: string | null; sheet_synced_at: Date | null;
+    sheet_pending: boolean; sheet_error: string | null; sheet_synced_at: Date | null; updated_at: Date | null;
   }[]>`
-    select id, msisdn, iccid, status::text, activated_at, sheet_pending, sheet_error, sheet_synced_at
+    select id, msisdn, iccid, status::text, activated_at, sheet_pending, sheet_error, sheet_synced_at, updated_at
     from public.lines where order_id = ${orderId}`;
   return l ?? null;
 }
@@ -265,6 +270,8 @@ export type LineDetail = {
   sheetRow: number | null;
   sheetPending: boolean;
   sheetError: string | null;
+  sheetSyncedAt: Date | null;
+  updatedAt: Date | null;
 };
 
 export async function getLine(id: string): Promise<LineDetail | null> {
@@ -273,13 +280,13 @@ export async function getLine(id: string): Promise<LineDetail | null> {
     id: string; msisdn: string; status: string; order_id: string | null; code: string | null; customer: string | null;
     vivo_login: string | null; plano_pj: string | null; payment_method: string | null; iccid: string | null; smart_dados: string | null;
     activated_on: string | null; sale_price_cents: number | null; cost_cents: number | null; due: string | null; notes: string | null;
-    sheet_row: number | null; sheet_pending: boolean; sheet_error: string | null;
+    sheet_row: number | null; sheet_pending: boolean; sheet_error: string | null; sheet_synced_at: Date | null; updated_at: Date | null;
   }[]>`
     select l.id, l.msisdn, l.status::text, l.order_id, o.code, coalesce(c.full_name, l.legacy_customer_name) as customer,
            l.vivo_login, l.plano_pj, l.payment_method, l.iccid, l.smart_dados,
            (l.activated_at at time zone 'America/Sao_Paulo')::date::text as activated_on,
            l.sale_price_cents, l.cost_cents, coalesce(s.next_due_date, l.legacy_due_date)::text as due, l.notes, l.sheet_row,
-           l.sheet_pending, l.sheet_error
+           l.sheet_pending, l.sheet_error, l.sheet_synced_at, l.updated_at
     from public.lines l
     left join public.orders o on o.id = l.order_id
     left join public.customers c on c.id = o.customer_id
@@ -291,6 +298,7 @@ export async function getLine(id: string): Promise<LineDetail | null> {
     vivoLogin: r.vivo_login, planoPj: r.plano_pj, paymentMethod: r.payment_method, iccid: r.iccid, smartDados: r.smart_dados,
     activatedOn: r.activated_on, salePriceCents: r.sale_price_cents, costCents: r.cost_cents, dueDate: r.due, notes: r.notes,
     sheetRow: r.sheet_row, sheetPending: r.sheet_pending, sheetError: r.sheet_error,
+    sheetSyncedAt: r.sheet_synced_at, updatedAt: r.updated_at,
   };
 }
 

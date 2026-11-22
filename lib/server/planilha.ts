@@ -9,6 +9,7 @@ import {
   mirrorTextRuns,
   parseSheetRows,
   quoteTab,
+  sheetErrorMessage,
   WRITABLE_FIELDS,
   type ColumnMap,
   type SheetField,
@@ -223,7 +224,13 @@ export async function importFromSheetIfDue() {
  */
 export async function pushPendingToSheet(limit = 20) {
   if (!(await sheetEnabled())) return { skipped: "planilha não configurada" };
-  const pending = await sql()<
+  let pending: {
+    id: string; msisdn: string; status: string; order_id: string | null; customer: string | null; iccid: string | null;
+    smart_dados: string | null; activated_at: Date | null; sale_price_cents: number | null; cost_cents: number | null; due: string | null;
+    sheet_overwrite: boolean;
+  }[];
+  try {
+    pending = await sql()<
     {
       id: string; msisdn: string; status: string; order_id: string | null; customer: string | null; iccid: string | null;
       smart_dados: string | null; activated_at: Date | null; sale_price_cents: number | null; cost_cents: number | null; due: string | null;
@@ -238,13 +245,21 @@ export async function pushPendingToSheet(limit = 20) {
     left join public.subscriptions s on s.order_id = o.id
     where l.sheet_pending
     order by l.updated_at limit ${limit}`;
+  } catch (err) {
+    // Falhou antes de chegar no Google (ex.: migração não rodada): grava o motivo nas linhas da fila
+    // para o painel mostrar, em vez de "escrevendo…" para sempre. Elas continuam pendentes.
+    const msg = sheetErrorMessage(err);
+    console.error(`[planilha] ${msg}`);
+    const marked = await sql()`update public.lines set sheet_error = ${msg} where sheet_pending`.catch(() => null);
+    return { written: 0, failed: marked?.count ?? 0, error: msg };
+  }
   if (!pending.length) return { written: 0, failed: 0 };
 
   let sheet: Awaited<ReturnType<typeof readSheet>>;
   try {
     sheet = await readSheet();
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = sheetErrorMessage(err);
     await sql()`update public.lines set sheet_error = ${msg} where id = any(${pending.map((p) => p.id)})`;
     return { written: 0, failed: pending.length, error: msg };
   }
@@ -332,7 +347,7 @@ export async function pushPendingToSheet(limit = 20) {
       written++;
     } catch (err) {
       failed++;
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = sheetErrorMessage(err);
       await sql()`update public.lines set sheet_error = ${msg} where id = ${l.id}`; // continua pendente: a rotina tenta de novo
       if (err instanceof SheetsError && [401, 403, 404].includes(err.status)) break;
     }
