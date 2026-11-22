@@ -187,7 +187,7 @@ export async function describeSheet() {
       problems: t.rows.filter((r) => r.kind === "inconsistente").map((r) => `linha ${r.rowNumber}: ${r.problem}`),
       invalid: t.invalid.slice(0, 10),
       duplicates: [...t.duplicates.values()].slice(0, 10),
-      ruleColumnsMissing: ruleCols.filter((c) => ruleColumnIndex(t.header, c) === -1),
+      ruleColumnsMissing: ruleCols.filter((c) => ruleColumnIndex(t.header, c, t.map) === -1),
     })),
   };
 }
@@ -442,7 +442,7 @@ export async function pushPendingToSheet(limit = 20) {
     const active = event ? rules.filter((x) => x.quando === event)
       : colorsOnly ? rules.filter((x) => x.quando === "ativar").map((x) => ({ ...x, escrever: null })) : [];
     for (const r of active) {
-      const col = ruleColumnIndex(tab.header, r.coluna);
+      const col = ruleColumnIndex(tab.header, r.coluna, tab.map);
       if (col === -1) continue; // esta aba não tem a coluna: ignora
       if (!ruleConditionMatches(r, tab.values[sheetRow - 1]?.[col])) continue;
       const range = `${quoteTab(tab.title)}!${columnLetter(col)}${sheetRow}`;

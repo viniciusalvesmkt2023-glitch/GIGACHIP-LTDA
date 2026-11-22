@@ -29,7 +29,7 @@ export function normalizeHeader(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-function fieldForHeader(h: string): SheetField | null {
+export function fieldForHeader(h: string): SheetField | null {
   const n = normalizeHeader(h);
   if (!n) return null;
   if (n.includes("numero") || n === "linha" || n === "msisdn") return "numero";

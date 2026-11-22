@@ -8,7 +8,7 @@
  * Exemplo padrão: ao ativar, coluna "Gestor" passa de "Falta Bloquear Gestor" / "Gestor Bloqueio"
  * para "Gestor Ativo". Se o gestor pedir "Ativo", basta trocar o texto no painel.
  */
-import { normalizeHeader } from "./planilha";
+import { fieldForHeader, normalizeHeader, type ColumnMap } from "./planilha";
 
 export const RULE_EVENTS = ["ativar", "bloquear", "desbloquear"] as const;
 export type RuleEvent = (typeof RULE_EVENTS)[number];
@@ -91,10 +91,17 @@ export function parseRules(input: unknown): { rules: SheetRule[]; errors: string
   return { rules: rules.slice(0, MAX_RULES), errors };
 }
 
-/** Acha a coluna da regra no cabeçalho da aba (sem diferença de maiúsculas e acentos). -1 = não tem. */
-export function ruleColumnIndex(headerRow: string[], coluna: string): number {
+/**
+ * Acha a coluna da regra no cabeçalho da aba (sem diferença de maiúsculas e acentos). Se o nome
+ * não estiver escrito igual, mas for uma coluna que o sistema já reconhece (ex.: regra "Cliente" e
+ * cabeçalho "Nome do Cliente"), usa a mesma coluna que o sistema achou. -1 = não tem.
+ */
+export function ruleColumnIndex(headerRow: string[], coluna: string, map?: ColumnMap): number {
   const want = normalizeHeader(coluna);
-  return headerRow.findIndex((h) => normalizeHeader(String(h ?? "")) === want);
+  const exact = headerRow.findIndex((h) => normalizeHeader(String(h ?? "")) === want);
+  if (exact >= 0 || !map) return exact;
+  const field = fieldForHeader(coluna);
+  return field && map[field] !== undefined ? map[field]! : -1;
 }
 
 /** A regra vale para o valor atual da célula? */

@@ -44,6 +44,9 @@ describe("regras da planilha", () => {
     expect(ruleColumnIndex(["Cliente", "Número", "GESTOR"], "gestor")).toBe(2);
     expect(ruleColumnIndex(["Ativação"], "ativacao")).toBe(0);
     expect(ruleColumnIndex(["Cliente"], "Gestor")).toBe(-1);
+    // cabeçalho escrito diferente, mas reconhecido pelo sistema: usa a mesma coluna
+    expect(ruleColumnIndex(["Nome do Cliente", "Número"], "Cliente", { cliente: 0, numero: 1 })).toBe(0);
+    expect(ruleColumnIndex(["Nome do Cliente", "Número"], "Gestor", { cliente: 0, numero: 1 })).toBe(-1);
     expect(isProtectedColumn("Nº Número")).toBe(true);
     expect(isProtectedColumn("Gestor")).toBe(false);
   });
