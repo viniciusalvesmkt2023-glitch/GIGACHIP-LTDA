@@ -4,7 +4,6 @@ import {
   columnLetter,
   FIELD_LABEL,
   findHeader,
-  formatForSheet,
   isAvailableMarker,
   mirrorTextRuns,
   parseSheetRows,
@@ -24,9 +23,17 @@ import {
   parseRules,
   ruleColumnIndex,
   ruleConditionMatches,
-  ruleTextForSheet,
   type SheetRule,
 } from "@/lib/domain/planilha-regras";
+import {
+  effectiveTemplates,
+  expectedClientText,
+  parseTemplates,
+  renderTemplate,
+  type TemplateContext,
+  type Templates,
+} from "@/lib/domain/planilha-modelos";
+import { shortOrderNumber } from "@/lib/domain/money";
 import { sheetRequests, sheets, sheetsConfigured, SheetsError } from "@/lib/integrations/google/sheets";
 import { sql } from "./db";
 import type { Staff } from "./staff-auth";
@@ -43,6 +50,7 @@ const READ_KEY = "planilha_lida_em";
 const READ_EVERY_MINUTES = 55;
 const RULES_KEY = "planilha_regras";
 const NAMES_KEY = "planilha_colunas";
+const TEMPLATES_KEY = "planilha_modelos";
 
 export type SheetConfig = { spreadsheetId: string; tab: string | null };
 
@@ -91,6 +99,22 @@ export async function setColumnNames(staff: Staff, names: ColumnNames): Promise<
   await sql()`
     insert into public.audit_log (actor_id, action, entity, entity_id, metadata)
     values (${staff.id}, 'nomes_colunas_planilha', 'app_settings', ${NAMES_KEY}, ${sql().json({ campos: Object.keys(names) })})`;
+}
+
+/** O que escrever em cada coluna (só o que o dono mudou; o resto é de fábrica). */
+export async function getTemplates(): Promise<Templates> {
+  const [row] = await sql()<{ value: unknown }[]>`select value from public.app_settings where key = ${TEMPLATES_KEY}`;
+  return row ? parseTemplates(row.value).templates : {};
+}
+
+export async function setTemplates(staff: Staff, templates: Templates): Promise<void> {
+  await sql()`
+    insert into public.app_settings (key, value, updated_by, updated_at)
+    values (${TEMPLATES_KEY}, ${sql().json(templates)}, ${staff.id}, now())
+    on conflict (key) do update set value = excluded.value, updated_by = excluded.updated_by, updated_at = now()`;
+  await sql()`
+    insert into public.audit_log (actor_id, action, entity, entity_id, metadata)
+    values (${staff.id}, 'modelos_planilha', 'app_settings', ${TEMPLATES_KEY}, ${sql().json({ campos: Object.keys(templates) })})`;
 }
 
 export async function sheetEnabled(): Promise<boolean> {
@@ -279,17 +303,17 @@ export async function pushPendingToSheet(limit = 20) {
   let pending: {
     id: string; msisdn: string; status: string; order_id: string | null; customer: string | null; iccid: string | null;
     smart_dados: string | null; activated_at: Date | null; sale_price_cents: number | null; cost_cents: number | null; due: string | null;
-    sheet_overwrite: boolean; reactivated_at: Date | null;
+    sheet_overwrite: boolean; reactivated_at: Date | null; code: string | null; plan_name: string | null;
   }[];
   try {
     pending = await sql()<
     {
       id: string; msisdn: string; status: string; order_id: string | null; customer: string | null; iccid: string | null;
       smart_dados: string | null; activated_at: Date | null; sale_price_cents: number | null; cost_cents: number | null; due: string | null;
-      sheet_overwrite: boolean; reactivated_at: Date | null;
+      sheet_overwrite: boolean; reactivated_at: Date | null; code: string | null; plan_name: string | null;
     }[]
   >`
-    select l.id, l.msisdn, l.status::text, l.order_id, l.sheet_overwrite, l.reactivated_at, coalesce(c.full_name, l.legacy_customer_name) as customer, l.iccid,
+    select l.id, l.msisdn, l.status::text, l.order_id, l.sheet_overwrite, l.reactivated_at, o.code, o.plan_snapshot->>'name' as plan_name, coalesce(c.full_name, l.legacy_customer_name) as customer, l.iccid,
            l.smart_dados, l.activated_at, l.sale_price_cents, l.cost_cents, coalesce(s.next_due_date, l.legacy_due_date)::text as due
     from public.lines l
     left join public.orders o on o.id = l.order_id
@@ -309,8 +333,9 @@ export async function pushPendingToSheet(limit = 20) {
 
   let sheet: Awaited<ReturnType<typeof readSheet>>;
   let rules: SheetRule[];
+  let templates: Templates;
   try {
-    [sheet, rules] = await Promise.all([readSheet(), getSheetRules()]);
+    [sheet, rules, templates] = await Promise.all([readSheet(), getSheetRules(), getTemplates().then(effectiveTemplates)]);
   } catch (err) {
     const msg = sheetErrorMessage(err);
     await sql()`update public.lines set sheet_error = ${msg} where id = any(${pending.map((p) => p.id)})`;
@@ -355,6 +380,12 @@ export async function pushPendingToSheet(limit = 20) {
     const { tab, row } = loc;
     const sheetRow = row.rowNumber; // 1-based
     const cells: { range: string; value: string }[] = [];
+    const ctx: TemplateContext = {
+      cliente: l.customer ?? "", iccid: l.iccid, smart: l.smart_dados,
+      ativacao: l.activated_at ? saoPauloIso(l.activated_at) : null,
+      vendaCents: l.sale_price_cents, valorCents: l.cost_cents, vencimento: l.due,
+      pedido: l.code ? shortOrderNumber(l.code).replace(/^#/, "") : null, plano: l.plan_name,
+    };
     // Venda pelo site, ou correção feita pela equipe no painel ("Editar"): preenche as colunas da venda
     if (l.order_id || l.sheet_overwrite) {
       // Sem passar por cima de outro cliente — a não ser que a equipe tenha corrigido no painel
@@ -362,19 +393,21 @@ export async function pushPendingToSheet(limit = 20) {
         await giveUp(l.id, `na planilha a linha ${row.rowNumber} ${row.problem} — arrume a planilha e clique em Tentar de novo`);
         continue;
       }
-      if (!l.sheet_overwrite && row.kind === "cliente" && normalizeName(row.cliente ?? "") !== normalizeName(l.customer ?? "")) {
+      // O nome na planilha pode estar como o modelo da coluna Cliente (ex.: "Beatriz Rocha - pedido 8")
+      const naPlanilha = normalizeName(row.cliente ?? "");
+      if (
+        !l.sheet_overwrite && row.kind === "cliente" && naPlanilha !== normalizeName(l.customer ?? "") &&
+        naPlanilha !== normalizeName(expectedClientText(templates.cliente, ctx, sheet.locale))
+      ) {
         await giveUp(l.id, `na planilha este número já está com o cliente "${row.cliente}" — confira antes`);
         continue;
       }
-      const values = {
-        cliente: l.customer ?? "", iccid: l.iccid, smart: l.smart_dados,
-        ativacao: l.activated_at ? saoPauloIso(l.activated_at) : null,
-        vendaCents: l.sale_price_cents, valorCents: l.cost_cents, vencimento: l.due,
-      };
+      // O que vai em cada coluna: modelo de Configurações (vazio = não escreve nessa coluna)
       for (const f of WRITABLE_FIELDS) {
         const col = tab.map[f];
-        if (col === undefined) continue;
-        cells.push({ range: `${quoteTab(tab.title)}!${columnLetter(col)}${sheetRow}`, value: formatForSheet(f, values, sheet.locale) });
+        const tpl = templates[f];
+        if (col === undefined || !tpl) continue;
+        cells.push({ range: `${quoteTab(tab.title)}!${columnLetter(col)}${sheetRow}`, value: renderTemplate(tpl, ctx, sheet.locale) });
       }
     }
     // Regras de Configurações (ex.: Gestor → "Gestor Ativo"; nome em vermelho no bloqueio)
@@ -395,7 +428,8 @@ export async function pushPendingToSheet(limit = 20) {
       if (r.escrever !== null) {
         const i = cells.findIndex((c) => c.range === range);
         if (i >= 0) cells.splice(i, 1);
-        cells.push({ range, value: ruleTextForSheet(r.escrever) });
+        // A regra também aceita etiquetas (ex.: "Ativo [Data de ativação]")
+        cells.push({ range, value: renderTemplate(r.escrever, ctx, sheet.locale) });
       }
       if (r.corTexto) ruleRequests.push(sheetRequests.textColor(tab.sheetId, sheetRow - 1, col, colorToRgb(r.corTexto)));
       if (r.corFundo) ruleRequests.push(sheetRequests.backgroundColor(tab.sheetId, sheetRow - 1, col, colorToRgb(r.corFundo)));
@@ -409,14 +443,15 @@ export async function pushPendingToSheet(limit = 20) {
         if (ref) {
           for (const f of WRITABLE_FIELDS) {
             const col = tab.map[f];
-            if (col !== undefined) requests.push(sheetRequests.copyFormat(tab.sheetId, ref - 1, sheetRow - 1, col));
+            if (col !== undefined && templates[f]) requests.push(sheetRequests.copyFormat(tab.sheetId, ref - 1, sheetRow - 1, col));
           }
           // Smart-Dados com o trecho numérico colorido como no modelo (ex.: "100+100" em vermelho)
           const smartCol = tab.map.smart;
-          if (smartCol !== undefined && l.smart_dados) {
+          const smartText = templates.smart ? renderTemplate(templates.smart, ctx, sheet.locale).replace(/^'/, "") : "";
+          if (smartCol !== undefined && smartText) {
             const model = await sheets.cellText(sheet.spreadsheetId, `${quoteTab(tab.title)}!${columnLetter(smartCol)}${ref}`);
-            const runs = mirrorTextRuns(l.smart_dados, model.text, model.runs);
-            if (runs) requests.push(sheetRequests.richText(tab.sheetId, sheetRow - 1, smartCol, l.smart_dados, runs));
+            const runs = mirrorTextRuns(smartText, model.text, model.runs);
+            if (runs) requests.push(sheetRequests.richText(tab.sheetId, sheetRow - 1, smartCol, smartText, runs));
           }
         }
       }

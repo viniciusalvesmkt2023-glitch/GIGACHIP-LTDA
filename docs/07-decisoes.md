@@ -483,3 +483,22 @@ tem que continuar funcionando sem programador.
 - As regras (D34) usam o nome da coluna escrito na própria regra (ex.: Gestor): se o gestor
   renomear essa coluna, muda-se a regra.
 - Guardado em `app_settings` (`planilha_colunas`), sem migração; quem mudou fica no histórico.
+
+## D36 — O que escrever em cada coluna da planilha, editável no painel (22/11/2026)
+
+Pedido do dono: poder mudar **o que** o sistema escreve em cada coluna na ativação.
+- **Painel → Configurações → O que escrever em cada coluna** (só o dono): para Cliente, ICCID,
+  Smart-Dados, Ativação, Venda final, Valor e Vencimento, um **modelo** com texto livre e
+  **etiquetas** (botões): [Nome do cliente], [Primeiro nome], [Número do pedido], [Plano do site],
+  [ICCID], [Smart-Dados], [Data de ativação], [Venda final], [Valor do gestor], [Vencimento],
+  [Dia do vencimento]. Ex.: "[Nome do cliente] - pedido [Número do pedido]" → "Beatriz Rocha -
+  pedido 8". Prévia com um exemplo embaixo de cada campo; "padrão" por campo e "Voltar tudo ao padrão".
+- De fábrica, cada coluna com o seu dado (igual a antes). Etiqueta sozinha de data/R$/ICCID sai no
+  formato próprio (data de verdade, moeda, ICCID como texto); misturada com texto, vira texto.
+- **Em branco = não escreve** naquela coluna. **Cliente é obrigatório e precisa ter o nome**
+  ([Nome do cliente] ou [Primeiro nome]): é por ele que o sistema confere de quem é a linha antes
+  de escrever (a conferência aceita o nome puro ou o texto do modelo). Etiqueta desconhecida é
+  recusada ao salvar. Texto nunca vira fórmula.
+- As regras (D34) também aceitam as etiquetas no "Escrever".
+- Vale da próxima escrita em diante. Guardado em `app_settings` (`planilha_modelos`), sem migração;
+  quem mudou fica no histórico (só os nomes dos campos).

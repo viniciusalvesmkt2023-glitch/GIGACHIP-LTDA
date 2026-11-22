@@ -16,9 +16,10 @@ import { createStaff, login, logout, requestPasswordReset, requireStaff, resetPa
 import { env } from "@/lib/server/env";
 import { blockCustomer, syncOverdue, unblockCustomer } from "@/lib/server/inadimplencia";
 import { processEmails } from "@/lib/server/email";
-import { describeSheet, importFromSheet, pushPendingToSheet, setColumnNames, setSheetConfig, setSheetRules, sheetEnabled } from "@/lib/server/planilha";
+import { describeSheet, importFromSheet, pushPendingToSheet, setColumnNames, setSheetConfig, setSheetRules, setTemplates, sheetEnabled } from "@/lib/server/planilha";
 import { parseRules } from "@/lib/domain/planilha-regras";
-import { parseColumnNames, SHEET_FIELDS, spreadsheetIdFromUrl } from "@/lib/domain/planilha";
+import { parseColumnNames, SHEET_FIELDS, spreadsheetIdFromUrl, WRITABLE_FIELDS } from "@/lib/domain/planilha";
+import { parseTemplates } from "@/lib/domain/planilha-modelos";
 
 export type FormState = { message?: string; ok?: boolean; value?: string; email?: string };
 
@@ -226,6 +227,15 @@ export async function setColumnNamesAction(_p: FormState, fd: FormData): Promise
   await setColumnNames(me, names);
   refresh();
   return { ok: true, message: "Nomes salvos. Confira em Integrações → “Testar planilha” se cada coluna foi achada." };
+}
+
+export async function setTemplatesAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner"]);
+  const { templates, errors } = parseTemplates(Object.fromEntries(WRITABLE_FIELDS.map((f) => [f, str(fd, f)])));
+  if (errors.length) return { message: errors.join(" ") };
+  await setTemplates(me, templates);
+  refresh();
+  return { ok: true, message: "Salvo. Vale a partir da próxima ativação (o que já está na planilha não muda)." };
 }
 
 export async function testSheetAction(): Promise<FormState> {

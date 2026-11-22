@@ -1,19 +1,23 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getLineCostCents } from "@/lib/server/lines";
-import { getColumnNames, getSheetConfig, getSheetRules } from "@/lib/server/planilha";
+import { getColumnNames, getSheetConfig, getSheetRules, getTemplates } from "@/lib/server/planilha";
+import { effectiveTemplates } from "@/lib/domain/planilha-modelos";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { setColumnNamesAction, setCostAction, setSheetConfigAction, setSheetRulesAction } from "../actions";
+import { setColumnNamesAction, setCostAction, setSheetConfigAction, setSheetRulesAction, setTemplatesAction } from "../actions";
 import { CostForm, SheetConfigForm } from "../forms";
 import { Card, PanelShell } from "../shell";
 import { SheetRulesEditor } from "./regras-planilha";
 import { ColumnNamesForm } from "./nomes-colunas";
+import { TemplatesForm } from "./modelos-planilha";
 
 export const metadata: Metadata = { title: "Configurações" };
 
 async function Content() {
   const staff = await requireStaff(["owner"]);
-  const [cost, sheet, rules, names] = await Promise.all([getLineCostCents(), getSheetConfig(), getSheetRules(), getColumnNames()]);
+  const [cost, sheet, rules, names, templates] = await Promise.all([
+    getLineCostCents(), getSheetConfig(), getSheetRules(), getColumnNames(), getTemplates(),
+  ]);
   return (
     <PanelShell staff={staff}>
       <div className="pn-head">
@@ -48,11 +52,20 @@ async function Content() {
         </p>
         <ColumnNamesForm action={setColumnNamesAction} initial={names} />
       </Card>
+      <Card title="O que escrever em cada coluna (na ativação)" className="mt-4">
+        <p className="mb-4 text-sm text-muted">
+          Monte o texto de cada coluna com as <b>etiquetas</b> (clique nelas) e o seu próprio texto. Ex.: na coluna Cliente,{" "}
+          <b>[Nome do cliente] - pedido [Número do pedido]</b> fica “Beatriz Rocha - pedido 8”. Deixe em branco para o sistema
+          não escrever naquela coluna (menos Cliente, que precisa do nome). A prévia embaixo de cada campo mostra como fica.
+        </p>
+        <TemplatesForm action={setTemplatesAction} initial={effectiveTemplates(templates)} />
+      </Card>
       <Card title="Regras da planilha" className="mt-4">
         <p className="mb-4 text-sm text-muted">
           O que muda na planilha em cada momento. Ex.: ao ativar, a coluna <b>Gestor</b> passa para <b>Gestor Ativo</b>. Se o
           gestor pedir outro texto (ex.: só <b>Ativo</b>) ou outra cor, é só mudar aqui. O nome da coluna tem que ser igual ao
-          cabeçalho da planilha (maiúsculas e acentos não importam). Para conferir, use “Testar planilha” em Integrações.
+          cabeçalho da planilha (maiúsculas e acentos não importam). O texto também aceita as etiquetas acima (ex.:{" "}
+          <b>Ativo desde [Data de ativação]</b>). Para conferir, use “Testar planilha” em Integrações.
         </p>
         <SheetRulesEditor action={setSheetRulesAction} initial={rules} />
       </Card>
