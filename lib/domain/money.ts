@@ -12,3 +12,9 @@ export function formatOrderCode(year: number, sequence: number): string {
 }
 
 export const ORDER_CODE_REGEX = /^GC-\d{4}-\d{5,}$/;
+
+/** Número curto do pedido para o painel: "GC-2026-00008" → "#8" (o código completo continua valendo). */
+export function shortOrderNumber(code: string): string {
+  const m = /-(\d+)$/.exec(code);
+  return m ? `#${Number(m[1])}` : code;
+}

@@ -10,6 +10,7 @@ import { decryptBytes, decryptField, encryptBytes } from "./crypto";
 import { sql, withActor, type Tx } from "./db";
 import { env } from "./env";
 import { identityMode } from "./identity-mode";
+import { shortOrderNumber } from "@/lib/domain/money";
 
 /**
  * Contrato pela D4Sign (D19, D20).
@@ -75,7 +76,7 @@ async function loadContract(contractId: string): Promise<ContractRow | null> {
 
 function contractData(r: ContractRow): ContractData {
   return {
-    orderCode: r.code,
+    orderCode: shortOrderNumber(r.code),
     customer: {
       fullName: r.full_name,
       cpf: decryptField(r.cpf_encrypted, env().FIELD_ENCRYPTION_KEY),
@@ -107,7 +108,7 @@ export async function renderOrderContract(contractId: string) {
   const r = await loadContract(contractId);
   if (!r) throw new Error("contrato não encontrado");
   const settings = contractSettings(env().APP_URL);
-  return { row: r, pdf: await renderContractPdf(buildContract(contractData(r), settings), { orderCode: r.code, isTest: settings.isTest }) };
+  return { row: r, pdf: await renderContractPdf(buildContract(contractData(r), settings), { orderCode: shortOrderNumber(r.code), isTest: settings.isTest }) };
 }
 
 /** Executa as etapas pendentes de UM contrato. */
@@ -145,7 +146,7 @@ async function advance(contractId: string): Promise<void> {
 
   if (step === "gerar_pdf") {
     const { pdf } = await renderOrderContract(contractId);
-    docUuid = await d4sign.uploadPdf(e.D4SIGN_SAFE_UUID, pdf.bytes, `Contrato ${r.code}.pdf`);
+    docUuid = await d4sign.uploadPdf(e.D4SIGN_SAFE_UUID, pdf.bytes, `Contrato Gigachip pedido ${shortOrderNumber(r.code).replace("#", "")}.pdf`);
     step = "cadastrar_signatario";
     await save({ step, doc: docUuid, sha: pdf.sha256 });
   }
@@ -168,7 +169,7 @@ async function advance(contractId: string): Promise<void> {
     const formLink = `${e.APP_URL.replace(/\/$/, "")}/acesso/${token}`;
     await d4sign.sendToSigner(
       docUuid,
-      `Olá, ${r.full_name.split(/\s+/)[0]}! Este é o contrato da sua linha Gigachip (pedido ${r.code}). Leia e assine. ` +
+      `Olá, ${r.full_name.split(/\s+/)[0]}! Este é o contrato da sua linha Gigachip (pedido ${shortOrderNumber(r.code)}). Leia e assine. ` +
         `Depois de assinar, volte ao formulário de ativação para falar com a gente no WhatsApp e ativar sua linha: ${formLink}`,
     );
     await withActor({ type: "system", reason: "contrato enviado para assinatura (D4Sign)" }, async (tx) => {
@@ -324,7 +325,7 @@ export async function readSignedContract(orderId: string, staffId: string, ip: s
   await sql()`
     insert into public.audit_log (actor_id, action, entity, entity_id, metadata, ip)
     values (${staffId}, 'baixar_contrato_assinado', 'orders', ${orderId}, '{}'::jsonb, ${ip})`;
-  return { code: row.code, bytes: decryptBytes(row.content, env().FIELD_ENCRYPTION_KEY) };
+  return { code: shortOrderNumber(row.code).replace("#", ""), bytes: decryptBytes(row.content, env().FIELD_ENCRYPTION_KEY) };
 }
 
 export async function getContractInfo(orderId: string) {

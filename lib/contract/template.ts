@@ -67,7 +67,7 @@ export function buildContract(data: ContractData, s: ContractSettings): Block[] 
 
   return [
     { type: "title", text: "CONTRATO DE FORNECIMENTO DE LINHA MÓVEL" },
-    { type: "meta", text: `Pedido nº **${data.orderCode}** · Modelo ${s.version}` },
+    { type: "meta", text: `Pedido nº **${data.orderCode.replace(/^#/, "")}** · Modelo ${s.version}` },
     {
       type: "para",
       text: `**CONTRATADA:** Gigachip Ltda., CNPJ 51.968.628/0001-16. Atendimento: ${contact}.`,

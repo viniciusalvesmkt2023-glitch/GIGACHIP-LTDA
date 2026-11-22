@@ -3,6 +3,7 @@ import { formatMsisdn } from "@/lib/domain/lines";
 import { issueAccessToken } from "./customer-access";
 import { sql, type Tx } from "./db";
 import { env } from "./env";
+import { shortOrderNumber } from "@/lib/domain/money";
 
 /**
  * E-mails automáticos (D22). Ficam numa fila (tabela notifications) e são enviados pelo Resend.
@@ -133,11 +134,11 @@ export async function processEmails(limit = 5): Promise<{ sent: number; failed: 
       let content: { subject: string; html: string; text: string };
       if (n.template === "linha_ativada") {
         const [l] = await sql()<{ msisdn: string }[]>`select msisdn from public.lines where order_id = ${n.order_id}`;
-        content = renderActivatedEmail({ firstName, code: o.code, planName: o.plan_name, number: l ? formatMsisdn(l.msisdn) : "" });
+        content = renderActivatedEmail({ firstName, code: shortOrderNumber(o.code), planName: o.plan_name, number: l ? formatMsisdn(l.msisdn) : "" });
       } else {
         const token = await sql().begin((tx) => issueAccessToken(tx, n.order_id, "email"));
         const link = `${env().APP_URL.replace(/\/$/, "")}/acesso/${token}`;
-        content = renderActivationEmail({ firstName, code: o.code, planName: o.plan_name, link, simType: o.sim_type });
+        content = renderActivationEmail({ firstName, code: shortOrderNumber(o.code), planName: o.plan_name, link, simType: o.sim_type });
       }
       const id = await sendViaResend(o.email, content);
       await sql()`update public.notifications set status = 'done', sent_at = now(), provider_message_id = ${id}, attempts = attempts + 1, last_error = null where id = ${n.id}`;

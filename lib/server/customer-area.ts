@@ -6,6 +6,7 @@ import { queueContract } from "./contracts";
 import { encryptBytes, encryptField } from "./crypto";
 import { sql, withActor } from "./db";
 import { env } from "./env";
+import { shortOrderNumber } from "@/lib/domain/money";
 
 /** O que o cliente vê na "Minha área" (sem CPF, sem dados do aparelho completos). */
 export type AreaView = {
@@ -40,7 +41,7 @@ export async function getAreaView(orderId: string): Promise<AreaView | null> {
   if (!r) return null;
   return {
     orderId: r.id,
-    code: r.code,
+    code: shortOrderNumber(r.code),
     planName: r.plan_name,
     simType: r.sim_type,
     status: r.status,

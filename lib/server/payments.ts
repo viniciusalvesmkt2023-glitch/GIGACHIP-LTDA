@@ -5,6 +5,7 @@ import { isPaymentEvent, reaisToCents, statusFromEvent } from "@/lib/integration
 import { enqueueEmail } from "./email";
 import { trackAsaasPayment } from "./inadimplencia";
 import { sql, withActor } from "./db";
+import { shortOrderNumber } from "@/lib/domain/money";
 
 type WebhookBody = { id?: string; event?: string; dateCreated?: string; payment?: { id?: string } };
 
@@ -147,7 +148,7 @@ export async function getPaymentView(orderId: string): Promise<PaymentView | nul
     limit 1`;
   if (!row) return null;
   return {
-    orderCode: row.code,
+    orderCode: shortOrderNumber(row.code),
     status: row.status,
     paymentStatus: row.payment_status,
     planName: row.plan_name,

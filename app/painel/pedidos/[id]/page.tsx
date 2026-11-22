@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { formatBRL } from "@/lib/domain/money";
+import { formatBRL, shortOrderNumber } from "@/lib/domain/money";
 import { getOrderDetail, STATUS_LABEL } from "@/lib/server/admin";
 import { getContractInfo } from "@/lib/server/contracts";
 import { getIdentityReview } from "@/lib/server/identity";
@@ -15,6 +15,7 @@ import { requireStaff } from "@/lib/server/staff-auth";
 import { activateLineAction, changeEmailAction, decideIdentityAction, importSheetAction, retryContractAction, retrySheetAction, revealAction, syncContractAction } from "../../actions";
 import { ActionButton, ActivateLineForm, ChangeEmailForm, HiddenFieldsButton, IdentityDecisionForm, RevealButton } from "../../forms";
 import { Card, PanelShell } from "../../shell";
+import { StatusBadge } from "../../status-badge";
 
 export const metadata: Metadata = { title: "Pedido" };
 
@@ -23,6 +24,7 @@ const SUB: Record<string, string> = {
   not_started: "Não iniciado", pending_documents: "Aguardando fotos", in_review: "Em análise", approved: "Aprovado", rejected: "Recusado", retry_required: "Novas fotos pedidas",
   not_created: "Não criado", queued: "Na fila", sent: "Enviado", signed: "Assinado", refused: "Recusado", error: "Erro", submitted: "Enviado", invalid: "Inválido",
 };
+const CAMPO: Record<string, string> = { status: "Pedido", payment_status: "Pagamento", identity_status: "Identidade", contract_status: "Contrato", device_status: "Aparelho/chip" };
 const KIND: Record<string, string> = { doc_front: "Documento (frente)", doc_back: "Documento (verso)", selfie: "Selfie" };
 const fmtTime = (d: Date) => d.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 const fmt = (d: Date | null) => (d ? d.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—");
@@ -44,18 +46,42 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
 
   return (
     <PanelShell staff={staff}>
-      <Link href="/painel/pedidos" className="text-sm text-brand">← Pedidos</Link>
-      <div className="mt-2 flex flex-wrap items-baseline gap-3">
-        <h1 className="font-mono text-2xl font-bold">{o.code}</h1>
-        <span className="rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand">{STATUS_LABEL[o.status] ?? o.status}</span>
+      <Link href="/painel/pedidos" className="od-back">← Pedidos</Link>
+      <div className="od-head">
+        <h1>Pedido {shortOrderNumber(o.code)}</h1>
+        <StatusBadge status={o.status} />
         {/* Atualiza sozinha: esperando o cliente (15 s) ou escrevendo na planilha (3 s). Pronto para ativar: não, para não atrapalhar quem digita. */}
         {line?.sheet_pending && !line.sheet_error ? <AutoRefresh seconds={3} />
           : ["aguardando_pagamento", "em_andamento"].includes(o.status) ? <AutoRefresh seconds={15} /> : null}
-        {o.problem_reason && <span className="rounded-full bg-red-100 px-3 py-1 text-sm text-danger">{o.problem_reason}</span>}
+        {o.problem_reason && <span className="pd-badge is-red">{o.problem_reason}</span>}
+        <span className="od-sub">
+          {o.full_name} · {o.plan_name} · {o.sim_type === "esim" ? "eSIM" : "Chip físico"}
+        </span>
       </div>
 
+      {/* andamento do pedido */}
+      <ol className="od-track">
+        {[
+          { label: "Pagamento", v: o.payment_status, ok: ["confirmed", "received"] },
+          { label: o.sim_type === "esim" ? "Registro do eSIM" : "Dados do chip", v: o.device_status, ok: ["confirmed"] },
+          { label: "Contrato", v: o.contract_status, ok: ["signed"] },
+          { label: "Identidade", v: o.identity_status, ok: ["approved"] },
+          { label: "Linha ativada", v: o.status === "ativado" ? "ativado" : o.status, ok: ["ativado"] },
+        ].map((st) => {
+          const ok = st.ok.includes(st.v);
+          const bad = ["rejected", "error", "refused", "invalid", "retry_required", "overdue", "chargeback"].includes(st.v);
+          return (
+            <li key={st.label} className={ok ? "is-ok" : bad ? "is-bad" : ""}>
+              <span>{ok ? "✓" : bad ? "!" : ""}</span>
+              <strong>{st.label}</strong>
+              <small>{ok ? "Concluído" : SUB[st.v] ?? (st.label === "Linha ativada" ? "Aguardando" : st.v)}</small>
+            </li>
+          );
+        })}
+      </ol>
+
       {canActivate && act && (
-        <Card title="Ativar linha" className="mt-6 border-success ring-1 ring-success">
+        <Card title="⚡ Ativar linha" className="od-activate mt-6">
           <p className="mb-4 text-sm text-muted">
             Depois de ativar no portal da Vivo, escolha o número usado e digite o ICCID. O resto já vem preenchido — confira e confirme.
           </p>
@@ -85,7 +111,7 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
       )}
 
       {line && (
-        <Card title="✅ Linha ativada" className="mt-6 border-success ring-1 ring-success">
+        <Card title="✅ Linha ativada" className="od-done mt-6">
           <p className="text-sm">
             Número <strong className="font-mono">{formatMsisdn(line.msisdn)}</strong> · ICCID <span className="font-mono">{line.iccid ?? "—"}</span> ·
             ativada em {fmt(line.activated_at)}
@@ -229,25 +255,21 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
         )}
       </Card>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Card title="Etapas">
-          <ul className="space-y-1 text-sm">
-            <li>Pagamento: {SUB[o.payment_status]}</li>
-            <li>Identidade: {SUB[o.identity_status]}</li>
-            <li>Contrato: {SUB[o.contract_status]}</li>
-            <li>Aparelho: {SUB[o.device_status]}</li>
-          </ul>
-        </Card>
-        <Card title="Histórico">
-          <ul className="max-h-72 space-y-1 overflow-y-auto text-xs">
-            {o.events.map((e, i) => (
-              <li key={i}>
-                <span className="text-muted">{fmt(e.created_at)}</span> · {e.field}: {e.from_value} → <strong>{e.to_value}</strong> ({e.actor_type}){e.reason ? ` — ${e.reason}` : ""}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </div>
+      <Card title="Histórico" className="mt-4">
+        <ul className="od-timeline">
+          {o.events.map((e, i) => (
+            <li key={i}>
+              <span className="od-when">{fmt(e.created_at)}</span>
+              <span>
+                {CAMPO[e.field] ?? e.field}: {SUB[e.from_value ?? ""] ?? STATUS_LABEL[e.from_value ?? ""] ?? e.from_value} →{" "}
+                <strong>{SUB[e.to_value ?? ""] ?? STATUS_LABEL[e.to_value ?? ""] ?? e.to_value}</strong>
+                <em>{e.actor_type === "staff" ? "equipe" : e.actor_type === "system" ? "sistema" : e.actor_type === "customer" ? "cliente" : e.actor_type}</em>
+                {e.reason ? <small> — {e.reason}</small> : null}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Card>
     </PanelShell>
   );
 }

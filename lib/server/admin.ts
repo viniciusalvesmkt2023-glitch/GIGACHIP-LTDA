@@ -60,6 +60,8 @@ export async function listOrders(staff: Staff, filter: { status?: string; q?: st
   void staff;
   const status = filter.status && STATUS_LABEL[filter.status] ? filter.status : null;
   const q = filter.q?.trim() || null;
+  // "8" ou "#8" → só o pedido de número 8 (fim do código GC-AAAA-00008)
+  const numero = q && /^#?\d{1,7}$/.test(q) ? String(Number(q.replace("#", ""))) : null;
   const rows = await sql()<
     {
       id: string; code: string; status: string; full_name: string; plan_name: string; sim_type: string;
@@ -71,8 +73,10 @@ export async function listOrders(staff: Staff, filter: { status?: string; q?: st
     from public.orders o join public.customers c on c.id = o.customer_id
     where (${status}::text is null or o.status::text = ${status})
       and (${filter.identityReview ?? false} = false or o.identity_status = 'in_review')
-      and (${q}::text is null or o.code ilike ${"%" + (q ?? "") + "%"} or c.full_name ilike ${"%" + (q ?? "") + "%"}
-           or c.email::text ilike ${"%" + (q ?? "") + "%"})
+      and (${q}::text is null
+           or (${numero}::text is not null and ltrim(split_part(o.code, '-', 3), '0') = ${numero})
+           or (${numero}::text is null and (o.code ilike ${"%" + (q ?? "") + "%"} or c.full_name ilike ${"%" + (q ?? "") + "%"}
+               or c.email::text ilike ${"%" + (q ?? "") + "%"})))
     order by o.created_at desc
     limit 200`;
   return rows.map<OrderListItem>((r) => ({
@@ -163,4 +167,11 @@ export async function salesSeries(staff: Staff, de: string, ate: string, agrupar
     from baldes left join pagos on pagos.b = baldes.b
     group by baldes.b order by baldes.b`;
   return rows.map((r) => ({ bucket: r.bucket, receitaCents: r.receita_cents, vendas: r.vendas }));
+}
+
+/** Quantos pedidos em cada status (filtros da lista de pedidos). */
+export async function orderStatusCounts(staff: Staff): Promise<Record<string, number>> {
+  void staff;
+  const rows = await sql()<{ status: string; n: number }[]>`select status::text, count(*)::int as n from public.orders group by status`;
+  return Object.fromEntries(rows.map((r) => [r.status, r.n]));
 }

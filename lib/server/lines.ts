@@ -4,6 +4,7 @@ import { decryptField } from "./crypto";
 import { sql, withActor } from "./db";
 import { env } from "./env";
 import type { Staff } from "./staff-auth";
+import { shortOrderNumber } from "@/lib/domain/money";
 
 /** Estoque de linhas e ativação (D26) — substitui a planilha de controle. */
 
@@ -90,7 +91,7 @@ export async function listLines(filter: { status?: string; q?: string }): Promis
     dueDate: r.due_date,
     paymentMethod: r.payment_method,
     orderId: r.order_id,
-    orderCode: r.code,
+    orderCode: r.code ? shortOrderNumber(r.code) : null,
     sheetPending: r.sheet_pending,
     sheetError: r.sheet_error,
     sheetRow: r.sheet_row,
@@ -286,7 +287,7 @@ export async function getLine(id: string): Promise<LineDetail | null> {
     where l.id = ${id}`;
   if (!r) return null;
   return {
-    id: r.id, msisdn: r.msisdn, status: r.status, orderId: r.order_id, orderCode: r.code, customer: r.customer,
+    id: r.id, msisdn: r.msisdn, status: r.status, orderId: r.order_id, orderCode: r.code ? shortOrderNumber(r.code) : null, customer: r.customer,
     vivoLogin: r.vivo_login, planoPj: r.plano_pj, paymentMethod: r.payment_method, iccid: r.iccid, smartDados: r.smart_dados,
     activatedOn: r.activated_on, salePriceCents: r.sale_price_cents, costCents: r.cost_cents, dueDate: r.due, notes: r.notes,
     sheetRow: r.sheet_row, sheetPending: r.sheet_pending, sheetError: r.sheet_error,

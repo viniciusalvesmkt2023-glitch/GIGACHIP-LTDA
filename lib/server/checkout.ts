@@ -9,6 +9,7 @@ import { sql, withActor } from "./db";
 import { issueAccessToken } from "./customer-access";
 import { env } from "./env";
 import { getActivePlanBySlug } from "./catalog";
+import { shortOrderNumber } from "@/lib/domain/money";
 
 /** Prazo para pagar a 1ª mensalidade antes de o pedido expirar. */
 const PAYMENT_WINDOW_HOURS = 48;
@@ -93,7 +94,7 @@ export async function createCheckout(
     return {
       kind: "novo" as const,
       orderId: order.id,
-      orderCode: order.code,
+      orderCode: shortOrderNumber(order.code),
       customerId,
       asaasCustomerId: sub?.provider_customer_id ?? null,
       accessToken: await issueAccessToken(tx, order.id, "checkout"),

@@ -69,7 +69,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel">["s
   const maxFunnel = Math.max(1, ...funnel.map((f) => f.value));
 
   return (
-    <PanelShell staff={staff} badges={{ pedidos: n("pronto_para_ativacao"), inadimplencia: overdue.bloquear + overdue.desbloquear }}>
+    <PanelShell staff={staff}>
       <div className="pn-head">
         <h1>Olá, {staff.name.split(" ")[0]}! 👋</h1>
         <p>{pending ? `Você tem ${pending} ${pending === 1 ? "tipo de tarefa" : "tipos de tarefa"} esperando.` : "Tudo em dia por aqui."}</p>

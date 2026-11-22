@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBRL, formatOrderCode, ORDER_CODE_REGEX } from "@/lib/domain/money";
+import { formatBRL, formatOrderCode, ORDER_CODE_REGEX, shortOrderNumber } from "@/lib/domain/money";
 
 describe("dinheiro e código do pedido", () => {
   it("formata reais", () => {
@@ -8,5 +8,13 @@ describe("dinheiro e código do pedido", () => {
   it("código do pedido", () => {
     expect(formatOrderCode(2026, 123)).toBe("GC-2026-00123");
     expect(ORDER_CODE_REGEX.test("GC-2026-00123")).toBe(true);
+  });
+});
+
+describe("shortOrderNumber", () => {
+  it("mostra só o número", () => {
+    expect(shortOrderNumber("GC-2026-00008")).toBe("#8");
+    expect(shortOrderNumber("GC-2026-00123")).toBe("#123");
+    expect(shortOrderNumber("qualquer")).toBe("qualquer");
   });
 });

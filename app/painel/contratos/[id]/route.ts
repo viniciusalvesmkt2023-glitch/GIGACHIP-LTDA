@@ -13,7 +13,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/painel/contratos/[i
   return new Response(new Uint8Array(file.bytes), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="Contrato ${file.code} (assinado).pdf"`,
+      "Content-Disposition": `inline; filename="Contrato pedido ${file.code} (assinado).pdf"`,
       "Cache-Control": "no-store, private",
     },
   });
