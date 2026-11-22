@@ -71,7 +71,7 @@ describe("missingMigrations", () => {
   it("lista várias na ordem", () => {
     const r = missingMigrations(new Set(["overdue_payments", "line_blocks", "lines.asaas_customer_id"]));
     expect(r.map((m) => m.file.slice(0, 16))).toEqual([
-      "20261121000011_p", "20261121000012_p", "20261121000013_r", "20261121000014_e", "20261122000015_c",
+      "20261120000002_b", "20261121000011_p", "20261121000012_p", "20261121000013_r", "20261121000014_e", "20261122000015_c",
     ]);
   });
 });

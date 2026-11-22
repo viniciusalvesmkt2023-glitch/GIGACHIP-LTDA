@@ -373,6 +373,10 @@ export function sheetErrorMessage(e: unknown): string {
 /** Tabelas/colunas criadas por cada migração recente — usadas para avisar "migração pendente". */
 export const EXPECTED_SCHEMA: { file: string; objects: string[] }[] = [
   {
+    file: "20261120000002_bloqueio_por_atraso.sql",
+    objects: ["lines.suspension_requested_at", "lines.reactivation_requested_at", "lines.reactivated_at"],
+  },
+  {
     file: "20261121000010_inadimplencia.sql",
     objects: ["overdue_payments", "line_blocks", "lines.asaas_customer_id"],
   },

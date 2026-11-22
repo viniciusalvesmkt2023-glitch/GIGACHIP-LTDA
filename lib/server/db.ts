@@ -14,22 +14,26 @@ const globalForDb = globalThis as unknown as { __gcSql?: Sql; __gcRaw?: Sql };
 /** Tempo máximo de uma consulta e de uma transação antes de desistir (e trocar as conexões). */
 const QUERY_TIMEOUT_MS = 15_000;
 const TRANSACTION_TIMEOUT_MS = 30_000;
+/** Leitura que passar disso é tentada de novo, uma vez, numa conexão nova (leituras são rápidas). */
+const READ_RETRY_AFTER_MS = 6_000;
 
 export class DatabaseTimeoutError extends Error {}
 
 /**
  * Já aconteceu, em produção, de uma conexão entre a Vercel e o Supabase ficar "pendurada" no meio
  * de uma consulta (no banco aparece como ClientRead). As consultas seguintes ficavam na fila atrás
- * dela e o painel ficava em "Carregando…" para sempre. Agora, se o banco não responder no tempo
- * limite, a consulta falha com erro e TODAS as conexões são trocadas por novas — a próxima
- * tentativa (ex.: atualizar a página) já funciona.
+ * dela e o painel ficava em "Carregando…" para sempre. Agora:
+ * - leitura (select/with sem insert/update/delete) sem resposta em 6 s → troca as conexões e tenta
+ *   de novo uma vez numa conexão nova;
+ * - qualquer outra consulta sem resposta em 15 s → falha com erro e troca as conexões.
+ * As conexões antigas recebem até 10 s para terminar o que estavam fazendo (antes eram cortadas
+ * na hora, e as consultas saudáveis do mesmo momento falhavam junto).
  */
 function resetPool(reason: string) {
   const old = globalForDb.__gcRaw;
   globalForDb.__gcRaw = undefined;
-  globalForDb.__gcSql = undefined;
-  console.error(`[db] ${reason}: conexões descartadas e recriadas`);
-  old?.end({ timeout: 0 }).catch(() => undefined);
+  console.error(`[db] ${reason}: conexões trocadas por novas`);
+  old?.end({ timeout: 10 }).catch(() => undefined);
 }
 
 function withTimeout<T>(work: PromiseLike<T>, ms: number, what: string): Promise<T> {
@@ -43,37 +47,59 @@ function withTimeout<T>(work: PromiseLike<T>, ms: number, what: string): Promise
   return Promise.race([Promise.resolve(work), timeout]).finally(() => clearTimeout(timer));
 }
 
-function guarded(raw: Sql): Sql {
-  return new Proxy(raw, {
-    // sql`...` → consulta com tempo limite
-    apply(target, thisArg, args) {
-      // No log vai só o começo do texto da consulta (sem os valores), para saber qual travou
-      const texto = Array.isArray(args[0]) ? (args[0] as string[]).join("?").replace(/\s+/g, " ").trim().slice(0, 90) : "";
-      return withTimeout(Reflect.apply(target, thisArg, args) as PromiseLike<unknown>, QUERY_TIMEOUT_MS, `consulta [${texto}]`);
-    },
-    get(target, prop, receiver) {
-      if (prop === "begin") {
-        return (...args: unknown[]) =>
-          withTimeout((target.begin as (...a: unknown[]) => PromiseLike<unknown>)(...args), TRANSACTION_TIMEOUT_MS, "transação");
-      }
-      return Reflect.get(target, prop, receiver);
-    },
-  }) as Sql;
-}
-
-export function sql(): Sql {
-  if (!globalForDb.__gcSql) {
+/** Pool de conexões atual (recriado depois de uma troca). */
+function raw(): Sql {
+  if (!globalForDb.__gcRaw) {
     globalForDb.__gcRaw = postgres(env().DATABASE_URL, {
       prepare: false,
       max: 5,
-      idle_timeout: 20,
+      // Fecha logo as conexões paradas: na Vercel a função "dorme" entre os acessos e uma conexão
+      // parada pode ficar morta sem aviso (era ela que travava o painel)
+      idle_timeout: 5,
       // Desiste de conectar após 10 s e renova cada conexão a cada 5 min.
       connect_timeout: 10,
       max_lifetime: 60 * 5,
       types: { bigint: postgres.BigInt },
     });
-    globalForDb.__gcSql = guarded(globalForDb.__gcRaw);
   }
+  return globalForDb.__gcRaw;
+}
+
+/** Só leitura (pode ser repetida sem efeito colateral). */
+export function isReadOnlyQuery(text: string): boolean {
+  return /^\s*(select|with)\b/i.test(text) && !/\b(insert|update|delete|for\s+update|nextval|set_config)\b/i.test(text);
+}
+
+function guarded(): Sql {
+  // O alvo é só um "molde": cada chamada usa o pool atual (que pode ter sido trocado)
+  return new Proxy(function () {} as unknown as Sql, {
+    // sql`...` → consulta com tempo limite (e nova tentativa, se for leitura)
+    apply(_target, thisArg, args) {
+      const full = Array.isArray(args[0]) ? (args[0] as string[]).join("?") : "";
+      // No log vai só o começo do texto da consulta (sem os valores), para saber qual travou
+      const texto = full.replace(/\s+/g, " ").trim().slice(0, 90);
+      const run = (ms: number) => withTimeout(Reflect.apply(raw(), thisArg, args) as PromiseLike<unknown>, ms, `consulta [${texto}]`);
+      if (!isReadOnlyQuery(full)) return run(QUERY_TIMEOUT_MS);
+      return run(READ_RETRY_AFTER_MS).catch((e: unknown) => {
+        if (!(e instanceof DatabaseTimeoutError)) throw e;
+        console.error(`[db] tentando de novo numa conexão nova: [${texto}]`);
+        return run(QUERY_TIMEOUT_MS);
+      });
+    },
+    get(_target, prop) {
+      const r = raw();
+      if (prop === "begin") {
+        return (...args: unknown[]) =>
+          withTimeout((r.begin as (...a: unknown[]) => PromiseLike<unknown>)(...args), TRANSACTION_TIMEOUT_MS, "transação");
+      }
+      const v = Reflect.get(r, prop, r);
+      return typeof v === "function" ? v.bind(r) : v;
+    },
+  });
+}
+
+export function sql(): Sql {
+  if (!globalForDb.__gcSql) globalForDb.__gcSql = guarded();
   return globalForDb.__gcSql;
 }
 
