@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Ban, CircleCheck, ExternalLink, Info, Lock, type LucideIcon } from "lucide-react";
 import { BLOCKED_DAYS_BEFORE_CANCEL } from "@/lib/contract/settings";
 import { formatMsisdn } from "@/lib/domain/lines";
 import { formatBRL } from "@/lib/domain/money";
@@ -7,7 +8,7 @@ import { lastOverdueSync, overdueBoard, type BoardRow } from "@/lib/server/inadi
 import { requireStaff } from "@/lib/server/staff-auth";
 import { blockCustomerAction, syncOverdueAction, unblockCustomerAction } from "../actions";
 import { ActionButton, BlockForm, HiddenFieldsButton } from "../forms";
-import { Card, PanelShell } from "../shell";
+import { PanelShell } from "../shell";
 
 export const metadata: Metadata = { title: "Inadimplência" };
 
@@ -17,22 +18,30 @@ const brDate = (iso: string) => {
 };
 const brDateTime = (d: Date) => d.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 const dias = (n: number) => (n === 1 ? "1 dia" : `${n} dias`);
+const iniciais = (nome: string) =>
+  nome
+    .trim()
+    .split(/\s+/)
+    .filter((p) => p.length > 2 || /^[A-ZÀ-Ú]/.test(p))
+    .slice(0, 2)
+    .map((p) => p[0]!.toUpperCase())
+    .join("") || "?";
 
 function Numbers({ row }: { row: BoardRow }) {
   if (!row.lines.length) {
     return (
-      <p className="text-xs text-muted">
+      <p className="in-nonum">
         {row.suggestedLineId ? "Número: achamos pelo nome na planilha — confira ao lado" : "Número: procure na planilha pelo nome"}
       </p>
     );
   }
   return (
-    <p className="text-sm">
+    <p className="in-nums">
       {row.lines.map((l) => (
-        <span key={l.id} className="mr-3 inline-block font-mono">
-          {formatMsisdn(l.msisdn)}
-          {l.vivoLogin && <span className="ml-1 font-sans text-xs text-muted">({l.vivoLogin})</span>}
-          {l.sheetRow && <span className="ml-1 font-sans text-xs text-muted">· linha {l.sheetRow} da planilha</span>}
+        <span key={l.id}>
+          <b>{formatMsisdn(l.msisdn)}</b>
+          {l.vivoLogin && <small>login {l.vivoLogin}</small>}
+          {l.sheetRow && <small>planilha L{l.sheetRow}</small>}
         </span>
       ))}
     </p>
@@ -41,14 +50,35 @@ function Numbers({ row }: { row: BoardRow }) {
 
 function Debts({ row }: { row: BoardRow }) {
   return (
-    <ul className="mt-1 space-y-0.5 text-xs text-muted">
+    <ul className="in-debts">
       {row.items.map((i) => (
         <li key={i.id}>
-          {formatBRL(i.valueCents)} · venceu {brDate(i.due)} ({dias(i.daysLate)} de atraso)
-          {i.invoiceUrl && <> · <a href={i.invoiceUrl} target="_blank" rel="noopener noreferrer" className="text-brand underline">cobrança no Asaas</a></>}
+          <b>{formatBRL(i.valueCents)}</b> · venceu {brDate(i.due)} · {dias(i.daysLate)} de atraso
+          {i.invoiceUrl && (
+            <a href={i.invoiceUrl} target="_blank" rel="noopener noreferrer">
+              cobrança no Asaas <ExternalLink size={11} />
+            </a>
+          )}
         </li>
       ))}
     </ul>
+  );
+}
+
+function Secao({ tone, icon: Icon, title, hint, count, children }: {
+  tone: "red" | "green" | "amber"; icon: LucideIcon; title: string; hint: string; count: number; children: React.ReactNode;
+}) {
+  return (
+    <section className={`in-sec is-${tone}`}>
+      <header>
+        <span className="in-sec-icon"><Icon size={18} /></span>
+        <div>
+          <h2>{title} <em>{count}</em></h2>
+          <p>{hint}</p>
+        </div>
+      </header>
+      <div className="in-list">{children}</div>
+    </section>
   );
 }
 
@@ -57,64 +87,87 @@ async function Content() {
   const [board, last] = await Promise.all([overdueBoard(), lastOverdueSync()]);
   const canAct = ["owner", "admin", "ativador"].includes(staff.role);
   const linkable = board.linkable.map((l) => ({ id: l.id, label: `${l.sheet_row ? `#${l.sheet_row} · ` : ""}${formatMsisdn(l.msisdn)}${l.name ? ` — ${l.name}` : ""}` }));
+  const emAtraso = [...board.bloquear, ...board.bloqueado].reduce((a, r) => a + r.totalCents, 0);
+  const paraCancelar = board.bloqueado.filter((r) => (r.blockedDays ?? 0) >= BLOCKED_DAYS_BEFORE_CANCEL).length;
 
   return (
     <PanelShell staff={staff}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Inadimplência</h1>
-          <p className="mt-1 text-sm text-muted">
-            Puxado do Asaas (todos os clientes, inclusive os da planilha). O Asaas marca como vencida no dia seguinte ao
-            vencimento. Última atualização: {last ? brDateTime(last) : "ainda não atualizado"}.
-          </p>
+      <div className="ln-top">
+        <div className="pn-head">
+          <h1>Inadimplência</h1>
+          <p>Puxado do Asaas · atualizado {last ? `em ${brDateTime(last)}` : "ainda não"}</p>
         </div>
-        <ActionButton action={syncOverdueAction} label="Atualizar agora" />
+        <div className="in-sync">
+          <ActionButton action={syncOverdueAction} label="Atualizar agora" />
+        </div>
       </div>
 
-      <Card title={`🔴 Bloquear linha — sem pagamento (${board.bloquear.length})`} className="mt-6">
-        {board.bloquear.length === 0 ? (
-          <p className="text-sm text-muted">Ninguém para bloquear. 🎉</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {board.bloquear.map((r) => (
-              <li key={r.customerId} className="grid gap-3 py-4 sm:grid-cols-[1fr_260px]">
-                <div>
-                  <p className="font-semibold">{r.name}</p>
-                  <Numbers row={r} />
-                  <Debts row={r} />
-                  <p className="mt-1 text-xs font-medium text-danger">Bloquear linha — sem pagamento</p>
-                </div>
-                {canAct && (
-                  <BlockForm
-                    action={blockCustomerAction}
-                    customerId={r.customerId}
-                    name={r.name}
-                    lines={r.lines.length ? null : linkable}
-                    suggestedLineId={r.suggestedLineId}
-                  />
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <div className="in-kpis">
+        <a href="#bloquear" className={`in-kpi is-red ${board.bloquear.length ? "is-on" : ""}`}>
+          <span><Ban size={16} /> Bloquear na Vivo</span>
+          <strong>{board.bloquear.length}</strong>
+          <small>sem pagamento</small>
+        </a>
+        <a href="#desbloquear" className={`in-kpi is-green ${board.desbloquear.length ? "is-on" : ""}`}>
+          <span><CircleCheck size={16} /> Desbloquear na Vivo</span>
+          <strong>{board.desbloquear.length}</strong>
+          <small>pagaram — até 24 h</small>
+        </a>
+        <a href="#bloqueadas" className="in-kpi is-amber">
+          <span><Lock size={16} /> Bloqueadas</span>
+          <strong>{board.bloqueado.length}</strong>
+          <small>{paraCancelar ? (paraCancelar === 1 ? "1 já pode ser cancelada" : `${paraCancelar} já podem ser canceladas`) : "aguardando pagamento"}</small>
+        </a>
+        <div className="in-kpi">
+          <span>Em atraso</span>
+          <strong>{formatBRL(emAtraso)}</strong>
+          <small>de quem ainda não pagou</small>
+        </div>
+      </div>
 
-      <Card title={`🟢 Desbloquear — pagou (${board.desbloquear.length})`} className="mt-4">
-        {board.desbloquear.length === 0 ? (
-          <p className="text-sm text-muted">Ninguém para desbloquear agora.</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {board.desbloquear.map((r) => (
-              <li key={r.customerId} className="grid gap-3 py-4 sm:grid-cols-[1fr_260px]">
-                <div>
-                  <p className="font-semibold">{r.name}</p>
-                  <Numbers row={r} />
-                  <p className="mt-1 text-xs text-muted">
-                    Pagou{r.paidAt ? ` em ${brDateTime(r.paidAt)}` : ""} · bloqueada desde {r.blockedAt ? brDateTime(r.blockedAt) : "—"}.
-                    Pelo contrato, desbloquear em até 24 h.
-                  </p>
+      <div id="bloquear">
+        <Secao tone="red" icon={Ban} title="Bloquear — sem pagamento" hint="Bloqueie na Vivo e depois clique em “Bloqueei na Vivo”." count={board.bloquear.length}>
+          {board.bloquear.length === 0 && <p className="pd-empty">Ninguém para bloquear. 🎉</p>}
+          {board.bloquear.map((r) => (
+            <div key={r.customerId} className="in-row">
+              <span className="in-avatar">{iniciais(r.name)}</span>
+              <div className="in-main">
+                <strong>{r.name}</strong>
+                <Numbers row={r} />
+                <Debts row={r} />
+              </div>
+              <div className="in-total">
+                <strong>{formatBRL(r.totalCents)}</strong>
+                <span className="pd-badge is-red">{dias(r.maxDaysLate)} de atraso</span>
+              </div>
+              {canAct && (
+                <div className="in-act">
+                  <BlockForm action={blockCustomerAction} customerId={r.customerId} name={r.name} lines={r.lines.length ? null : linkable} suggestedLineId={r.suggestedLineId} />
                 </div>
-                {canAct && r.blockId && (
+              )}
+            </div>
+          ))}
+        </Secao>
+      </div>
+
+      <div id="desbloquear">
+        <Secao tone="green" icon={CircleCheck} title="Desbloquear — pagou" hint="Pelo contrato, desbloquear em até 24 h depois do pagamento." count={board.desbloquear.length}>
+          {board.desbloquear.length === 0 && <p className="pd-empty">Ninguém para desbloquear agora.</p>}
+          {board.desbloquear.map((r) => (
+            <div key={r.customerId} className="in-row">
+              <span className="in-avatar">{iniciais(r.name)}</span>
+              <div className="in-main">
+                <strong>{r.name}</strong>
+                <Numbers row={r} />
+                <p className="in-note">
+                  Pagou{r.paidAt ? ` em ${brDateTime(r.paidAt)}` : ""} · bloqueada desde {r.blockedAt ? brDateTime(r.blockedAt) : "—"}
+                </p>
+              </div>
+              <div className="in-total">
+                <span className="pd-badge is-green">Pago</span>
+              </div>
+              {canAct && r.blockId && (
+                <div className="in-act">
                   <HiddenFieldsButton
                     action={unblockCustomerAction}
                     fields={{ blockId: r.blockId }}
@@ -122,36 +175,49 @@ async function Content() {
                     variant="primary"
                     confirm={`Confirma que você DESBLOQUEOU a linha de ${r.name} na Vivo?`}
                   />
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+                </div>
+              )}
+            </div>
+          ))}
+        </Secao>
+      </div>
 
-      <Card title={`🔒 Bloqueadas — aguardando pagamento (${board.bloqueado.length})`} className="mt-4">
-        {board.bloqueado.length === 0 ? (
-          <p className="text-sm text-muted">Nenhuma linha bloqueada.</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {board.bloqueado.map((r) => (
-              <li key={r.customerId} className="py-4">
-                <p className="font-semibold">{r.name}</p>
-                <Numbers row={r} />
-                <Debts row={r} />
-                <p className={`mt-1 text-xs ${(r.blockedDays ?? 0) >= BLOCKED_DAYS_BEFORE_CANCEL ? "font-semibold text-danger" : "text-muted"}`}>
-                  Bloqueada há {dias(r.blockedDays ?? 0)}
-                  {(r.blockedDays ?? 0) >= BLOCKED_DAYS_BEFORE_CANCEL && ` — passou de ${BLOCKED_DAYS_BEFORE_CANCEL} dias: pelo contrato, já pode cancelar`}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <div id="bloqueadas">
+        <Secao tone="amber" icon={Lock} title="Bloqueadas — aguardando pagamento" hint={`A partir de ${BLOCKED_DAYS_BEFORE_CANCEL} dias bloqueada, o contrato já permite cancelar.`} count={board.bloqueado.length}>
+          {board.bloqueado.length === 0 && <p className="pd-empty">Nenhuma linha bloqueada.</p>}
+          {board.bloqueado.map((r) => {
+            const d = r.blockedDays ?? 0;
+            const cancelar = d >= BLOCKED_DAYS_BEFORE_CANCEL;
+            return (
+              <div key={r.customerId} className="in-row">
+                <span className="in-avatar">{iniciais(r.name)}</span>
+                <div className="in-main">
+                  <strong>{r.name}</strong>
+                  <Numbers row={r} />
+                  <Debts row={r} />
+                </div>
+                <div className="in-total">
+                  <strong>{formatBRL(r.totalCents)}</strong>
+                  <span className={`pd-badge ${cancelar ? "is-red" : "is-amber"}`}>Bloqueada há {dias(d)}</span>
+                  {cancelar && <small className="in-cancel">Já pode cancelar (contrato)</small>}
+                </div>
+              </div>
+            );
+          })}
+        </Secao>
+      </div>
+
+      <p className="in-foot">
+        <Info size={14} /> O Asaas marca a cobrança como vencida no dia seguinte ao vencimento. A lista inclui os clientes do site e os da planilha.
+      </p>
     </PanelShell>
   );
 }
 
 export default function InadimplenciaPage() {
-  return <Suspense fallback={<div className="p-8">Carregando…</div>}><Content /></Suspense>;
+  return (
+    <Suspense fallback={<div className="p-8">Carregando…</div>}>
+      <Content />
+    </Suspense>
+  );
 }
