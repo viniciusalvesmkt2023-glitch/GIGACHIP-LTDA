@@ -47,7 +47,9 @@ function guarded(raw: Sql): Sql {
   return new Proxy(raw, {
     // sql`...` → consulta com tempo limite
     apply(target, thisArg, args) {
-      return withTimeout(Reflect.apply(target, thisArg, args) as PromiseLike<unknown>, QUERY_TIMEOUT_MS, "consulta");
+      // No log vai só o começo do texto da consulta (sem os valores), para saber qual travou
+      const texto = Array.isArray(args[0]) ? (args[0] as string[]).join("?").replace(/\s+/g, " ").trim().slice(0, 90) : "";
+      return withTimeout(Reflect.apply(target, thisArg, args) as PromiseLike<unknown>, QUERY_TIMEOUT_MS, `consulta [${texto}]`);
     },
     get(target, prop, receiver) {
       if (prop === "begin") {

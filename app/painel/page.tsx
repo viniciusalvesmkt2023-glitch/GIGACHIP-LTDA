@@ -39,11 +39,19 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel">["s
   const str = (v: unknown) => (typeof v === "string" ? v : undefined);
   const hoje = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
   const periodo = parsePeriodo({ periodo: str(sp.periodo), de: str(sp.de), ate: str(sp.ate) }, hoje);
+  // Cada parte se vira sozinha: se uma consulta falhar ou demorar, o resto da tela aparece
+  const seguro = <T,>(nome: string, p: Promise<T>, vazio: T): Promise<T> =>
+    p.catch((e: unknown) => {
+      console.error(`[visao-geral] ${nome}: ${e instanceof Error ? e.message : String(e)}`);
+      return vazio;
+    });
   const [c, overdue, lines, serie] = await Promise.all([
-    dashboardCounts(staff),
-    overdueCounts(),
-    lineCounts(),
-    salesSeries(staff, periodo.de, periodo.ate, periodo.agrupar),
+    seguro("contagens", dashboardCounts(staff), {
+      byStatus: {} as Record<string, number>, identity_review: 0, revenue_cents: 0, paid: 0, revenue_month_cents: 0, activated_month: 0, new_orders_today: 0,
+    }),
+    seguro("inadimplencia", overdueCounts(), { bloquear: 0, desbloquear: 0 }),
+    seguro("linhas", lineCounts(), {} as Record<string, number>),
+    seguro("grafico", salesSeries(staff, periodo.de, periodo.ate, periodo.agrupar), [] as Awaited<ReturnType<typeof salesSeries>>),
   ]);
   const totalCents = serie.reduce((a, p) => a + p.receitaCents, 0);
   const totalVendas = serie.reduce((a, p) => a + p.vendas, 0);
