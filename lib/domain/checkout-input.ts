@@ -1,8 +1,14 @@
 import { z } from "zod";
 import { isValidCpf, normalizeBrMobile, onlyDigits } from "./validators";
 
-/** Versão dos termos/política aceitos — gravada em `consents.document_version`. */
-export const TERMS_VERSION = "rascunho-2026-11";
+/** Versão do aviso aceito (hoje só o opcional de avisos pelo WhatsApp) — `consents.document_version`. */
+export const TERMS_VERSION = "aviso-whatsapp-2026-11";
+
+/** "20/05/1975" → "1975-05-20" (o formulário digita com barras); ISO passa direto. */
+export function birthDateToIso(v: string): string {
+  const m = /^\s*(\d{2})\/(\d{2})\/(\d{4})\s*$/.exec(v);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : v.trim();
+}
 
 const MIN_AGE = 18;
 
@@ -35,10 +41,16 @@ export function checkoutInputSchema(today: Date = new Date()) {
         .refine(isValidCpf, "CPF inválido."),
       birthDate: z
         .string()
-        .regex(/^\d{4}-\d{2}-\d{2}$/, "Data de nascimento inválida.")
+        .transform(birthDateToIso)
+        .refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v), "Digite a data completa (dd/mm/aaaa).")
+        .refine((v) => {
+          const [y, m, d] = v.split("-").map(Number) as [number, number, number];
+          const dt = new Date(Date.UTC(y, m - 1, d));
+          return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+        }, "Data de nascimento inválida.")
         .refine((v) => {
           const d = new Date(`${v}T00:00:00Z`);
-          return !Number.isNaN(d.getTime()) && ageOn(d, today) >= MIN_AGE && ageOn(d, today) < 120;
+          return Number.isNaN(d.getTime()) || (ageOn(d, today) >= MIN_AGE && ageOn(d, today) < 120);
         }, `É preciso ter ${MIN_AGE} anos ou mais.`),
       email: z.string().trim().toLowerCase().email("E-mail inválido.").max(200),
       phone: z
@@ -53,8 +65,6 @@ export function checkoutInputSchema(today: Date = new Date()) {
         }),
       simType: z.enum(["esim", "physical"], { message: "Escolha eSIM ou chip físico." }),
       billingType: z.enum(["pix", "credit_card"], { message: "Escolha PIX ou cartão." }),
-      acceptTerms: checked.refine((v) => v, "É preciso aceitar os termos e o contrato."),
-      acceptPrivacy: checked.refine((v) => v, "É preciso aceitar a política de privacidade."),
       whatsappOptIn: checked,
     })
     .strict();

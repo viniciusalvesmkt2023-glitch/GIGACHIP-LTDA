@@ -11,8 +11,6 @@ const valid = {
   phone: "(88) 99999-1556",
   simType: "esim",
   billingType: "pix",
-  acceptTerms: "on",
-  acceptPrivacy: "on",
 };
 
 describe("formulário de contratação", () => {
@@ -28,7 +26,7 @@ describe("formulário de contratação", () => {
 
   it("aponta cada campo inválido com mensagem em português", () => {
     const r = parseCheckoutForm(
-      { ...valid, cpf: "111.111.111-11", fullName: "Maria", phone: "123", acceptTerms: undefined },
+      { ...valid, cpf: "111.111.111-11", fullName: "Maria", phone: "123" },
       today,
     );
     expect(r.ok).toBe(false);
@@ -36,7 +34,6 @@ describe("formulário de contratação", () => {
     expect(r.errors.cpf).toBe("CPF inválido.");
     expect(r.errors.fullName).toBe("Informe nome e sobrenome.");
     expect(r.errors.phone).toMatch(/Celular inválido/);
-    expect(r.errors.acceptTerms).toMatch(/aceitar os termos/);
   });
 
   it("exige maioridade", () => {
@@ -57,5 +54,25 @@ describe("formulário de contratação", () => {
       expect(r.errors.simType).toBeDefined();
       expect(r.errors.billingType).toBeDefined();
     }
+  });
+});
+
+describe("data de nascimento digitada com barras (D38)", () => {
+  it("aceita dd/mm/aaaa e guarda como data", () => {
+    const r = parseCheckoutForm({ ...valid, birthDate: "10/05/1990" }, today);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value.birthDate).toBe("1990-05-10");
+  });
+
+  it("recusa data incompleta ou que não existe", () => {
+    const a = parseCheckoutForm({ ...valid, birthDate: "10/05/19" }, today);
+    const b = parseCheckoutForm({ ...valid, birthDate: "31/02/1990" }, today);
+    expect(!a.ok && a.errors.birthDate).toMatch(/data completa/);
+    expect(!b.ok && b.errors.birthDate).toMatch(/inválida/);
+  });
+
+  it("não exige mais aceitar Termos/Privacidade; campos antigos são recusados", () => {
+    expect(parseCheckoutForm(valid, today).ok).toBe(true);
+    expect(parseCheckoutForm({ ...valid, acceptTerms: "on" }, today).ok).toBe(false);
   });
 });

@@ -66,7 +66,8 @@ export async function createCheckout(
       customerId = created.id;
     }
 
-    const consentTypes = ["termos", "privacidade", ...(input.whatsappOptIn ? ["whatsapp"] : [])];
+    // Sem caixinha de Termos/Privacidade (D38): só registra o "sim" opcional aos avisos pelo WhatsApp
+    const consentTypes = input.whatsappOptIn ? ["whatsapp"] : [];
     for (const type of consentTypes) {
       await tx`
         insert into public.consents (customer_id, type, document_version, ip, user_agent)
