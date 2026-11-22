@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { CircleCheck, CircleX, CreditCard, Database, FileSignature, FileSpreadsheet, Mail, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { d4signBudget, d4signConfigured } from "@/lib/integrations/d4sign/client";
 import { env } from "@/lib/server/env";
+import { WHATSAPP_NUMBER } from "@/components/whatsapp";
+import { formatWhatsapp } from "@/lib/contract/settings";
 import { serviceAccountEmail, sheetsConfigured } from "@/lib/integrations/google/sheets";
 import { getSheetConfig } from "@/lib/server/planilha";
 import { pendingMigrations } from "@/lib/server/schema-check";
@@ -66,7 +68,7 @@ async function Content() {
     ["api.asaas.com", "www.asaas.com"].includes(asaasHost) ? { label: "Produção — cobranças reais", tone: "green" }
     : /sandbox/i.test(asaasHost) ? { label: "Modo de teste (sandbox) — nenhuma cobrança é real", tone: "amber" }
     : { label: "Servidor de teste — nenhuma cobrança é real", tone: "amber" };
-  const whats = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
+  const whats = WHATSAPP_NUMBER;
 
   return (
     <PanelShell staff={staff}>
@@ -182,8 +184,8 @@ async function Content() {
         <Servico
           icon={MessageCircle}
           nome="WhatsApp"
-          para="Botão do cliente para pedir a ativação"
-          itens={[{ label: "Número do botão", ok: Boolean(whats), hint: whats ? `+${whats.replace(/\D/g, "")}` : "NEXT_PUBLIC_WHATSAPP_NUMBER" }]}
+          para="Botão do cliente para pedir a ativação e atendimento no contrato"
+          itens={[{ label: "Número de atendimento", ok: Boolean(whats), hint: whats ? `+55 ${formatWhatsapp(whats) ?? whats}` : "NEXT_PUBLIC_WHATSAPP_NUMBER" }]}
         />
       </div>
     </PanelShell>

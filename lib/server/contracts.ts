@@ -107,7 +107,7 @@ function webhookUrl(): string | null {
 export async function renderOrderContract(contractId: string) {
   const r = await loadContract(contractId);
   if (!r) throw new Error("contrato não encontrado");
-  const settings = contractSettings(env().APP_URL);
+  const settings = contractSettings();
   return { row: r, pdf: await renderContractPdf(buildContract(contractData(r), settings), { orderCode: shortOrderNumber(r.code), isTest: settings.isTest }) };
 }
 

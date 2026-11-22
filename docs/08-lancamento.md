@@ -48,16 +48,17 @@ Quem faz: **[Claude]** = eu, no código · **[Sócios]** = vocês (contas, pagam
 
 ## Fase A — Contas e documentos (pode ir fazendo já) [Sócios]
 
-- [ ] ⚠️ **Advogado aprova o contrato** (PDF de teste no painel). Depois disso eu tiro a marca
-  d'água "TESTE".
+- [x] ✅ **Advogado aprovou o contrato** (22/11). Marca "TESTE" retirada e cláusula de dados
+  pessoais removida (D37).
 - [ ] ⚠️ **Perguntar ao advogado sobre privacidade (LGPD).** Vocês pediram para tirar as páginas e
   a caixinha de Termos/Privacidade. A LGPD exige informar o cliente sobre o uso dos dados (CPF,
   documento, selfie). O advogado diz se basta o que está no contrato da D4Sign ou se precisa de um
   aviso no site. Se precisar, eu coloco de volta de um jeito discreto.
 - [ ] ⚠️ **Vercel Pro** (US$ 20/mês). O plano grátis não pode ser usado para vender (regra da Vercel).
 - [ ] ⚠️ **Supabase Pro** (US$ 25/mês). Sem ele não há backup diário e o banco pausa se ficar parado.
-- [ ] ⚠️ **WhatsApp**: número definitivo → Vercel `NEXT_PUBLIC_WHATSAPP_NUMBER` (só números, com
-  DDD) → Redeploy. Painel → Integrações mostra se está configurado.
+- [x] ✅ **WhatsApp de atendimento (85) 8129-0832** já está no sistema (contrato, site e ativação).
+  Se existir `NEXT_PUBLIC_WHATSAPP_NUMBER` na Vercel com outro número, apagar ou trocar para
+  `558581290832`.
 - [ ] **E-mails (Resend)**: conferir em Integrações que "E-mails" está **Configurado**
   (`RESEND_API_KEY` e `EMAIL_FROM` na Vercel). Sem isso, o cliente não recebe o link da ativação.
 - [ ] **D4Sign**: pedir aumento do limite de 10 chamadas por hora e confirmar se o reconhecimento

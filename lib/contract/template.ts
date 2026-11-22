@@ -8,7 +8,7 @@
  */
 import { formatBRL } from "@/lib/domain/money";
 
-export const CONTRACT_TEMPLATE_VERSION = "v4-teste-2026-11"; // v4: e-mail de atendimento/LGPD contato@
+export const CONTRACT_TEMPLATE_VERSION = "v5-2026-11"; // v5: aprovado pelo advogado; sem a cláusula de dados pessoais
 
 export type ContractSettings = {
   version: string;
@@ -17,9 +17,6 @@ export type ContractSettings = {
   /** WhatsApp de atendimento já formatado. null = ainda não existe (o contrato usa só o e-mail). */
   whatsapp: string | null;
   supportEmail: string;
-  privacyUrl: string;
-  /** E-mail para assuntos de dados pessoais (LGPD). */
-  dpoEmail: string;
   /** Ex.: "24 (vinte e quatro) horas". */
   unblockTime: string;
   /** Dias com a linha bloqueada até o cancelamento definitivo (D10). */
@@ -148,26 +145,18 @@ export function buildContract(data: ContractData, s: ContractSettings): Block[] 
       text: "6.2. Se a validação não for concluída ou for reprovada, a CONTRATADA poderá recusar a ativação, com **reembolso integral** dos valores pagos.",
     },
 
-    { type: "heading", text: "7. Dados pessoais (LGPD)" },
+    { type: "heading", text: "7. Atendimento, arrependimento e cancelamento" },
+    { type: "para", text: `7.1. Suporte e cancelamento: ${contact}, com registro e protocolo.` },
     {
       type: "para",
-      text: `7.1. A CONTRATADA trata os dados do CLIENTE (cadastro, documento, selfie, dados do aparelho e do chip, pagamentos) para executar este contrato, prevenir fraudes e cumprir obrigações legais e regulatórias, conforme a **Política de Privacidade** (${s.privacyUrl}).`,
-    },
-    { type: "para", text: "7.2. Imagens de documento e selfie são mantidas apenas pelo prazo necessário e depois excluídas." },
-    { type: "para", text: `7.3. Pedidos sobre dados pessoais (acesso, correção, exclusão e demais direitos da LGPD): ${s.dpoEmail}.` },
-
-    { type: "heading", text: "8. Atendimento, arrependimento e cancelamento" },
-    { type: "para", text: `8.1. Suporte e cancelamento: ${contact}, com registro e protocolo.` },
-    {
-      type: "para",
-      text: "8.2. Por ser contratação fora do estabelecimento, o CLIENTE pode desistir em até **7 (sete) dias** contados da contratação ou da ativação, sem multa e com devolução dos valores pagos (art. 49 do Código de Defesa do Consumidor).",
+      text: "7.2. Por ser contratação fora do estabelecimento, o CLIENTE pode desistir em até **7 (sete) dias** contados da contratação ou da ativação, sem multa e com devolução dos valores pagos (art. 49 do Código de Defesa do Consumidor).",
     },
 
-    { type: "heading", text: "9. Assinatura eletrônica e disposições finais" },
+    { type: "heading", text: "8. Assinatura eletrônica e disposições finais" },
     {
       type: "para",
-      text: "9.1. Este contrato é assinado **eletronicamente** pelo CLIENTE na plataforma D4Sign, nos termos da MP 2.200-2/2001 (art. 10, §2º) e da Lei 14.063/2020. Os dados de identificação de quem assinou, a data, a hora e o endereço IP constam do **relatório de assinaturas** que a plataforma anexa ao final deste documento, dispensando assinatura à mão.",
+      text: "8.1. Este contrato é assinado **eletronicamente** pelo CLIENTE na plataforma D4Sign, nos termos da MP 2.200-2/2001 (art. 10, §2º) e da Lei 14.063/2020. Os dados de identificação de quem assinou, a data, a hora e o endereço IP constam do **relatório de assinaturas** que a plataforma anexa ao final deste documento, dispensando assinatura à mão.",
     },
-    { type: "para", text: "9.2. Fica eleito o foro do domicílio do CLIENTE." },
+    { type: "para", text: "8.2. Fica eleito o foro do domicílio do CLIENTE." },
   ];
 }

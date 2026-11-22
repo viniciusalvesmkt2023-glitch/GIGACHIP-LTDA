@@ -16,8 +16,6 @@ const settings: ContractSettings = {
   isTest: true,
   whatsapp: null,
   supportEmail: "contato@gigachip.com.br",
-  privacyUrl: "https://gigachip-ltda.vercel.app/privacidade",
-  dpoEmail: "contato@gigachip.com.br",
   unblockTime: "24 (vinte e quatro) horas",
   blockedDaysBeforeCancel: 5,
 };
@@ -59,6 +57,14 @@ describe("contrato", () => {
     expect(comWa).toContain("e-mail contato@gigachip.com.br e WhatsApp (88) 90000-0000");
   });
 
+  it("versão aprovada: sem cláusula de dados pessoais, cláusulas numeradas de 1 a 8", () => {
+    const titulos = buildContract(data, settings).filter((b) => b.type === "heading").map((b) => b.text);
+    expect(titulos.map((t) => t.split(".")[0])).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
+    expect(text).not.toMatch(/LGPD|Política de Privacidade|privacidade/i);
+    expect(text).toContain("7.2. Por ser contratação fora do estabelecimento");
+    expect(text).toContain("8.2. Fica eleito o foro");
+  });
+
   it("chip físico e cartão mudam o texto", () => {
     const t = buildContract({ ...data, simType: "physical", billingType: "credit_card" }, settings).map((b) => b.text).join("\n");
     expect(t).toContain("chip físico lacrado adquirido pelo CLIENTE");
@@ -71,5 +77,24 @@ describe("contrato", () => {
     expect(pdf.pages).toBeGreaterThanOrEqual(2);
     expect(pdf.sha256).toMatch(/^[0-9a-f]{64}$/);
     if (process.env.CONTRACT_SAMPLE_OUT) writeFileSync(process.env.CONTRACT_SAMPLE_OUT, pdf.bytes);
+  });
+});
+
+describe("WhatsApp de atendimento", () => {
+  it("formata número com 8 ou 9 dígitos", async () => {
+    const { formatWhatsapp } = await import("@/lib/contract/settings");
+    expect(formatWhatsapp("55 85 8129-0832")).toBe("(85) 8129-0832");
+    expect(formatWhatsapp("5588999991556")).toBe("(88) 99999-1556");
+    expect(formatWhatsapp("123")).toBeNull();
+  });
+
+  it("o contrato aprovado sai sem a marca de teste e com o WhatsApp padrão", async () => {
+    const { contractSettings } = await import("@/lib/contract/settings");
+    const old = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+    delete process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+    const s = contractSettings();
+    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = old;
+    expect(s.isTest).toBe(false);
+    expect(s.whatsapp).toBe("(85) 8129-0832");
   });
 });

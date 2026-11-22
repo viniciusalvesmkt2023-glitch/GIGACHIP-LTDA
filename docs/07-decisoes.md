@@ -502,3 +502,14 @@ Pedido do dono: poder mudar **o que** o sistema escreve em cada coluna na ativa�
 - As regras (D34) também aceitam as etiquetas no "Escrever".
 - Vale da próxima escrita em diante. Guardado em `app_settings` (`planilha_modelos`), sem migração;
   quem mudou fica no histórico (só os nomes dos campos).
+
+## D37 — Contrato aprovado pelo advogado e WhatsApp de atendimento (22/11/2026)
+
+- O advogado aprovou o contrato: modelo **v5-2026-11**, **sem** a marca d'água "VERSÃO DE TESTE".
+- A cláusula **7. Dados pessoais (LGPD)** foi retirada a pedido dos sócios (junto com as páginas e a
+  caixinha de Termos/Privacidade); as cláusulas seguintes foram renumeradas (Atendimento = 7,
+  Assinatura eletrônica = 8).
+- **WhatsApp de atendimento: (85) 8129-0832** (`WHATSAPP_DEFAULT` em `lib/site.ts`). Aparece no
+  contrato, no botão do site e no último passo da ativação. Se a variável
+  `NEXT_PUBLIC_WHATSAPP_NUMBER` existir na Vercel, ela vale por cima — deixar igual ou apagar.
+- Contratos já gerados antes desta mudança continuam com a versão da época (cada contrato grava a sua).
