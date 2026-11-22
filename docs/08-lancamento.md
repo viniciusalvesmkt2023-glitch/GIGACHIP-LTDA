@@ -1,4 +1,8 @@
-# 08 — Roteiro de lançamento (versão 2 — 22/11/2026)
+# 08 — Roteiro de lançamento (versão 2 — atualizado em 22/11/2026, noite)
+
+> **Situação:** site e painel novos no ar; Asaas em produção; testes limpos; planilha oficial
+> conectada (122 números, 6 disponíveis). Os sócios decidiram esperar a **primeira venda real de
+> cliente** em vez de fazer uma compra de teste (Fase D): acompanhar essa venda passo a passo.
 
 Tudo o que falta para colocar o site e o painel novos no ar e **vender de verdade**.
 Marque cada item ao concluir. ⚠️ = obrigatório antes do primeiro cliente real.
@@ -6,7 +10,7 @@ Quem faz: **[Claude]** = eu, no código · **[Sócios]** = vocês (contas, pagam
 
 ---
 
-## O que já está pronto (no rascunho, ainda não está no ar)
+## O que já está pronto (NO AR desde 22/11/2026)
 
 - ✅ **Página inicial nova** (celular grande, planos estilo Vivo com coroa no "MAIS ESCOLHIDO",
   "Poucos passos", "Por que a Gigachip", perguntas frequentes, rodapé com Reclame Aqui).
@@ -25,32 +29,32 @@ Quem faz: **[Claude]** = eu, no código · **[Sócios]** = vocês (contas, pagam
 
 ## Fase 0 — Terminar o sistema [Claude]
 
-- [ ] ⚠️ Trazer do Lovable para o sistema real a **contratação nova**:
+- [x] ⚠️ Trazer do Lovable para o sistema real a **contratação nova**:
   - 3 passos;
   - data de nascimento com "/" automático;
   - resumo azul só no 1º passo;
   - **sem** a caixinha de aceitar Termos/Privacidade.
-- [ ] ⚠️ **Pagamento novo**:
+- [x] ⚠️ **Pagamento novo**:
   - PIX com QR Code, "copia e cola" e passo a passo;
   - cartão pela página segura do Asaas;
   - tela "Pagamento confirmado".
-- [ ] ⚠️ **Ativação nova**:
+- [x] ⚠️ **Ativação nova**:
   - **eSIM**: guia animado (iPhone ou Android) com "print do registro do eSIM" e botão de copiar
     o código;
   - **chip físico**: foto do verso da embalagem lacrada (ICCID), com a opção "envio depois".
-- [ ] **Área do Cliente** com o cabeçalho simples e o botão "Sair" (faturas ficam para a 2ª fase).
-- [ ] Tirar os links de Termos e Privacidade dos rodapés (pedido dos sócios). Ver o aviso na Fase A.
+- [x] **Área do Cliente** com o cabeçalho simples e o botão "Sair" (faturas ficam para a 2ª fase).
+- [x] Tirar os links de Termos e Privacidade dos rodapés (pedido dos sócios). Ver o aviso na Fase A.
 - [ ] (Opcional) Botão **"Remover acesso"** na Equipe, para quando alguém sair.
-- [ ] ⚠️ Juntar tudo numa versão só e rodar todas as verificações:
+- [x] ⚠️ Juntar tudo numa versão só e rodar todas as verificações:
   - lint, tipos, testes e regras do banco;
   - um pedido de teste do começo ao fim.
-- [ ] ⚠️ **Mostrar a lista final do que muda e esperar a aprovação dos sócios** antes de publicar.
+- [x] ⚠️ **Mostrar a lista final do que muda e esperar a aprovação dos sócios** antes de publicar.
 
 ## Fase A — Contas e documentos (pode ir fazendo já) [Sócios]
 
 - [x] ✅ **Advogado aprovou o contrato** (22/11). Marca "TESTE" retirada e cláusula de dados
   pessoais removida (D37).
-- [ ] ⚠️ **Perguntar ao advogado sobre privacidade (LGPD).** Vocês pediram para tirar as páginas e
+- [x] ⚠️ **Perguntar ao advogado sobre privacidade (LGPD).** Vocês pediram para tirar as páginas e
   a caixinha de Termos/Privacidade. A LGPD exige informar o cliente sobre o uso dos dados (CPF,
   documento, selfie). O advogado diz se basta o que está no contrato da D4Sign ou se precisa de um
   aviso no site. Se precisar, eu coloco de volta de um jeito discreto.
@@ -72,43 +76,43 @@ Quem faz: **[Claude]** = eu, no código · **[Sócios]** = vocês (contas, pagam
 ## Fase B — Banco e Asaas de verdade (no dia) [Sócios, eu acompanho]
 
 - [x] ✅ Migração **0015** (chip físico sem IMEI) rodada no Supabase em 22/11.
-- [ ] ⚠️ Painel → **Integrações**: se aparecer "Migração pendente", rodar no Supabase → SQL Editor
+- [x] ⚠️ Painel → **Integrações**: se aparecer "Migração pendente", rodar no Supabase → SQL Editor
   os arquivos indicados, na ordem.
-- [ ] ⚠️ Na conta **real** do Asaas (não o sandbox):
-  - [ ] cadastrar a **chave PIX** da Gigachip (sem ela o QR Code não aparece);
-  - [ ] Integrações → Chaves de API → **gerar chave** (não mandar no chat);
-  - [ ] Integrações → Webhooks → **novo webhook**:
+- [x] ⚠️ Na conta **real** do Asaas (não o sandbox):
+  - [x] cadastrar a **chave PIX** da Gigachip (sem ela o QR Code não aparece);
+  - [x] Integrações → Chaves de API → **gerar chave** (não mandar no chat);
+  - [x] Integrações → Webhooks → **novo webhook**:
     - URL `https://SEU-DOMINIO/api/webhooks/asaas`;
     - token = uma senha nova, com 32 caracteres ou mais;
     - eventos de **Cobrança** marcados e fila ativa.
-- [ ] ⚠️ Vercel → Environment Variables:
+- [x] ⚠️ Vercel → Environment Variables:
   - `ASAAS_API_URL` = `https://api.asaas.com/v3`
   - `ASAAS_API_KEY` = a chave real
   - `ASAAS_WEBHOOK_TOKEN` = o token do webhook real
   - `APP_URL` = `https://gigachip.com.br` (se o domínio já estiver ligado)
-- [ ] ⚠️ Conferir em Painel → Integrações: Asaas em **"Produção — cobranças reais"**.
+- [x] ⚠️ Conferir em Painel → Integrações: Asaas em **"Produção — cobranças reais"**.
 
 ## Fase C — Publicar, limpar os testes e ligar a planilha verdadeira (no dia)
 
-- [ ] ⚠️ **[Claude]** Publicar a versão aprovada na Fase 0 (o site e o painel novos entram no ar).
-- [ ] ⚠️ Supabase → SQL Editor → rodar **`scripts/supabase/limpar-dados-de-teste.sql`**:
+- [x] ⚠️ **[Claude]** Publicar a versão aprovada na Fase 0 (o site e o painel novos entram no ar).
+- [x] ⚠️ Supabase → SQL Editor → rodar **`scripts/supabase/limpar-dados-de-teste.sql`**:
   - apaga pedidos, clientes e linhas de teste;
   - mantém a equipe, os planos e o valor do gestor;
   - os pedidos voltam a começar do **#1**;
   - no final deve mostrar 0 pedidos, 0 clientes e 0 linhas.
-- [ ] ⚠️ Compartilhar a **planilha verdadeira** do gestor com o e-mail do robô como **Editor**
+- [x] ⚠️ Compartilhar a **planilha verdadeira** do gestor com o e-mail do robô como **Editor**
   (o e-mail aparece em Integrações).
-- [ ] ⚠️ Painel → Configurações → colar o **link da planilha verdadeira** → Salvar.
-- [ ] Painel → Configurações → conferir **Nomes das colunas**, **O que escrever** e **Regras**
+- [x] ⚠️ Painel → Configurações → colar o **link da planilha verdadeira** → Salvar.
+- [x] Painel → Configurações → conferir **Nomes das colunas**, **O que escrever** e **Regras**
   (de fábrica já vem: Gestor → "Gestor Ativo"; nome vermelho no bloqueio e preto no desbloqueio).
-- [ ] ⚠️ Painel → Integrações → **Testar planilha**: todas as colunas achadas, nenhum aviso de
+- [x] ⚠️ Painel → Integrações → **Testar planilha**: todas as colunas achadas, nenhum aviso de
   coluna faltando, contagem de números certa.
-- [ ] ⚠️ Painel → Linhas → **Ler planilha agora** → conferir os números disponíveis.
+- [x] ⚠️ Painel → Linhas → **Ler planilha agora** → conferir os números disponíveis.
 - [ ] Se o domínio mudou: atualizar a rotina de 10 minutos (Supabase → SQL Editor →
   `scripts/supabase/agendar-rotinas.sql` com a URL nova e o mesmo CRON_SECRET).
-- [ ] ⚠️ Vercel → **Redeploy** (para valer tudo o que foi trocado).
+- [x] ⚠️ Vercel → **Redeploy** (para valer tudo o que foi trocado).
 
-## Fase D — Primeira venda de verdade (no dia)
+## Fase D — Primeira venda de verdade (acompanhar a 1ª venda de cliente)
 
 - [ ] Um de vocês compra o plano mais barato com **cartão ou PIX de verdade** e segue o fluxo
   inteiro (D28):
