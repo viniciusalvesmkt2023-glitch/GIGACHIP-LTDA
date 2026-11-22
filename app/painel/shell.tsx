@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { AlertTriangle, ClipboardList, LayoutDashboard, LogOut, Smartphone } from "lucide-react";
 import type { ReactNode } from "react";
 import { sql } from "@/lib/server/db";
 import type { Staff } from "@/lib/server/staff-auth";
@@ -71,17 +71,47 @@ export async function PanelShell({ staff, children }: { staff: Staff; children: 
   );
 }
 
-/** Tela de espera do painel: menu e contorno aparecem na hora; os dados chegam em seguida. */
+/**
+ * Tela de espera do painel: menu e contorno aparecem na hora; os dados chegam em seguida.
+ * Menu desenhado sem o componente interativo (que lê o endereço da página): a espera é montada
+ * antes da página e, nas telas com [id], o Next não deixa ler o endereço nesse momento.
+ */
 export function PanelLoading() {
-  const items: NavItem[] = [
-    { href: "/painel", label: "Visão geral", icon: "home" },
-    { href: "/painel/pedidos", label: "Pedidos", icon: "pedidos" },
-    { href: "/painel/linhas", label: "Linhas", icon: "linhas" },
-    { href: "/painel/inadimplencia", label: "Inadimplência", icon: "inadimplencia" },
+  const items = [
+    { label: "Visão geral", Icon: LayoutDashboard },
+    { label: "Pedidos", Icon: ClipboardList },
+    { label: "Linhas", Icon: Smartphone },
+    { label: "Inadimplência", Icon: AlertTriangle },
   ];
   return (
     <div className="pn-root">
-      <PanelNav items={items} footer={<div className="pn-user pn-sk-user" aria-hidden="true" />} />
+      <div className="pn-mobilebar">
+        <span className="pn-brand">
+          {/* eslint-disable-next-line @next/next/no-img-element -- logo pequena e estática */}
+          <img src="/logo-gigachip.png" alt="Gigachip" width={124} height={24} />
+          <span>painel</span>
+        </span>
+      </div>
+      <aside className="pn-side">
+        <div className="pn-side-top">
+          <span className="pn-brand">
+            {/* eslint-disable-next-line @next/next/no-img-element -- logo pequena e estática */}
+            <img src="/logo-gigachip.png" alt="Gigachip" width={140} height={27} />
+            <span>painel</span>
+          </span>
+        </div>
+        <nav className="pn-nav" aria-hidden="true">
+          {items.map(({ label, Icon }) => (
+            <span key={label} className="pn-link">
+              <Icon size={18} />
+              <span>{label}</span>
+            </span>
+          ))}
+        </nav>
+        <div className="pn-side-foot">
+          <div className="pn-user pn-sk-user" aria-hidden="true" />
+        </div>
+      </aside>
       <main className="pn-main" aria-busy="true" aria-label="Carregando">
         <div className="pn-sk pn-sk-title" />
         <div className="pn-sk pn-sk-sub" />
