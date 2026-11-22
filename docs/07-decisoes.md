@@ -531,3 +531,16 @@ Pedido do dono: poder mudar **o que** o sistema escreve em cada coluna na ativa�
   - Depois: contrato no e-mail (D4Sign) → botão do WhatsApp (D28 continua igual).
 - As telas de contratação, pagamento, ativação e área do cliente usam o topo simples (logo +
   "Ambiente seguro"), sem menu, para o cliente não sair no meio do caminho.
+
+## D39 — Inadimplência só com cobranças de linha (valor mínimo) (22/11/2026)
+
+O Asaas usado é o do sócio e também cobra **outros produtos**. As cobranças de linha são sempre de
+**R$ 100,00 ou mais**; as menores são de outros produtos e não podem aparecer na Inadimplência.
+- Painel → **Configurações → Inadimplência: valor mínimo da cobrança** (só o dono). De fábrica:
+  **R$ 100,00**. Use 0,00 para considerar todas.
+- A regra vale para a lista (bloquear, desbloquear, bloqueadas), os totais, o contador do menu e
+  para as confirmações "Bloqueei/Desbloqueei na Vivo" (uma cobrança pequena de outro produto não
+  impede desbloquear a linha).
+- O sistema continua puxando todas as cobranças vencidas do Asaas; o filtro é só na exibição, então
+  mudar o valor vale na hora, sem precisar puxar de novo. Guardado em `app_settings`
+  (`inadimplencia_valor_minimo_cents`), sem migração.

@@ -16,11 +16,12 @@ async function menuBadges(): Promise<Record<string, number>> {
       select
         (select count(*)::int from public.orders where status = 'pronto_para_ativacao') as pedidos,
         (select count(distinct p.provider_customer_id)::int from public.overdue_payments p
-          where p.status = 'em_aberto'
+          where p.status = 'em_aberto' and p.value_cents >= coalesce((select (s.value #>> '{}')::int from public.app_settings s where s.key = 'inadimplencia_valor_minimo_cents'), 10000)
             and not exists (select 1 from public.line_blocks b where b.provider_customer_id = p.provider_customer_id and b.unblocked_at is null))
         + (select count(*)::int from public.line_blocks b
           where b.unblocked_at is null
-            and not exists (select 1 from public.overdue_payments p where p.provider_customer_id = b.provider_customer_id and p.status = 'em_aberto'))
+            and not exists (select 1 from public.overdue_payments p where p.provider_customer_id = b.provider_customer_id and p.status = 'em_aberto'
+              and p.value_cents >= coalesce((select (s.value #>> '{}')::int from public.app_settings s where s.key = 'inadimplencia_valor_minimo_cents'), 10000)))
         as inadimplencia`;
     return { pedidos: r?.pedidos ?? 0, inadimplencia: r?.inadimplencia ?? 0 };
   } catch {

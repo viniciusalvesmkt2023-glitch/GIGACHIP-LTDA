@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { configPageSettings } from "@/lib/server/planilha";
 import { effectiveTemplates } from "@/lib/domain/planilha-modelos";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { setColumnNamesAction, setCostAction, setSheetConfigAction, setSheetRulesAction, setTemplatesAction } from "../actions";
-import { CostForm, SheetConfigForm } from "../forms";
+import { setColumnNamesAction, setCostAction, setMinOverdueAction, setSheetConfigAction, setSheetRulesAction, setTemplatesAction } from "../actions";
+import { CostForm, MinOverdueForm, SheetConfigForm } from "../forms";
 import { Card, PanelShell, PanelLoading } from "../shell";
 import { SheetRulesEditor } from "./regras-planilha";
 import { ColumnNamesForm } from "./nomes-colunas";
@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Configurações" };
 
 async function Content() {
   const staff = await requireStaff(["owner"]);
-  const { costCents: cost, sheet, rules, names, templates } = await configPageSettings();
+  const { costCents: cost, minOverdueCents, sheet, rules, names, templates } = await configPageSettings();
   return (
     <PanelShell staff={staff}>
       <div className="pn-head">
@@ -27,6 +27,13 @@ async function Content() {
           ativadas mantêm o valor da época.
         </p>
         <CostForm action={setCostAction} current={(cost / 100).toFixed(2).replace(".", ",")} />
+      </Card>
+      <Card title="Inadimplência: valor mínimo da cobrança" className="mt-4">
+        <p className="mb-3 text-sm text-muted">
+          O Asaas também tem cobranças de outros produtos. Na tela Inadimplência (e nos contadores do menu) só entram cobranças a
+          partir deste valor, que são as de linha. Use 0,00 para considerar todas.
+        </p>
+        <MinOverdueForm action={setMinOverdueAction} current={(minOverdueCents / 100).toFixed(2).replace(".", ",")} />
       </Card>
       <Card title="Planilha do gestor (Google Planilhas)" className="mt-4">
         <p className="mb-3 text-sm text-muted">

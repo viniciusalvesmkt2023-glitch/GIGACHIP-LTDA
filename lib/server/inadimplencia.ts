@@ -146,7 +146,9 @@ export async function overdueBoard() {
       select provider_customer_id, max(customer_name) as name,
              json_agg(json_build_object('id', provider_payment_id, 'value', value_cents, 'due', due_date::text, 'url', invoice_url)
                       order by due_date) as items
-      from public.overdue_payments where status = 'em_aberto' group by provider_customer_id
+      from public.overdue_payments where status = 'em_aberto'
+        and value_cents >= coalesce((select (s.value #>> '{}')::int from public.app_settings s where s.key = 'inadimplencia_valor_minimo_cents'), 10000) -- só cobranças de linha (o Asaas também tem outros produtos)
+      group by provider_customer_id
     ), blk as (
       select * from public.line_blocks where unblocked_at is null
     )
@@ -205,11 +207,12 @@ export async function overdueCounts(): Promise<{ bloquear: number; desbloquear: 
   const [r] = await sql()<{ bloquear: number; desbloquear: number }[]>`
     select
       (select count(distinct p.provider_customer_id)::int from public.overdue_payments p
-        where p.status = 'em_aberto'
+        where p.status = 'em_aberto' and p.value_cents >= coalesce((select (s.value #>> '{}')::int from public.app_settings s where s.key = 'inadimplencia_valor_minimo_cents'), 10000)
           and not exists (select 1 from public.line_blocks b where b.provider_customer_id = p.provider_customer_id and b.unblocked_at is null)) as bloquear,
       (select count(*)::int from public.line_blocks b
         where b.unblocked_at is null
-          and not exists (select 1 from public.overdue_payments p where p.provider_customer_id = b.provider_customer_id and p.status = 'em_aberto')) as desbloquear`;
+          and not exists (select 1 from public.overdue_payments p where p.provider_customer_id = b.provider_customer_id and p.status = 'em_aberto'
+            and p.value_cents >= coalesce((select (s.value #>> '{}')::int from public.app_settings s where s.key = 'inadimplencia_valor_minimo_cents'), 10000))) as desbloquear`;
   return r;
 }
 
@@ -224,7 +227,7 @@ export async function blockCustomer(staff: Staff, customerId: string, lineId: st
   return withActor({ type: "staff", id: staff.id, reason: "linha bloqueada na Vivo (sem pagamento)" }, async (tx) => {
     const [debt] = await tx<{ name: string | null; n: number }[]>`
       select max(customer_name) as name, count(*)::int as n from public.overdue_payments
-      where provider_customer_id = ${customerId} and status = 'em_aberto'`;
+      where provider_customer_id = ${customerId} and status = 'em_aberto' and value_cents >= coalesce((select (s.value #>> '{}')::int from public.app_settings s where s.key = 'inadimplencia_valor_minimo_cents'), 10000)`;
     if (!debt?.n) return { ok: false, message: "Esse cliente não tem cobrança em atraso (talvez já tenha pago). Atualize a página." };
     const [open] = await tx`select 1 from public.line_blocks where provider_customer_id = ${customerId} and unblocked_at is null`;
     if (open) return { ok: false, message: "Esse cliente já está marcado como bloqueado." };
@@ -259,7 +262,8 @@ export async function unblockCustomer(staff: Staff, blockId: string): Promise<Re
       select provider_customer_id as customer_id from public.line_blocks where id = ${blockId} and unblocked_at is null for update`;
     if (!b) return { ok: false, message: "Esse bloqueio já foi encerrado. Atualize a página." };
     const [debt] = await tx<{ n: number }[]>`
-      select count(*)::int as n from public.overdue_payments where provider_customer_id = ${b.customer_id} and status = 'em_aberto'`;
+      select count(*)::int as n from public.overdue_payments where provider_customer_id = ${b.customer_id} and status = 'em_aberto'
+        and value_cents >= coalesce((select (s.value #>> '{}')::int from public.app_settings s where s.key = 'inadimplencia_valor_minimo_cents'), 10000)`;
     if (debt.n > 0) return { ok: false, message: "O cliente ainda tem cobrança em atraso no Asaas." };
     await tx`update public.line_blocks set unblocked_at = now(), unblocked_by = ${staff.id} where id = ${blockId}`;
     const lines = await tx<{ id: string }[]>`
@@ -273,4 +277,21 @@ export async function unblockCustomer(staff: Staff, blockId: string): Promise<Re
       values (${staff.id}, 'desbloquear_linha', 'line_blocks', ${blockId}, ${tx.json({ linhas: lines.map((l) => l.id) })})`;
     return { ok: true, message: "Desbloqueio registrado. A linha volta a aparecer como Ativa." };
   });
+}
+
+/**
+ * Valor mínimo de cobrança considerado na Inadimplência (D39). O Asaas é compartilhado com outros
+ * produtos; cobranças menores que isso não são de linha e ficam fora das listas e contadores.
+ */
+export const MIN_OVERDUE_KEY = "inadimplencia_valor_minimo_cents";
+export const MIN_OVERDUE_DEFAULT_CENTS = 10000;
+
+export async function setMinOverdueCents(staff: Staff, cents: number): Promise<void> {
+  await sql()`
+    insert into public.app_settings (key, value, updated_by, updated_at)
+    values (${MIN_OVERDUE_KEY}, ${sql().json(cents)}, ${staff.id}, now())
+    on conflict (key) do update set value = excluded.value, updated_by = excluded.updated_by, updated_at = now()`;
+  await sql()`
+    insert into public.audit_log (actor_id, action, entity, entity_id, metadata)
+    values (${staff.id}, 'alterar_minimo_inadimplencia', 'app_settings', ${MIN_OVERDUE_KEY}, ${sql().json({ para: cents })})`;
 }

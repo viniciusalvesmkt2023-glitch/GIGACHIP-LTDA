@@ -182,6 +182,19 @@ export function AddNumbersForm({ action }: { action: Action }) {
   );
 }
 
+export function MinOverdueForm({ action, current }: { action: Action; current: string }) {
+  const [s, a, pending] = useActionState(action, {});
+  return (
+    <form action={a} className="flex flex-wrap items-end gap-3">
+      <label className="text-sm font-medium">Valor mínimo da cobrança (R$)
+        <input name="minimo" required defaultValue={current} className={input} />
+      </label>
+      <button disabled={pending} className={`${buttonStyles.primary} py-3`}>{pending ? "Salvando..." : "Salvar"}</button>
+      <div className="w-full"><Msg s={s} /></div>
+    </form>
+  );
+}
+
 export function CostForm({ action, current }: { action: Action; current: string }) {
   const [s, a, pending] = useActionState(action, {});
   return (

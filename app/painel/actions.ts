@@ -14,7 +14,7 @@ import { revealSensitive, type SensitiveField } from "@/lib/server/admin";
 import { decideIdentity } from "@/lib/server/identity";
 import { createStaff, login, logout, requestPasswordReset, requireStaff, resetPassword, staffCount, verifySecondFactor, type StaffRole } from "@/lib/server/staff-auth";
 import { env } from "@/lib/server/env";
-import { blockCustomer, syncOverdue, unblockCustomer } from "@/lib/server/inadimplencia";
+import { blockCustomer, setMinOverdueCents, syncOverdue, unblockCustomer } from "@/lib/server/inadimplencia";
 import { processEmails } from "@/lib/server/email";
 import { describeSheet, importFromSheet, pushPendingToSheet, setColumnNames, setSheetConfig, setSheetRules, setTemplates, sheetEnabled } from "@/lib/server/planilha";
 import { parseRules } from "@/lib/domain/planilha-regras";
@@ -167,6 +167,15 @@ export async function setCostAction(_p: FormState, fd: FormData): Promise<FormSt
   await setLineCostCents(me, cents);
   refresh();
   return { ok: true, message: "Valor do gestor atualizado. Vale para as próximas ativações." };
+}
+
+export async function setMinOverdueAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner"]);
+  const cents = parseMoneyToCents(str(fd, "minimo"));
+  if (cents === null) return { message: "Valor inválido. Use, por exemplo, 100,00 (ou 0,00 para considerar todas)." };
+  await setMinOverdueCents(me, cents);
+  refresh();
+  return { ok: true, message: "Salvo. A Inadimplência já considera só cobranças a partir desse valor." };
 }
 
 export async function blockCustomerAction(_p: FormState, fd: FormData): Promise<FormState> {

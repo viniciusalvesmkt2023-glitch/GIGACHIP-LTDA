@@ -123,14 +123,17 @@ export async function setTemplates(staff: Staff, templates: Templates): Promise<
  */
 export async function configPageSettings() {
   const COST = "custo_linha_gestor_cents";
+  const MIN = "inadimplencia_valor_minimo_cents";
   const rows = await sql()<{ key: string; value: unknown }[]>`
     select key, value from public.app_settings
-    where key = any(${[COST, CONFIG_KEY, RULES_KEY, NAMES_KEY, TEMPLATES_KEY]})`;
+    where key = any(${[COST, MIN, CONFIG_KEY, RULES_KEY, NAMES_KEY, TEMPLATES_KEY]})`;
   const v = new Map(rows.map((r) => [r.key, r.value]));
   const cost = Number(v.get(COST));
   const sheet = v.get(CONFIG_KEY) as SheetConfig | undefined;
+  const min = Number(v.get(MIN));
   return {
     costCents: Number.isFinite(cost) && cost >= 0 ? cost : 3000,
+    minOverdueCents: Number.isFinite(min) && min >= 0 ? min : 10000,
     sheet: sheet?.spreadsheetId ? sheet : null,
     rules: v.has(RULES_KEY) ? parseRules(v.get(RULES_KEY)).rules : DEFAULT_RULES,
     names: v.has(NAMES_KEY) ? parseColumnNames(v.get(NAMES_KEY)).names : {},
