@@ -2713,3 +2713,16 @@ html:has(.gc-site) {
   flex: none;
   margin-top: 3px;
 }
+/* selos de segurança brancos, iguais ao do Asaas */
+.gc-site .gc-seal.gc-seal-ssl {
+  border-color: #fff;
+  background: #fff;
+  color: #0f172a;
+}
+.gc-site .gc-seal.gc-seal-ssl small {
+  color: #5b6b7d;
+}
+.gc-site .gc-seal.gc-seal-ssl .gc-seal-icon {
+  background: #dcfce7;
+  color: #16a34a;
+}
