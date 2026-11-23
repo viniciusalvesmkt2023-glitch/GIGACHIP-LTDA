@@ -2577,3 +2577,139 @@ html:has(.gc-site) {
     opacity: 0.25;
   }
 }
+
+/* ---------- topo ocupando a tela inteira no computador (D41) ----------
+ * Ao abrir o site, só o topo aparece: ele vai até a borda de baixo da tela, com a faixa azul dos
+ * benefícios encostada embaixo. Em telas maiores o conteúdo do topo cresce (como o zoom de 125%). */
+@media (min-width: 1100px) {
+  .gc-site .hero-section {
+    --hz: 1;
+    display: flex;
+    align-items: center;
+    min-height: calc(100svh - 65px);
+  }
+  .gc-site .hero-section .hero-content {
+    zoom: var(--hz);
+    width: min(1180px, calc((100% - 64px) / var(--hz)));
+    padding-top: calc(104px / var(--hz));
+    padding-bottom: calc(36px / var(--hz));
+  }
+}
+@media (min-width: 1100px) {
+  /* texto com mais espaço: o título fica em 2 linhas (o celular passa da borda e é cortado) */
+  .gc-site .hero-section .hero-content {
+    grid-template-columns: minmax(0, 1.22fr) minmax(0, 0.78fr);
+  }
+  .gc-site .hero-section .hero-copy {
+    max-width: 640px;
+  }
+  /* selos quebram em 2 linhas para não ficarem embaixo da notificação do Instagram */
+  .gc-site .hero-section .hero-seals {
+    max-width: 470px;
+    flex-wrap: wrap;
+    row-gap: 8px;
+    margin-top: 20px;
+  }
+}
+/* zoom do topo conforme o tamanho da tela (largura E altura, para nunca passar da dobra) */
+@media (min-width: 1100px) and (max-height: 739px) {
+  .gc-site .hero-section .hero-content {
+    padding-top: 88px;
+    padding-bottom: 12px;
+  }
+}
+@media (min-width: 1280px) and (min-height: 740px) {
+  .gc-site .hero-section { --hz: 1.1; }
+}
+@media (min-width: 1380px) and (min-height: 800px) {
+  .gc-site .hero-section { --hz: 1.2; }
+}
+@media (min-width: 1480px) and (min-height: 880px) {
+  .gc-site .hero-section { --hz: 1.25; }
+}
+@media (min-width: 1700px) and (min-height: 920px) {
+  .gc-site .hero-section { --hz: 1.35; }
+}
+
+/* ---------- rodapé: selos de segurança e endereço (D41) ---------- */
+.gc-site .gc-footer-seals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 250px));
+  gap: 10px;
+  margin-top: 22px;
+}
+@media (max-width: 480px) {
+  .gc-site .gc-footer-seals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .gc-site .gc-seal,
+  .gc-site .gc-footer-seals .gc-footer-ra {
+    padding: 8px 10px 8px 8px;
+    gap: 8px;
+  }
+  .gc-site .gc-seal strong,
+  .gc-site .gc-footer-seals .gc-footer-ra strong {
+    font-size: 12.5px;
+  }
+  .gc-site .gc-seal-icon {
+    width: 30px;
+    height: 30px;
+  }
+}
+.gc-site .gc-footer-seals .gc-footer-ra {
+  margin-top: 0;
+}
+.gc-site .gc-seal {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 10px 10px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 0.05);
+  color: #fff;
+}
+.gc-site .gc-seal small {
+  display: block;
+  font-size: 11px;
+  color: rgb(255 255 255 / 0.6);
+}
+.gc-site .gc-seal strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.gc-site .gc-seal-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgb(34 197 94 / 0.16);
+  color: #4ade80;
+}
+/* Asaas: logo azul num fundo branco, para ter contraste no rodapé escuro */
+.gc-site .gc-seal:not(.gc-seal-ssl) {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 14px;
+  background: #fff;
+}
+.gc-site .gc-seal:not(.gc-seal-ssl) small {
+  color: #5b6b7d;
+}
+.gc-site .gc-seal img {
+  height: 20px;
+  width: auto;
+}
+.gc-site .gc-footer-address {
+  align-items: flex-start;
+  line-height: 1.5;
+}
+.gc-site .gc-footer-address svg {
+  flex: none;
+  margin-top: 3px;
+}

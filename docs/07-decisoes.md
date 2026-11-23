@@ -557,3 +557,14 @@ Pedido do dono: se ele ou o gestor mexerem na planilha, o painel acompanha.
   e no audit_log.
 - Logo depois de uma ativação ou correção feita no painel (escrita na planilha ainda pendente), a
   leitura não mexe naquela linha, para não desfazer o que a equipe acabou de fazer.
+
+## D41 — Topo ocupando a tela e rodapé com endereço e selos (23/11/2026)
+
+- Página inicial no computador: o topo vai até a borda de baixo da tela, com a faixa azul dos
+  benefícios encostada embaixo (nada da parte escura aparece ao abrir). Em telas maiores o conteúdo
+  do topo cresce (efeito parecido com o zoom de 125%), limitado pela altura da tela. O desfoque do pé
+  da tela só aparece depois que a pessoa começa a rolar.
+- Rodapé: endereço do CNPJ (Rua Santana Soares, 102 — Jardim Gonzaga, Juazeiro do Norte – CE,
+  CEP 63046-530) e selos: Reclame Aqui, "Pagamentos processados por Asaas", "Site seguro —
+  Certificado SSL" e "Compra 100% segura". Não usamos selos de terceiros que exigem verificação
+  (ex.: "Site seguro Google") nem promessas que o contrato não faz.

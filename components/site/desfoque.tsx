@@ -12,11 +12,12 @@ const DESFOQUES = [0.25, 0.5, 1, 2, 4, 8, 16, 32];
 
 export function DesfoqueRodape() {
   // Some quando a pessoa chega ao fim da página, para não embaçar o rodapé
-  const [noFim, setNoFim] = useState(false);
+  // No começo da página também fica escondido: a faixa azul dos benefícios aparece nítida (D41)
+  const [noFim, setNoFim] = useState(true);
   useEffect(() => {
     const verificar = () => {
       const fim = document.documentElement.scrollHeight - window.innerHeight;
-      setNoFim(window.scrollY >= fim - 160);
+      setNoFim(window.scrollY < 40 || window.scrollY >= fim - 160);
     };
     verificar();
     window.addEventListener("scroll", verificar, { passive: true });
