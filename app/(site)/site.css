@@ -2582,15 +2582,18 @@ html:has(.gc-site) {
  * Ao abrir o site, só o topo aparece: ele vai até a borda de baixo da tela, com a faixa azul dos
  * benefícios encostada embaixo. Em telas maiores o conteúdo do topo cresce (como o zoom de 125%). */
 @media (min-width: 1100px) {
-  .gc-site .hero-section {
+  .gc-site {
     --hz: 1;
+  }
+  .gc-site .hero-section {
     display: flex;
     align-items: center;
     min-height: calc(100svh - 65px);
   }
   .gc-site .hero-section .hero-content {
     zoom: var(--hz);
-    width: min(1180px, calc((100% - 64px) / var(--hz)));
+    /* dentro do zoom a % já vem dividida pelo zoom: só a sobra das bordas é dividida */
+    width: min(1180px, calc(100% - (120px / var(--hz))));
     padding-top: calc(104px / var(--hz));
     padding-bottom: calc(36px / var(--hz));
   }
@@ -2598,7 +2601,13 @@ html:has(.gc-site) {
 @media (min-width: 1100px) {
   /* texto com mais espaço: o título fica em 2 linhas (o celular passa da borda e é cortado) */
   .gc-site .hero-section .hero-content {
-    grid-template-columns: minmax(0, 1.22fr) minmax(0, 0.78fr);
+    /* coluna do celular com a largura que ele ocupa na tela (300 px x 1,5): texto e celular
+     * encostam nas duas bordas do conteúdo, com a mesma sobra de cada lado da tela */
+    grid-template-columns: minmax(0, 1fr) 450px;
+  }
+  .gc-site .hero-section .phone-wrap {
+    justify-self: end;
+    transform-origin: top right;
   }
   .gc-site .hero-section .hero-copy {
     max-width: 640px;
@@ -2618,17 +2627,17 @@ html:has(.gc-site) {
     padding-bottom: 12px;
   }
 }
-@media (min-width: 1280px) and (min-height: 740px) {
-  .gc-site .hero-section { --hz: 1.1; }
+@media (min-width: 1390px) and (min-height: 740px) {
+  .gc-site { --hz: 1.1; }
 }
-@media (min-width: 1380px) and (min-height: 800px) {
-  .gc-site .hero-section { --hz: 1.2; }
+@media (min-width: 1500px) and (min-height: 800px) {
+  .gc-site { --hz: 1.2; }
 }
-@media (min-width: 1480px) and (min-height: 880px) {
-  .gc-site .hero-section { --hz: 1.25; }
+@media (min-width: 1560px) and (min-height: 880px) {
+  .gc-site { --hz: 1.25; }
 }
 @media (min-width: 1700px) and (min-height: 920px) {
-  .gc-site .hero-section { --hz: 1.35; }
+  .gc-site { --hz: 1.35; }
 }
 
 /* ---------- rodapé: selos de segurança e endereço (D41) ---------- */
@@ -2784,5 +2793,21 @@ html:has(.gc-site) {
   }
   .gc-site .gc-selo {
     height: 82px;
+  }
+}
+
+/* menu de cima alinhado com o topo: o logo começa onde começa o texto e os botões terminam onde
+ * termina o celular (mesmo cálculo da largura do topo) */
+@media (min-width: 1100px) {
+  .gc-site .gc-nav {
+    width: min(calc(1180px * var(--hz) + 48px), calc(100% - 72px));
+    max-width: none;
+  }
+}
+/* notificação de cima não sai da tela (o celular agora encosta na borda do conteúdo) */
+@media (min-width: 1100px) {
+  .gc-site .hero-section .phone-wrap .notif-direita {
+    left: calc(100% - 150px);
+    top: -46px;
   }
 }

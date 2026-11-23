@@ -101,7 +101,7 @@ export function HeaderBar({ plans }: { plans: HeaderPlan[] }) {
   return (
     <nav
       aria-label="Menu principal"
-      className={`fixed left-1/2 top-3 z-50 w-[calc(100%-1rem)] max-w-7xl -translate-x-1/2 rounded-2xl border transition-all duration-500 md:top-4 md:w-[95%] ${
+      className={`gc-nav fixed left-1/2 top-3 z-50 w-[calc(100%-1rem)] max-w-7xl -translate-x-1/2 rounded-2xl border transition-all duration-500 md:top-4 md:w-[95%] ${
         scrolled
           ? "border-black/5 bg-white/70 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.05)] backdrop-blur-xl md:py-3"
           : "border-transparent bg-transparent py-4 md:py-5"
