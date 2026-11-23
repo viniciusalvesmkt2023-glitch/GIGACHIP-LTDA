@@ -2726,3 +2726,63 @@ html:has(.gc-site) {
   background: #dcfce7;
   color: #16a34a;
 }
+/* selos em quadrados brancos (substitui os selos acima) */
+.gc-site .gc-selos {
+  display: grid;
+  grid-template-columns: repeat(5, 128px);
+  gap: 10px;
+  margin-top: 22px;
+}
+.gc-site .gc-selo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 100px;
+  padding: 8px;
+  border-radius: 14px;
+  background: #fff;
+  color: #0f172a;
+  text-align: center;
+  box-shadow: 0 10px 24px -16px rgb(0 0 0 / 0.6);
+}
+.gc-site .gc-selo svg {
+  width: 100%;
+  height: 100%;
+}
+.gc-site .gc-selo small {
+  font-size: 10.5px;
+  line-height: 1.25;
+  color: #5b6b7d;
+}
+.gc-site .gc-selo img {
+  width: 88px;
+  height: auto;
+}
+.gc-site .gc-selo-ra strong {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.gc-site .gc-selo-ra em {
+  font-style: normal;
+  color: #57a836;
+}
+.gc-site .gc-selo-ra:hover {
+  outline: 2px solid #57a836;
+}
+@media (max-width: 1180px) {
+  .gc-site .gc-selos {
+    grid-template-columns: repeat(3, minmax(0, 128px));
+  }
+}
+@media (max-width: 480px) {
+  .gc-site .gc-selos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .gc-site .gc-selo {
+    height: 82px;
+  }
+}

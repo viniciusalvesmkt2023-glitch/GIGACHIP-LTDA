@@ -2,8 +2,9 @@
 
 /* eslint-disable @next/next/no-img-element -- logo pequena e estática */
 import Link from "next/link";
-import { ArrowUp, ArrowUpRight, LockKeyhole, Mail, MapPin, MessageCircle, ShieldCheck } from "lucide-react";
+import { ArrowUp, Mail, MapPin, MessageCircle } from "lucide-react";
 import { CONTACT_EMAIL } from "@/lib/site";
+import { SelosConfianca } from "./selos";
 
 const RECLAME_AQUI = "https://www.reclameaqui.com.br/empresa/gigachip-ltda/";
 
@@ -17,48 +18,7 @@ export function SiteFooterBar({ whatsapp }: { whatsapp: string | null }) {
             <img src="/logo-g.png" alt="Gigachip" width={56} height={43} className="h-11 w-auto" />
           </Link>
           <p>Linhas na rede Vivo, sem fidelidade e 100% online. Empresa independente, parceira comercial da operadora Vivo.</p>
-          <div className="gc-footer-seals">
-            <a
-              href={RECLAME_AQUI}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="gc-footer-ra"
-              aria-label="Ver a Gigachip no Reclame Aqui (abre em nova aba)"
-            >
-              <span className="gc-footer-ra-icon" aria-hidden="true">
-                <ShieldCheck size={20} />
-              </span>
-              <span>
-                <small>Estamos no</small>
-                <strong>
-                  Reclame <em>AQUI</em>
-                </strong>
-              </span>
-              <ArrowUpRight size={16} className="gc-footer-ra-arrow" aria-hidden="true" />
-            </a>
-            <span className="gc-seal" title="Pagamentos processados pelo Asaas">
-              <small>Pagamentos processados por</small>
-              <img src="/asaas-logo.png" alt="Asaas" width={74} height={20} />
-            </span>
-            <span className="gc-seal gc-seal-ssl">
-              <span className="gc-seal-icon" aria-hidden="true">
-                <LockKeyhole size={18} />
-              </span>
-              <span>
-                <small>Site seguro</small>
-                <strong>Certificado SSL</strong>
-              </span>
-            </span>
-            <span className="gc-seal gc-seal-ssl">
-              <span className="gc-seal-icon" aria-hidden="true">
-                <ShieldCheck size={18} />
-              </span>
-              <span>
-                <small>Compra</small>
-                <strong>100% segura</strong>
-              </span>
-            </span>
-          </div>
+          <SelosConfianca reclameAqui={RECLAME_AQUI} />
         </div>
 
         <div>
