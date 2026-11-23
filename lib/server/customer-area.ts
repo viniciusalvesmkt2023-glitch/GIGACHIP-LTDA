@@ -143,3 +143,72 @@ export async function deviceForWhatsapp(orderId: string) {
     iccid: d.iccid ? decryptField(d.iccid, key) : null,
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* Área do Cliente: plano, linha e faturas (D42)                       */
+/* ------------------------------------------------------------------ */
+
+export type Fatura = {
+  id: string;
+  dueDate: string; // YYYY-MM-DD
+  amountCents: number;
+  status: string;
+  paidAt: Date | null;
+  invoiceUrl: string | null;
+  billingType: string;
+  first: boolean;
+};
+
+export async function getClientDashboard(orderId: string) {
+  const [o] = await sql()<
+    {
+      customer_id: string; plan: { name?: string; dataTotalGb?: number; dataBaseGb?: number; dataBonusGb?: number } | null;
+      monthly_price_cents: number; next_due_date: string | null; billing_type: string | null; sub_status: string | null;
+      msisdn: string | null; line_status: string | null; activated_at: Date | null;
+    }[]
+  >`
+    select o.customer_id, o.plan_snapshot as plan, o.monthly_price_cents,
+           s.next_due_date::text as next_due_date, s.billing_type::text as billing_type, s.status::text as sub_status,
+           l.msisdn, l.status::text as line_status, l.activated_at
+    from public.orders o
+    left join public.subscriptions s on s.order_id = o.id
+    left join public.lines l on l.order_id = o.id
+    where o.id = ${orderId}`;
+  if (!o) return null;
+  const faturas = await sql()<
+    { id: string; due_date: string; amount_cents: number; status: string; paid_at: Date | null; invoice_url: string | null; billing_type: string; is_first_payment: boolean }[]
+  >`
+    select id, due_date::text, amount_cents, status::text, paid_at, invoice_url, billing_type::text, is_first_payment
+    from public.payments where order_id = ${orderId} and status <> 'cancelled'
+    order by due_date desc limit 24`;
+  const outros = await sql()<{ id: string; code: string; plan_name: string; status: string }[]>`
+    select id, code, plan_snapshot->>'name' as plan_name, status::text from public.orders
+    where customer_id = ${o.customer_id} and id <> ${orderId}
+    order by created_at desc limit 10`;
+  return {
+    planName: o.plan?.name ?? "Plano",
+    gb: o.plan?.dataTotalGb ?? null,
+    baseGb: o.plan?.dataBaseGb ?? null,
+    bonusGb: o.plan?.dataBonusGb ?? null,
+    monthlyCents: o.monthly_price_cents,
+    nextDueDate: o.next_due_date,
+    billingType: o.billing_type,
+    subscriptionStatus: o.sub_status,
+    msisdn: o.msisdn,
+    lineStatus: o.line_status,
+    activatedAt: o.activated_at,
+    faturas: faturas.map<Fatura>((f) => ({
+      id: f.id, dueDate: f.due_date, amountCents: f.amount_cents, status: f.status, paidAt: f.paid_at,
+      invoiceUrl: f.invoice_url, billingType: f.billing_type, first: f.is_first_payment,
+    })),
+    outrosPedidos: outros.map((p) => ({ id: p.id, code: shortOrderNumber(p.code), planName: p.plan_name, status: p.status })),
+  };
+}
+
+/** Cobrança do PRÓPRIO pedido (o cliente só vê/paga as dele). */
+export async function faturaDoPedido(orderId: string, paymentId: string) {
+  const [p] = await sql()<{ provider_payment_id: string; status: string; invoice_url: string | null; amount_cents: number; due_date: string }[]>`
+    select provider_payment_id, status::text, invoice_url, amount_cents, due_date::text from public.payments
+    where id = ${paymentId} and order_id = ${orderId}`;
+  return p ?? null;
+}

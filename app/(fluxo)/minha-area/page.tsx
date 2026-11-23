@@ -3,6 +3,11 @@ import Link from "next/link";
 import { Suspense } from "react";
 import {
   ArrowRight,
+  CircleAlert,
+  PhoneCall,
+  Receipt,
+  Unlock,
+  Wifi,
   Check,
   CircleHelp,
   Clock,
@@ -10,7 +15,6 @@ import {
   FileSignature,
   Lock,
   LogOut,
-  Mail,
   MessageCircle,
   Smartphone,
   type LucideIcon,
@@ -18,10 +22,11 @@ import {
 import { whatsappLink } from "@/components/whatsapp";
 import { formatMsisdn } from "@/lib/domain/lines";
 import { currentOrderId } from "@/lib/server/customer-access";
-import { getAreaView, type AreaView } from "@/lib/server/customer-area";
-import { lineForOrder } from "@/lib/server/lines";
-import { LinhaPedido } from "../linha-pedido";
-import { sairAction } from "./actions";
+import { getAreaView, getClientDashboard, type AreaView } from "@/lib/server/customer-area";
+import { formatBRL } from "@/lib/domain/money";
+import { sairAction, trocarPedidoAction } from "./actions";
+import { Faturas } from "./faturas";
+import { ClienteLogin } from "./entrar/login-form";
 
 export const metadata: Metadata = { title: "Área do Cliente", robots: { index: false } };
 
@@ -85,45 +90,42 @@ function Passos({ v }: { v: AreaView }) {
   );
 }
 
-async function Area({ searchParams }: { searchParams: PageProps<"/minha-area">["searchParams"] }) {
-  const sp = await searchParams;
+const LINHA: Record<string, { label: string; tone: string }> = {
+  ativa: { label: "Linha ativa", tone: "green" },
+  suspensao_pendente: { label: "Linha ativa", tone: "green" },
+  suspensa: { label: "Linha bloqueada", tone: "red" },
+  reativacao_pendente: { label: "Desbloqueando", tone: "amber" },
+  cancelamento_pendente: { label: "Cancelando", tone: "gray" },
+  cancelada: { label: "Linha cancelada", tone: "gray" },
+};
+const dataBr = (iso: string | null) => (iso ? iso.slice(0, 10).split("-").reverse().join("/") : "—");
+
+async function Area() {
   const orderId = await currentOrderId();
   const v = orderId ? await getAreaView(orderId) : null;
-  const ajuda = whatsappLink("Olá! Preciso de ajuda para acessar a Área do Cliente da Gigachip.");
-
   if (!v || !orderId) {
     return (
-      <div className="cl-empty">
-        <span className="cl-empty-icon">
-          <Mail size={26} />
-        </span>
-        <p className="ck-kicker">ÁREA DO CLIENTE</p>
-        <h1 className="ck-title">Acesse pelo link do seu e-mail</h1>
-        <p className="ck-sub ac-sub-big">
-          {sp.link === "invalido"
-            ? "Este link expirou ou não é válido. Abra o e-mail mais recente da Gigachip ou fale com a gente."
-            : "Depois do pagamento, mandamos um e-mail com o seu link pessoal. É só abrir por ele — não precisa de senha."}
+      <>
+        <ClienteLogin />
+        <p className="text-center">
+          <Link href="/planos" className="ac-link">
+            Ainda não é cliente? Ver os planos
+          </Link>
         </p>
-        <p className="ac-wait">
-          <Clock size={15} /> Não achou? Confira o spam ou a aba Promoções.
-        </p>
-        {ajuda && (
-          <a href={ajuda} target="_blank" rel="noopener noreferrer" className="ck-btn">
-            <MessageCircle size={18} /> Falar com a gente no WhatsApp
-          </a>
-        )}
-        <Link href="/planos" className="ac-link">
-          Ainda não é cliente? Ver os planos
-        </Link>
-      </div>
+      </>
     );
   }
 
-  const linha = v.status === "ativado" ? await lineForOrder(orderId) : null;
+  const d = await getClientDashboard(orderId);
+  const linha = d?.msisdn ? d : null;
   const paid = v.paymentStatus === "confirmed" || v.paymentStatus === "received";
+  const ativado = v.status === "ativado";
   const faltaAtivacao = paid && !["ativado", "pronto_para_ativacao", "em_ativacao", "cancelado", "expirado"].includes(v.status);
-  const gb = /(\d+)\s*GB/i.exec(v.planName)?.[1];
+  const hoje = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+  const abertas = (d?.faturas ?? []).filter((f) => f.status === "overdue" || (f.status === "pending" && f.dueDate < hoje));
   const suporte = whatsappLink(`Olá! Sou cliente da Gigachip (pedido ${v.code}) e preciso de ajuda.`);
+  const ls = linha?.lineStatus ? LINHA[linha.lineStatus] : null;
+  const cartao = d?.billingType === "credit_card";
 
   return (
     <>
@@ -138,32 +140,113 @@ async function Area({ searchParams }: { searchParams: PageProps<"/minha-area">["
           </button>
         </form>
       </div>
-      <LinhaPedido texto={`Pedido ${v.code} · ${gb ? `Plano ${gb} GB` : v.planName} · ${v.simType === "esim" ? "eSIM" : "Chip físico"}`} />
 
-      {v.status === "ativado" && (
-        <div className="cl-ativa">
-          <span>
-            <Check size={22} strokeWidth={3} />
+      {abertas.length > 0 && (
+        <p className="cl-aviso">
+          <CircleAlert size={18} />
+          {abertas.length === 1 ? "Você tem 1 fatura vencida." : `Você tem ${abertas.length} faturas vencidas.`} Pague abaixo para
+          não ter a linha bloqueada.
+        </p>
+      )}
+      {linha?.lineStatus === "suspensa" && abertas.length === 0 && (
+        <p className="cl-aviso is-amber">
+          <Clock size={18} /> Recebemos o pagamento. Sua linha será desbloqueada em até 24 horas.
+        </p>
+      )}
+
+      {/* Meu plano */}
+      <section className="cl-plano">
+        <div className="cl-plano-top">
+          <span className="cl-plano-logo">
+            {/* eslint-disable-next-line @next/next/no-img-element -- logo pequena e estática */}
+            <img src="/vivo-logo.png" alt="Rede Vivo" width={64} height={20} />
           </span>
-          <div>
-            <b>Sua linha está ativa!</b>
-            <small>{linha ? <>Número: <strong>{formatMsisdn(linha.msisdn)}</strong></> : "O número foi enviado para o seu e-mail."}</small>
-          </div>
+          {ls ? <span className={`cl-tag is-${ls.tone}`}>{ls.label}</span> : <span className="cl-tag is-amber">{ativado ? "Linha ativa" : "Em ativação"}</span>}
         </div>
+        <p className="cl-plano-nome">{d?.planName ?? v.planName}</p>
+        <div className="cl-plano-main">
+          <span className="cl-plano-gb">
+            {d?.gb ?? "—"}
+            <small>GB/mês</small>
+          </span>
+          <span className="cl-plano-preco">
+            {d ? formatBRL(d.monthlyCents) : ""}
+            <small>/mês</small>
+          </span>
+        </div>
+        <dl className="cl-plano-dados">
+          <div>
+            <dt>Número da linha</dt>
+            <dd>{linha?.msisdn ? formatMsisdn(linha.msisdn) : "Aparece aqui quando a linha for ativada"}</dd>
+          </div>
+          <div>
+            <dt>Próximo vencimento</dt>
+            <dd>{dataBr(d?.nextDueDate ?? null)}</dd>
+          </div>
+          <div>
+            <dt>Pagamento</dt>
+            <dd>{cartao ? "Cartão de crédito (automático)" : "PIX todo mês"}</dd>
+          </div>
+          <div>
+            <dt>Chip</dt>
+            <dd>{v.simType === "esim" ? "eSIM" : "Chip físico"}</dd>
+          </div>
+        </dl>
+        <ul className="cl-plano-inclui">
+          <li>
+            <Wifi size={15} /> {d?.bonusGb ? `${d.baseGb} GB + ${d.bonusGb} GB de bônus` : `${d?.gb ?? ""} GB`} todo mês
+          </li>
+          <li>
+            <PhoneCall size={15} /> Ligações ilimitadas
+          </li>
+          <li>
+            <Unlock size={15} /> Sem fidelidade
+          </li>
+        </ul>
+      </section>
+
+      {!ativado && (
+        <>
+          <p className="ac-how-title mt-6">Andamento da ativação</p>
+          <Passos v={v} />
+          {faltaAtivacao && (
+            <Link href="/ativacao" className="ck-btn">
+              Continuar a ativação <ArrowRight size={18} />
+            </Link>
+          )}
+          {!paid && v.status === "aguardando_pagamento" && (
+            <Link href={`/pedido/${orderId}/pagamento`} className="ck-btn">
+              Ir para o pagamento <ArrowRight size={18} />
+            </Link>
+          )}
+        </>
       )}
 
-      <p className="ac-how-title mt-6">Andamento do pedido</p>
-      <Passos v={v} />
+      <p className="ac-how-title mt-6">
+        <Receipt size={15} className="mr-1 inline" /> Minhas faturas
+      </p>
+      <Faturas faturas={d?.faturas ?? []} hoje={hoje} cartao={cartao} />
 
-      {faltaAtivacao && (
-        <Link href="/ativacao" className="ck-btn">
-          Continuar a ativação <ArrowRight size={18} />
-        </Link>
-      )}
-      {!paid && v.status === "aguardando_pagamento" && (
-        <Link href={`/pedido/${orderId}/pagamento`} className="ck-btn">
-          Ir para o pagamento <ArrowRight size={18} />
-        </Link>
+      {(d?.outrosPedidos.length ?? 0) > 0 && (
+        <>
+          <p className="ac-how-title mt-6">Suas outras linhas</p>
+          <ul className="cl-outros">
+            {d!.outrosPedidos.map((p) => (
+              <li key={p.id}>
+                <form action={trocarPedidoAction}>
+                  <input type="hidden" name="pedido" value={p.id} />
+                  <button type="submit">
+                    <span>
+                      <b>Pedido {p.code}</b>
+                      <small>{p.planName}</small>
+                    </span>
+                    <ArrowRight size={16} />
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {suporte && (
@@ -175,16 +258,16 @@ async function Area({ searchParams }: { searchParams: PageProps<"/minha-area">["
   );
 }
 
-export default function MinhaAreaPage({ searchParams }: PageProps<"/minha-area">) {
+export default function MinhaAreaPage() {
   return (
     <div className="ck-page">
       <div className="container-site ck-grid is-single">
         <div className="ck-card">
           <Suspense fallback={<div style={{ minHeight: 420 }} />}>
-            <Area searchParams={searchParams} />
+            <Area />
           </Suspense>
           <p className="ck-trust">
-            <Lock size={14} /> Acesso pessoal pelo link do e-mail · não compartilhe
+            <Lock size={14} /> Acesso pessoal · não compartilhe o código nem o link
           </p>
         </div>
       </div>

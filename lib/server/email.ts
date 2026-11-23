@@ -91,6 +91,19 @@ export async function sendEmailNow(to: string, content: { subject: string; html:
 
 const esc = (v: string) => v.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
+/** Código de 6 números para entrar na Área do Cliente (D42). */
+export function renderLoginCodeEmail(p: { firstName: string; code: string }) {
+  const subject = `${p.code} é o seu código de acesso da Gigachip`;
+  const html = layout(
+    `Olá${p.firstName ? `, ${esc(p.firstName)}` : ""}!`,
+    `<p style="line-height:1.6">Use este código para entrar na sua <strong>Área do Cliente</strong>:</p>
+<p style="margin:20px 0;font-size:34px;font-weight:bold;letter-spacing:8px;color:#0a82c7">${p.code}</p>
+<p style="font-size:13px;color:#64748b;line-height:1.6">O código vale por 10 minutos. Se não foi você que pediu, é só ignorar este e-mail.</p>`,
+  );
+  const text = `Seu código de acesso da Área do Cliente Gigachip: ${p.code}\n\nVale por 10 minutos. Se não foi você que pediu, ignore este e-mail.\n\nGigachip Ltda.`;
+  return { subject, html, text };
+}
+
 export function renderPasswordResetEmail(p: { firstName: string; link: string }) {
   const subject = "Redefinir sua senha do painel Gigachip";
   const html = layout(
@@ -106,7 +119,8 @@ Para entrar, o código do aplicativo autenticador (2FA) continua sendo pedido.</
 }
 
 async function sendViaResend(to: string, content: { subject: string; html: string; text: string }) {
-  const res = await fetch("https://api.resend.com/emails", {
+  // RESEND_API_URL só existe nos testes locais (e-mail falso); em produção é sempre o Resend
+  const res = await fetch(process.env.RESEND_API_URL || "https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], ...content }),

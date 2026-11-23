@@ -1999,3 +1999,290 @@
 .gc-site .ck-page {
   min-height: calc(100svh - 62px);
 }
+.gc-site .cl-login {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+.gc-site .cl-login-form {
+  width: 100%;
+  max-width: 420px;
+  display: grid;
+  gap: 14px;
+  text-align: left;
+}
+.gc-site .cl-login-form .ck-title,
+.gc-site .cl-login-form .ck-sub {
+  text-align: center;
+}
+.gc-site .cl-code {
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.45em;
+}
+
+/* ---------- área do cliente: plano e faturas (D42) ---------- */
+.gc-site .cl-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+  background: #fef2f2;
+  font-size: 14px;
+  font-weight: 600;
+  color: #b91c1c;
+}
+.gc-site .cl-aviso svg {
+  flex: none;
+  margin-top: 1px;
+}
+.gc-site .cl-aviso.is-amber {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+.gc-site .cl-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 99px;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.gc-site .cl-tag::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.gc-site .cl-tag.is-green { background: #dcfce7; color: #15803d; }
+.gc-site .cl-tag.is-amber { background: #fef3c7; color: #b45309; }
+.gc-site .cl-tag.is-red { background: #fee2e2; color: #b91c1c; }
+.gc-site .cl-tag.is-gray { background: #f1f5f9; color: #475569; }
+.gc-site .cl-plano {
+  padding: 20px;
+  border-radius: 22px;
+  background: linear-gradient(150deg, #0a6fc2, #01a3ec);
+  color: #fff;
+  box-shadow: 0 22px 44px -26px rgb(10 111 194 / 0.8);
+}
+.gc-site .cl-plano-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gc-site .cl-plano-logo {
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: #fff;
+}
+.gc-site .cl-plano-logo img {
+  height: 16px;
+  width: auto;
+}
+.gc-site .cl-plano .cl-tag.is-green {
+  background: rgb(255 255 255 / 0.95);
+}
+.gc-site .cl-plano-nome {
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+.gc-site .cl-plano-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.gc-site .cl-plano-gb {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1;
+}
+.gc-site .cl-plano-gb small,
+.gc-site .cl-plano-preco small {
+  margin-left: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.gc-site .cl-plano-preco {
+  font-size: 24px;
+  font-weight: 800;
+}
+.gc-site .cl-plano-dados {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+.gc-site .cl-plano-dados div {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.14);
+}
+.gc-site .cl-plano-dados dt {
+  font-size: 11.5px;
+  opacity: 0.8;
+}
+.gc-site .cl-plano-dados dd {
+  margin-top: 2px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.gc-site .cl-plano-inclui {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 14px;
+  font-size: 13px;
+}
+.gc-site .cl-plano-inclui li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.gc-site .cl-faturas {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+.gc-site .cl-fatura {
+  padding: 14px 16px;
+  border: 1px solid #e6ebf1;
+  border-radius: 16px;
+  background: #fff;
+}
+.gc-site .cl-fatura.is-open {
+  border-color: #fcd34d;
+  box-shadow: 0 10px 26px -22px rgb(180 83 9 / 0.8);
+}
+.gc-site .cl-fatura-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gc-site .cl-fatura-top b {
+  display: block;
+  font-size: 17px;
+}
+.gc-site .cl-fatura-top small {
+  font-size: 12.5px;
+  color: #5b6b7d;
+}
+.gc-site .cl-pay {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  margin-top: 12px;
+}
+.gc-site .cl-pay-btn {
+  width: auto;
+  margin-top: 12px;
+  padding-inline: 20px;
+  height: 46px;
+}
+.gc-site .cl-pay .cl-pay-btn {
+  margin-top: 0;
+}
+.gc-site .cl-pix {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #e2e8f0;
+}
+.gc-site .cl-pix-qr {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0a82c7;
+}
+.gc-site .cl-pix-qr img {
+  width: 170px;
+  height: 170px;
+  padding: 6px;
+  border: 1px solid #e6ebf1;
+  border-radius: 14px;
+  image-rendering: pixelated;
+}
+.gc-site .cl-pix-qr span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.gc-site .cl-pix-side {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+.gc-site .cl-pix-side code {
+  display: block;
+  max-height: 64px;
+  overflow: hidden;
+  word-break: break-all;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  font-size: 11.5px;
+}
+.gc-site .cl-pix-note {
+  font-size: 12.5px;
+  color: #5b6b7d;
+}
+.gc-site .cl-outros {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.gc-site .cl-outros button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e6ebf1;
+  border-radius: 14px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.gc-site .cl-outros button:hover {
+  border-color: #7dd3fc;
+}
+.gc-site .cl-outros small {
+  display: block;
+  font-size: 12.5px;
+  color: #5b6b7d;
+}
+@media (max-width: 560px) {
+  .gc-site .cl-plano-dados {
+    grid-template-columns: 1fr;
+  }
+  .gc-site .cl-pix {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .gc-site .cl-pix-side {
+    width: 100%;
+  }
+  .gc-site .cl-pay-btn {
+    width: 100%;
+  }
+}

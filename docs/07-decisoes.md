@@ -568,3 +568,18 @@ Pedido do dono: se ele ou o gestor mexerem na planilha, o painel acompanha.
   CEP 63046-530) e selos: Reclame Aqui, "Pagamentos processados por Asaas", "Site seguro —
   Certificado SSL" e "Compra 100% segura". Não usamos selos de terceiros que exigem verificação
   (ex.: "Site seguro Google") nem promessas que o contrato não faz.
+
+## D42 — Área do Cliente: entrar com código, ver o plano e pagar as faturas (23/11/2026)
+
+- **Entrar:** além do link pessoal do e-mail, o cliente digita o e-mail da compra e recebe um
+  **código de 6 números** (vale 10 minutos). O código não é guardado (fica só assinado num cookie);
+  limites no audit_log: 5 envios por e-mail/hora, 20 por IP/hora, 5 tentativas erradas por código. A
+  tela responde igual para quem não é cliente.
+- **Meu plano:** nome, GB, mensalidade, número da linha e situação (ativa/bloqueada), próximo
+  vencimento, forma de pagamento e tipo de chip. Antes da ativação, mostra o andamento e "Continuar a
+  ativação".
+- **Minhas faturas:** mensalidades do pedido (do banco, atualizadas pelo aviso do Asaas): paga, em
+  aberto, vencida. Fatura em aberto: **Pagar com PIX** (QR Code + copia e cola, gerado na hora só para
+  a cobrança do próprio pedido) e "Outras formas de pagar" (página do Asaas, com boleto). Cartão:
+  botão para a página segura do Asaas. Aviso no topo quando há fatura vencida.
+- Cliente com mais de uma linha: lista "Suas outras linhas" para trocar de pedido.
