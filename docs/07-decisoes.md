@@ -544,3 +544,16 @@ O Asaas usado é o do sócio e também cobra **outros produtos**. As cobranças 
 - O sistema continua puxando todas as cobranças vencidas do Asaas; o filtro é só na exibição, então
   mudar o valor vale na hora, sem precisar puxar de novo. Guardado em `app_settings`
   (`inadimplencia_valor_minimo_cents`), sem migração.
+
+## D40 — A planilha do gestor também manda nas linhas vendidas pelo site (23/11/2026)
+
+Pedido do dono: se ele ou o gestor mexerem na planilha, o painel acompanha.
+- A planilha é lida **a cada 10 minutos** (antes, 1 vez por hora) e no botão "Ler planilha agora".
+- Linha vendida pelo site, com cliente na planilha: o painel passa a usar o **ICCID/EID, Smart-Dados,
+  Ativação, Venda final e Valor** que estiverem na planilha (só o que veio preenchido). Nome e
+  vencimento continuam vindo do cadastro e da assinatura do cliente.
+- Linha vendida pelo site que **voltou para "Disponível"** na planilha: o número volta para o estoque
+  e o pedido volta para **"Pronto para ativar"** (aparece de novo na fila), com o motivo no histórico
+  e no audit_log.
+- Logo depois de uma ativação ou correção feita no painel (escrita na planilha ainda pendente), a
+  leitura não mexe naquela linha, para não desfazer o que a equipe acabou de fazer.

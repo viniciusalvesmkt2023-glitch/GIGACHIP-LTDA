@@ -35,7 +35,7 @@ import {
 } from "@/lib/domain/planilha-modelos";
 import { shortOrderNumber } from "@/lib/domain/money";
 import { sheetRequests, sheets, sheetsConfigured, SheetsError } from "@/lib/integrations/google/sheets";
-import { sql } from "./db";
+import { sql, withActor } from "./db";
 import type { Staff } from "./staff-auth";
 
 /**
@@ -47,7 +47,8 @@ import type { Staff } from "./staff-auth";
 
 const CONFIG_KEY = "planilha_google";
 const READ_KEY = "planilha_lida_em";
-const READ_EVERY_MINUTES = 55;
+/** A rotina roda a cada 10 min; a planilha é lida em toda rodada (mudanças do gestor aparecem rápido). */
+const READ_EVERY_MINUTES = 9;
 const RULES_KEY = "planilha_regras";
 const NAMES_KEY = "planilha_colunas";
 const TEMPLATES_KEY = "planilha_modelos";
@@ -255,7 +256,44 @@ export async function importFromSheet(staff: Staff | null) {
       where id = ${cur.id}
         and (vivo_login is distinct from ${r.login} or plano_pj is distinct from ${r.plano}
              or (${r.pagamento}::text is not null and payment_method is distinct from ${r.pagamento}))`;
-    if (cur.order_id || cur.sheet_pending) continue; // vendida pelo site ou com escrita pendente: o sistema manda
+    if (cur.sheet_pending) continue; // o sistema ainda vai escrever nesta linha: não desfaz o que a equipe acabou de fazer
+    if (cur.order_id) {
+      // Vendida pelo site (D40): a planilha também manda nos dados da venda.
+      if (r.kind === "cliente") {
+        // Só o que veio preenchido (o nome e o vencimento continuam do cadastro/assinatura)
+        const res = await sql()`
+          update public.lines
+          set iccid = coalesce(${r.iccid}, iccid), smart_dados = coalesce(${r.smart}, smart_dados),
+              activated_at = coalesce(${at(r.ativacao)}::timestamptz, activated_at),
+              sale_price_cents = coalesce(${r.vendaCents}, sale_price_cents), cost_cents = coalesce(${r.valorCents}, cost_cents)
+          where id = ${cur.id}
+            and ((${r.iccid}::text is not null and iccid is distinct from ${r.iccid})
+                 or (${r.smart}::text is not null and smart_dados is distinct from ${r.smart})
+                 or (${r.vendaCents}::int is not null and sale_price_cents is distinct from ${r.vendaCents})
+                 or (${r.valorCents}::int is not null and cost_cents is distinct from ${r.valorCents}))
+          returning id`;
+        if (res.length) stats.atualizados++;
+      } else {
+        // O gestor voltou o número para "Disponível": desfaz a venda no painel. O pedido volta para
+        // "Pronto para ativar" (aparece de novo na fila, com o motivo no histórico).
+        await withActor({ type: "system", reason: "número voltou a Disponível na planilha do gestor" }, async (tx) => {
+          await tx`
+            update public.lines
+            set status = 'disponivel', order_id = null, legacy_customer_name = null, iccid = null, smart_dados = null,
+                activated_at = null, sale_price_cents = null, cost_cents = null, legacy_due_date = null, asaas_customer_id = null,
+                sheet_error = null
+            where id = ${cur.id}`;
+          await tx`
+            update public.orders set status = 'pronto_para_ativacao', activated_at = null
+            where id = ${cur.order_id} and status = 'ativado'`;
+          await tx`
+            insert into public.audit_log (actor_id, action, entity, entity_id, metadata)
+            values (null, 'linha_liberada_pela_planilha', 'orders', ${cur.order_id}, ${tx.json({ linha: cur.id })})`;
+        });
+        stats.liberados++;
+      }
+      continue;
+    }
     if (r.kind === "cliente") {
       const res = await sql()`
         update public.lines
