@@ -1995,3 +1995,7 @@
     justify-self: start;
   }
 }
+/* o fundo azul claro vai até o fim da tela (sem faixa branca embaixo em telas grandes) */
+.gc-site .ck-page {
+  min-height: calc(100svh - 62px);
+}
