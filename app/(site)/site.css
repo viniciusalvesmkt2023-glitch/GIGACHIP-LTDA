@@ -708,7 +708,7 @@ html:has(.gc-site) {
   background: linear-gradient(#33c9ff, #0a6fc2);
   box-shadow:
     0 84px 0 0 #0a6fc2,
-    -306px 20px 0 0 #0a6fc2;
+    -303px 20px 0 0 #0a6fc2;
 }
 @property --gc-ang {
   syntax: "<angle>";
