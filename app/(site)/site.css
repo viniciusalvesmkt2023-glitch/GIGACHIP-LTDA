@@ -2811,3 +2811,17 @@ html:has(.gc-site) {
     top: -46px;
   }
 }
+/* celular (D41): botão lateral esquerdo colado no aparelho e notificação de cima dentro da tela */
+@media (max-width: 767px) {
+  .gc-site .phone::after {
+    box-shadow:
+      0 84px 0 0 #0a6fc2,
+      -287px 20px 0 0 #0a6fc2;
+  }
+  .gc-site .phone-wrap .notif-direita {
+    left: auto;
+    right: 4px;
+    top: -58px;
+    transform-origin: right bottom;
+  }
+}
