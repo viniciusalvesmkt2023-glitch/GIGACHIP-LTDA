@@ -62,6 +62,18 @@ export function customerSituation(openOverdueCount: number, hasOpenBlock: boolea
   return openOverdueCount > 0 ? "bloquear" : "em_dia";
 }
 
+/**
+ * O nome escrito na planilha é deste cliente? Mesmo primeiro nome e todas as palavras do nome mais
+ * curto aparecem no mais longo ("Filipe Santos" × "Filipe Santos da Silva"). Quem confirma é a equipe.
+ */
+export function sameCustomerName(a: string, b: string): boolean {
+  const x = normalizeName(a).split(" ").filter((w) => w.length > 1);
+  const y = normalizeName(b).split(" ").filter((w) => w.length > 1);
+  if (!x.length || !y.length || x[0] !== y[0]) return false;
+  const [curto, longo] = x.length <= y.length ? [x, y] : [y, x];
+  return curto.length >= 2 && curto.every((w) => longo.includes(w));
+}
+
 /** Nome para comparar com a planilha antiga (sem acentos, minúsculo, espaços simples). */
 export function normalizeName(name: string): string {
   return name

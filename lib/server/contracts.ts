@@ -279,26 +279,42 @@ export async function syncContractByDocument(documentUuid: string, actor: "webho
   return { ok: true as const, status: mapped ?? "desconhecido" };
 }
 
-/** Contratos enviados há mais de 1 h, ainda sem assinatura: confere o status (rede de segurança). */
-export async function syncPendingSignatures(limit = 2) {
+/**
+ * Rotina (a cada minuto): confere na D4Sign os contratos enviados ainda sem assinatura.
+ * - A D4Sign avisou (aviso de "assinou"/"finalizado") → confere a cada minuto, por até 1 hora
+ *   (a D4Sign avisa um instante antes de terminar o PDF assinado). Sem isso o pedido só andava
+ *   com o botão "Conferir assinatura".
+ * - Sem aviso → confere de hora em hora (rede de segurança, caso o aviso se perca).
+ * Cada conferência que não achou assinatura empurra a próxima (next_attempt_at), para não gastar
+ * o limite de chamadas por hora da D4Sign.
+ */
+export async function syncPendingSignatures(limit = 3) {
   if (!d4signConfigured()) return 0;
-  const rows = await sql()<{ provider_document_uuid: string }[]>`
-    select c.provider_document_uuid from public.contracts c
+  const rows = await sql()<{ id: string; provider_document_uuid: string; notified: boolean }[]>`
+    select c.id, c.provider_document_uuid, n.notified from public.contracts c
     cross join lateral (
-      -- A D4Sign já avisou (webhook) depois do envio, mas o aviso não pôde ser conferido
-      -- (ex.: limite de chamadas por hora): esses vêm primeiro e não esperam 1 hora.
       select exists (
         select 1 from public.webhook_events w
-        where w.provider = 'd4sign' and w.payload->>'uuid' = c.provider_document_uuid and w.received_at > c.sent_at
+        where w.provider = 'd4sign' and w.payload->>'uuid' = c.provider_document_uuid
+          and w.received_at > c.sent_at and w.received_at > now() - interval '1 hour'
       ) as notified
     ) n
     where c.status = 'sent' and c.provider_document_uuid is not null
+      and coalesce(c.next_attempt_at, '-infinity') <= now()
       and (n.notified or c.sent_at < now() - interval '1 hour')
     order by n.notified desc, c.sent_at limit ${limit}`;
   let n = 0;
   for (const r of rows) {
     if ((await d4signBudget()) < 2) break;
-    await syncContractByDocument(r.provider_document_uuid, "system").catch((e) => console.error(`[contratos] sync: ${e}`));
+    const res = await syncContractByDocument(r.provider_document_uuid, "system").catch((e) => {
+      console.error(`[contratos] sync: ${e}`);
+      return null;
+    });
+    if (res?.status !== "signed") {
+      await sql()`
+        update public.contracts set next_attempt_at = now() + ${r.notified ? "1 minute" : "1 hour"}::interval
+        where id = ${r.id} and status = 'sent'`;
+    }
     n++;
   }
   return n;

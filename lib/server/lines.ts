@@ -1,4 +1,5 @@
 import "server-only";
+import { sameCustomerName } from "@/lib/domain/inadimplencia";
 import { paymentMethodText, smartDadosText, type NewNumberRow } from "@/lib/domain/lines";
 import { decryptField } from "./crypto";
 import { sql, withActor } from "./db";
@@ -135,6 +136,17 @@ export async function availableNumbers() {
     order by msisdn`;
 }
 
+/**
+ * Linhas que já estão na planilha com o nome deste cliente, mas sem pedido ligado (a equipe ativou
+ * na Vivo e preencheu a planilha à mão). Aparecem primeiro no "Ativar linha" para ligar o pedido.
+ */
+export async function sheetLinesForCustomer(customerName: string) {
+  const rows = await sql()<{ id: string; msisdn: string; name: string; sheet_row: number | null }[]>`
+    select id, msisdn, legacy_customer_name as name, sheet_row from public.lines
+    where order_id is null and legacy_customer_name is not null and status not in ('disponivel', 'cancelada')`;
+  return rows.filter((r) => sameCustomerName(r.name, customerName));
+}
+
 /** Valores que o sistema já sabe para preencher a ativação (o dono só confere e digita o ICCID). */
 export async function activationDefaults(orderId: string) {
   const [o] = await sql()<
@@ -191,15 +203,18 @@ export async function activateOrder(staff: Staff, orderId: string, input: Activa
     if (!order || !["pronto_para_ativacao", "em_ativacao"].includes(order.status)) {
       return { ok: false, message: "O pedido não está pronto para ativação." };
     }
-    const [line] = await tx<{ id: string }[]>`
-      select id from public.lines where id = ${input.lineId} and status = 'disponivel' and order_id is null for update`;
-    if (!line) return { ok: false, message: "Esse número não está mais disponível. Escolha outro." };
+    const [line] = await tx<{ id: string; status: string; name: string | null }[]>`
+      select id, status::text, legacy_customer_name as name from public.lines
+      where id = ${input.lineId} and order_id is null and status <> 'cancelada' for update`;
+    // Número do estoque, ou linha já preenchida na planilha com o nome deste cliente
+    const ok = line && (line.status === "disponivel" || (line.name && sameCustomerName(line.name, defaults.customer)));
+    if (!line || !ok) return { ok: false, message: "Esse número não está mais disponível. Escolha outro." };
 
     // Só os campos da VENDA são preenchidos. O que já veio cadastrado com o número
     // (login Vivo, número, plano PJ, forma de pagamento) nunca é alterado aqui.
     await tx`
       update public.lines
-      set order_id = ${orderId}, status = 'ativa', iccid = ${iccid}, smart_dados = ${input.smartDados},
+      set order_id = ${orderId}, status = 'ativa', legacy_customer_name = null, iccid = ${iccid}, smart_dados = ${input.smartDados},
           sale_price_cents = ${input.salePriceCents}, cost_cents = ${input.costCents},
           payment_method = coalesce(payment_method, ${defaults.paymentMethod}),
           activated_by = ${staff.id}, activated_at = now(), sheet_pending = true, sheet_error = null

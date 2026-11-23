@@ -1,5 +1,5 @@
 import "server-only";
-import { normalizeName } from "@/lib/domain/inadimplencia";
+import { normalizeName, sameCustomerName } from "@/lib/domain/inadimplencia";
 import {
   columnLetter,
   FIELD_LABEL,
@@ -47,8 +47,8 @@ import type { Staff } from "./staff-auth";
 
 const CONFIG_KEY = "planilha_google";
 const READ_KEY = "planilha_lida_em";
-/** A rotina roda a cada 10 min; a planilha é lida em toda rodada (mudanças do gestor aparecem rápido). */
-const READ_EVERY_MINUTES = 9;
+/** A rotina roda a cada minuto; a planilha é lida em toda rodada (mudança na planilha aparece em ~1 min). */
+const READ_EVERY_MINUTES = 0.75;
 const RULES_KEY = "planilha_regras";
 const NAMES_KEY = "planilha_colunas";
 const TEMPLATES_KEY = "planilha_modelos";
@@ -210,8 +210,11 @@ export async function importFromSheet(staff: Staff | null) {
 
   const existing = new Map(
     (
-      await sql()<{ id: string; msisdn: string; order_id: string | null; status: string; sheet_pending: boolean; legacy_customer_name: string | null }[]>`
-        select id, msisdn, order_id, status::text, sheet_pending, legacy_customer_name
+      await sql()<{
+        id: string; msisdn: string; order_id: string | null; status: string; sheet_pending: boolean; legacy_customer_name: string | null;
+        sheet_error: string | null; updated_at: Date | null;
+      }[]>`
+        select id, msisdn, order_id, status::text, sheet_pending, legacy_customer_name, sheet_error, updated_at
         from public.lines where msisdn = any(${rows.map((r) => r.msisdn)})`
     ).map((l) => [l.msisdn, l]),
   );
@@ -256,7 +259,10 @@ export async function importFromSheet(staff: Staff | null) {
       where id = ${cur.id}
         and (vivo_login is distinct from ${r.login} or plano_pj is distinct from ${r.plano}
              or (${r.pagamento}::text is not null and payment_method is distinct from ${r.pagamento}))`;
-    if (cur.sheet_pending) continue; // o sistema ainda vai escrever nesta linha: não desfaz o que a equipe acabou de fazer
+    // O sistema acabou de mexer nesta linha e ainda vai escrever nela: não desfaz o que a equipe fez.
+    // Escrita travada (com erro ou há mais de 10 min): a planilha manda e a fila é limpa.
+    if (cur.sheet_pending && !cur.sheet_error && cur.updated_at && Date.now() - cur.updated_at.getTime() < 10 * 60_000) continue;
+    if (cur.sheet_pending) await sql()`update public.lines set sheet_pending = false, sheet_error = null where id = ${cur.id}`;
     if (cur.order_id) {
       // Vendida pelo site (D40): a planilha também manda nos dados da venda.
       if (r.kind === "cliente") {
@@ -307,8 +313,8 @@ export async function importFromSheet(staff: Staff | null) {
                or status = 'disponivel')
         returning id`;
       if (res.length) stats.atualizados++;
-    } else if (cur.status === "ativa") {
-      // O gestor apagou o cliente da linha: o número voltou a ficar livre
+    } else if (cur.status !== "disponivel") {
+      // O gestor apagou o cliente da linha (ativa, bloqueada, cancelando…): o número voltou a ficar livre
       await sql()`
         update public.lines
         set status = 'disponivel', legacy_customer_name = null, iccid = null, smart_dados = null, activated_at = null,
@@ -459,6 +465,7 @@ export async function pushPendingToSheet(limit = 20) {
       const naPlanilha = normalizeName(row.cliente ?? "");
       if (
         !l.sheet_overwrite && row.kind === "cliente" && naPlanilha !== normalizeName(l.customer ?? "") &&
+        !sameCustomerName(row.cliente ?? "", l.customer ?? "") &&
         naPlanilha !== normalizeName(expectedClientText(templates.cliente, ctx, sheet.locale))
       ) {
         await giveUp(l.id, `na planilha este número já está com o cliente "${row.cliente}" — confira antes`);

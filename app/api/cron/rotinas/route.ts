@@ -9,6 +9,9 @@ import { importFromSheetIfDue, pushPendingToSheet } from "@/lib/server/planilha"
  * Rotina agendada (Vercel Cron). A Vercel envia "Authorization: Bearer <CRON_SECRET>".
  * Hoje: confere assinaturas, envia contratos da fila, envia e-mails e puxa a inadimplência do Asaas.
  */
+/** Roda a cada minuto (Vercel Cron, plano Pro): cada etapa tem o seu próprio intervalo. */
+export const maxDuration = 60;
+
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET?.trim();
   // Diferencia "não configurado" de "senha errada" para facilitar o diagnóstico (sem revelar a senha)

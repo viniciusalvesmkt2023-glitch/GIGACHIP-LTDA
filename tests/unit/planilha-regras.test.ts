@@ -80,3 +80,14 @@ describe("regras da planilha", () => {
     expect(eventForLine({ ...base, orderId: null, status: "ativa" })).toBe(null);
   });
 });
+
+describe("nome do cliente na planilha", async () => {
+  const { sameCustomerName } = await import("@/lib/domain/inadimplencia");
+  it("aceita nome mais curto escrito à mão e recusa outro cliente", () => {
+    expect(sameCustomerName("Filipe Santos", "Filipe Santos da Silva")).toBe(true);
+    expect(sameCustomerName("FILIPE SANTOS", "Filipe Santos")).toBe(true);
+    expect(sameCustomerName("Filipe", "Filipe Santos")).toBe(false);
+    expect(sameCustomerName("Filipe Souza", "Filipe Santos")).toBe(false);
+    expect(sameCustomerName("Ana Santos", "Filipe Santos")).toBe(false);
+  });
+});

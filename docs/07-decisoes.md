@@ -583,3 +583,19 @@ Pedido do dono: se ele ou o gestor mexerem na planilha, o painel acompanha.
   a cobrança do próprio pedido) e "Outras formas de pagar" (página do Asaas, com boleto). Cartão:
   botão para a página segura do Asaas. Aviso no topo quando há fatura vencida.
 - Cliente com mais de uma linha: lista "Suas outras linhas" para trocar de pedido.
+
+## D43 — Rotina a cada minuto: assinatura e planilha atualizam sozinhas (23/11/2026)
+
+Depois da 1ª venda real: a assinatura da D4Sign só andava com o botão "Conferir assinatura" e
+mudanças na planilha demoravam ou não apareciam.
+- **Rotina a cada minuto** (Vercel Cron, plano Pro; `vercel.json`). Cada etapa mantém o seu próprio
+  intervalo (inadimplência 1 vez por hora, etc.).
+- **D4Sign:** o aviso de assinatura chega um instante antes de a D4Sign terminar o PDF. Agora o aviso
+  marca o contrato e a rotina confere **a cada minuto** (por até 1 hora) até ficar assinado; sem aviso,
+  confere de hora em hora. O botão continua como reserva.
+- **Planilha:** lida **a cada minuto**. Número que voltou para "Disponível" é liberado em qualquer
+  situação (ativa, bloqueada, cancelando). Escrita travada (com erro ou há mais de 10 min) não
+  impede mais a planilha de mandar.
+- **Ativar linha:** além dos números disponíveis, aparecem primeiro as linhas que já estão na
+  planilha com o nome do cliente (ex.: ativou na Vivo e preencheu à mão). Ao confirmar, o pedido é
+  ligado a essa linha.

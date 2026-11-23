@@ -6,7 +6,7 @@ import { formatBRL, shortOrderNumber } from "@/lib/domain/money";
 import { getOrderDetail, STATUS_LABEL } from "@/lib/server/admin";
 import { getContractInfo } from "@/lib/server/contracts";
 import { getIdentityReview } from "@/lib/server/identity";
-import { activationDefaults, availableNumbers, lineForOrder } from "@/lib/server/lines";
+import { activationDefaults, availableNumbers, lineForOrder, sheetLinesForCustomer } from "@/lib/server/lines";
 import { formatMsisdn } from "@/lib/domain/lines";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { identityMode } from "@/lib/server/identity-mode";
@@ -39,7 +39,14 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
   const contract = await getContractInfo(id);
   const identityModeLabel = identityMode();
   const canActivate = ["owner", "admin", "ativador"].includes(staff.role) && ["pronto_para_ativacao", "em_ativacao"].includes(o.status);
-  const [act, numbers] = canActivate ? await Promise.all([activationDefaults(id), availableNumbers()]) : [null, []];
+  const [act, estoque, naPlanilha] = canActivate
+    ? await Promise.all([activationDefaults(id), availableNumbers(), sheetLinesForCustomer(o.full_name)])
+    : [null, [], []];
+  // Linhas que já estão na planilha com o nome do cliente vêm primeiro
+  const numbers = [
+    ...naPlanilha.map((n) => ({ id: n.id, label: `${formatMsisdn(n.msisdn)} — já na planilha com "${n.name}"${n.sheet_row ? ` (linha ${n.sheet_row})` : ""}` })),
+    ...estoque.map((n) => ({ id: n.id, label: formatMsisdn(n.msisdn) })),
+  ];
   const brMoney = (c: number) => (c / 100).toFixed(2).replace(".", ",");
   const canSee = ["owner", "admin", "ativador"].includes(staff.role);
   const line = ["ativado", "pronto_para_ativacao", "em_ativacao"].includes(o.status) ? await lineForOrder(id) : null;
@@ -89,7 +96,7 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
           <ActivateLineForm
             action={activateLineAction}
             orderId={o.id}
-            numbers={numbers.map((n) => ({ id: n.id, label: formatMsisdn(n.msisdn) }))}
+            numbers={numbers}
             defaults={{
               customer: act.customer,
               iccid: act.iccidSuggestion,
