@@ -1,0 +1,149 @@
+/* Grade de canais da Watch TV (D44) — fora do .gc-site porque o diálogo vai direto no <body> */
+.wt-info {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+.wt-info.is-orange {
+  color: #e2440d;
+}
+.wt-info.is-orange:hover {
+  background: #ffe4d6;
+}
+.wt-info.is-white {
+  color: #fff;
+}
+.wt-info.is-white:hover {
+  background: rgb(255 255 255 / 0.18);
+}
+.wt-info:focus-visible {
+  outline: 3px solid rgba(255, 90, 31, 0.4);
+  outline-offset: 2px;
+}
+
+.wt-canais {
+  width: min(680px, calc(100vw - 24px));
+  max-height: min(88vh, 860px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 22px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 30px 80px -20px rgb(15 23 42 / 0.45);
+  font-family: inherit;
+}
+.wt-canais::backdrop {
+  background: rgb(15 23 42 / 0.55);
+  backdrop-filter: blur(2px);
+}
+.wt-canais-box {
+  display: flex;
+  flex-direction: column;
+  max-height: min(88vh, 860px);
+}
+.wt-canais-head {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid #eef1f5;
+}
+.wt-canais-head img {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+.wt-canais-head strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+}
+.wt-canais-head small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: #64748b;
+  line-height: 1.4;
+}
+.wt-canais-x {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 0;
+  background: #f1f5f9;
+  color: #334155;
+  cursor: pointer;
+}
+.wt-canais-body {
+  overflow-y: auto;
+  padding: 6px 18px 18px;
+}
+.wt-canais-body h3 {
+  margin: 16px 0 6px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #ffd9c7;
+  color: #e2440d;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.wt-canais-grupo {
+  margin-top: 10px;
+}
+.wt-canais-grupo p {
+  margin: 0 0 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.wt-canais-grupo p em {
+  margin-left: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 11.5px;
+  font-style: normal;
+  font-weight: 600;
+}
+.wt-canais-grupo ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wt-canais-grupo li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 12.5px;
+  color: #334155;
+}
+.wt-canais-img {
+  display: inline-block;
+  margin-top: 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #e2440d;
+  text-decoration: underline;
+}
+.wt-canais-nota {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: #94a3b8;
+}

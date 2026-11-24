@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { WATCH_TV } from "@/lib/domain/watch-tv";
+import { WatchCanaisInfo } from "./watch-canais";
 
 const reais = (cents: number) => {
   const r = Math.floor(cents / 100).toLocaleString("pt-BR");
@@ -30,6 +31,7 @@ export function PlanWatchFoot({ slug, priceCents, porGb }: { slug: string; price
           Adicionar <b>{WATCH_TV.nome}</b> <b className="gc-watch-price">+ {reais(WATCH_TV.precoCents)}/mês</b>
           <small>Canais ao vivo, filmes e séries em até {WATCH_TV.telas} TVs · IPTV legalizado</small>
         </span>
+        <WatchCanaisInfo />
       </label>
 
       <div className="gc-plan-foot">

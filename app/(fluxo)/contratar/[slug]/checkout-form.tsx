@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { formatBRL } from "@/lib/domain/money";
 import { WATCH_TV } from "@/lib/domain/watch-tv";
+import { WatchCanaisInfo } from "@/components/site/watch-canais";
 import { submitCheckout, type CheckoutFormState } from "../actions";
 import { LinhaPedido } from "../../linha-pedido";
 
@@ -228,7 +229,9 @@ function Resumo({ plan, plans, onTrocar, tv }: { plan: CheckoutPlan; plans: Chec
           <img src="/watch-tv.png" alt="Watch TV" width={44} height={44} />
           <span>
             <span className="ck-summary-watch-top">
-              <b>+ {WATCH_TV.nome}</b>
+              <b>
+                + {WATCH_TV.nome} <WatchCanaisInfo tone="white" />
+              </b>
               <strong>+ {formatBRL(WATCH_TV.precoCents)}/mês</strong>
             </span>
             <small>
@@ -266,7 +269,10 @@ function WatchBump({ ativo, onChange }: { ativo: boolean; onChange: (v: boolean)
       </span>
       <img src="/watch-tv.png" alt="" width={64} height={64} className="ck-bump-logo" />
       <span className="ck-bump-body">
-        <strong>Sim! Quero a {WATCH_TV.nome} junto com a minha linha</strong>
+        <span className="ck-bump-title">
+          <strong>Sim! Quero a {WATCH_TV.nome} junto com a minha linha</strong>
+          <WatchCanaisInfo />
+        </span>
         <span>
           Canais ao vivo, filmes e séries para assistir em até <b>{WATCH_TV.telas} TVs ao mesmo tempo</b>.
         </span>

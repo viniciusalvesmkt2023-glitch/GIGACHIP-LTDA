@@ -2442,3 +2442,21 @@
   font-weight: 800;
   white-space: nowrap;
 }
+.gc-site .ck-bump-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gc-site .ck-summary-watch b {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.gc-site .ck-summary-watch .wt-info {
+  width: 22px;
+  height: 22px;
+}
+.gc-site .ck-summary-watch b {
+  white-space: nowrap;
+}
