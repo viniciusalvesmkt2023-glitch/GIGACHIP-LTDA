@@ -15,10 +15,12 @@ import {
   QrCode,
   ShieldCheck,
   Smartphone,
+  Tv,
   Unlock,
   Wifi,
 } from "lucide-react";
 import { formatBRL } from "@/lib/domain/money";
+import { WATCH_TV } from "@/lib/domain/watch-tv";
 import { submitCheckout, type CheckoutFormState } from "../actions";
 import { LinhaPedido } from "../../linha-pedido";
 
@@ -164,7 +166,7 @@ function Opcao({ ativo, onClick, icone, titulo, texto, extra }: {
   );
 }
 
-function Resumo({ plan, plans, onTrocar }: { plan: CheckoutPlan; plans: CheckoutPlan[]; onTrocar: (s: string) => void }) {
+function Resumo({ plan, plans, onTrocar, tv }: { plan: CheckoutPlan; plans: CheckoutPlan[]; onTrocar: (s: string) => void; tv: boolean }) {
   const [aberto, setAberto] = useState(false);
   return (
     <aside className="ck-summary">
@@ -221,7 +223,17 @@ function Resumo({ plan, plans, onTrocar }: { plan: CheckoutPlan; plans: Checkout
         <li>
           <Smartphone size={16} /> {plan.allowEsim && plan.allowPhysical ? "eSIM ou chip físico" : plan.allowEsim ? "eSIM" : "Chip físico"}
         </li>
+        {tv && (
+          <li>
+            <Tv size={16} /> {WATCH_TV.nome} em até {WATCH_TV.telas} TVs
+          </li>
+        )}
       </ul>
+      {tv && (
+        <p className="ck-summary-total">
+          Total por mês <b>{formatBRL(plan.priceCents + WATCH_TV.precoCents)}</b>
+        </p>
+      )}
 
       <div className="ck-summary-foot">
         <span>
@@ -235,12 +247,39 @@ function Resumo({ plan, plans, onTrocar }: { plan: CheckoutPlan; plans: Checkout
   );
 }
 
+/** Watch TV junto (D44): opcional, começa desmarcada (a não ser que o cliente tenha marcado no plano). */
+function WatchBump({ ativo, onChange }: { ativo: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className={`ck-bump ${ativo ? "is-on" : ""}`}>
+      <span className="ck-bump-flag">LEVE JUNTO</span>
+      <input type="checkbox" checked={ativo} onChange={(e) => onChange(e.target.checked)} />
+      <span className="ck-bump-box" aria-hidden="true">
+        <Check size={16} strokeWidth={4} />
+      </span>
+      <img src="/watch-tv.png" alt="" width={64} height={64} className="ck-bump-logo" />
+      <span className="ck-bump-body">
+        <strong>Sim! Quero a {WATCH_TV.nome} junto com a minha linha</strong>
+        <span>
+          Canais ao vivo, filmes e séries para assistir em até <b>{WATCH_TV.telas} TVs ao mesmo tempo</b>.
+        </span>
+        <span className="ck-bump-ok">
+          <span>✔ IPTV legalizado</span>
+          <span>✔ Smart TV, celular e PC</span>
+          <span>✔ Cancela quando quiser</span>
+        </span>
+        <span className="ck-bump-price">+ {formatBRL(WATCH_TV.precoCents)}/mês</span>
+        <small>Na mesma cobrança da linha. O acesso chega no seu e-mail depois do pagamento.</small>
+      </span>
+    </label>
+  );
+}
+
 /* ---------------- formulário ---------------- */
 
 const initial: CheckoutFormState = { errors: {}, values: {} };
 const topo = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-export function CheckoutForm({ plans, initialSlug }: { plans: CheckoutPlan[]; initialSlug: string }) {
+export function CheckoutForm({ plans, initialSlug, initialWatchTv = false }: { plans: CheckoutPlan[]; initialSlug: string; initialWatchTv?: boolean }) {
   const [state, action, pending] = useActionState(submitCheckout, initial);
   const [slug, setSlug] = useState(initialSlug);
   const [etapa, setEtapa] = useState(1);
@@ -250,9 +289,11 @@ export function CheckoutForm({ plans, initialSlug }: { plans: CheckoutPlan[]; in
   const [chip, setChip] = useState<Chip | null>(null);
   const [metodo, setMetodo] = useState<Metodo | null>(null);
   const [whats, setWhats] = useState(true);
+  const [tv, setTv] = useState(initialWatchTv);
   const [visto, setVisto] = useState<CheckoutFormState>(initial);
 
   const plan = plans.find((p) => p.slug === slug) ?? plans[0]!;
+  const totalCents = plan.priceCents + (tv ? WATCH_TV.precoCents : 0);
   const chips: Chip[] = [...(plan.allowEsim ? ["esim" as const] : []), ...(plan.allowPhysical ? ["physical" as const] : [])];
   const chipValido = chip && chips.includes(chip) ? chip : chips.length === 1 ? chips[0]! : null;
 
@@ -290,7 +331,15 @@ export function CheckoutForm({ plans, initialSlug }: { plans: CheckoutPlan[]; in
       <div className={`container-site ck-grid ${etapa === 1 ? "" : "is-single"}`}>
         <div className="ck-card">
           <Etapas atual={etapa} />
-          {etapa > 1 && <LinhaPedido texto={`Plano ${plan.gb} GB · ${formatBRL(plan.priceCents)}/mês · sem fidelidade`} />}
+          {etapa > 1 && (
+            <LinhaPedido
+              texto={
+                tv
+                  ? `Plano ${plan.gb} GB + Watch TV · ${formatBRL(totalCents)}/mês · sem fidelidade`
+                  : `Plano ${plan.gb} GB · ${formatBRL(plan.priceCents)}/mês · sem fidelidade`
+              }
+            />
+          )}
 
           {srv.form && (
             <p role="alert" className="ck-alert">
@@ -326,6 +375,7 @@ export function CheckoutForm({ plans, initialSlug }: { plans: CheckoutPlan[]; in
             <input type="hidden" name="simType" value={chipValido ?? ""} />
             <input type="hidden" name="billingType" value={metodo ?? ""} />
             {whats && <input type="hidden" name="whatsappOptIn" value="on" />}
+            {tv && <input type="hidden" name="watchTv" value="on" />}
 
             {etapa === 1 && (
               <div>
@@ -475,6 +525,8 @@ export function CheckoutForm({ plans, initialSlug }: { plans: CheckoutPlan[]; in
                 </div>
                 {srv.billingType && <p className="ck-error">{srv.billingType}</p>}
 
+                <WatchBump ativo={tv} onChange={setTv} />
+
                 <div className="ck-checks">
                   <label className="ck-check">
                     <input type="checkbox" checked={whats} onChange={(e) => setWhats(e.target.checked)} />
@@ -493,7 +545,7 @@ export function CheckoutForm({ plans, initialSlug }: { plans: CheckoutPlan[]; in
                       </>
                     ) : (
                       <>
-                        Ir para o pagamento <ArrowRight size={18} />
+                        Ir para o pagamento · {formatBRL(totalCents)} <ArrowRight size={18} />
                       </>
                     )}
                   </button>
@@ -507,7 +559,7 @@ export function CheckoutForm({ plans, initialSlug }: { plans: CheckoutPlan[]; in
           </p>
         </div>
 
-        {etapa === 1 && <Resumo plan={plan} plans={plans} onTrocar={setSlug} />}
+        {etapa === 1 && <Resumo plan={plan} plans={plans} onTrocar={setSlug} tv={tv} />}
       </div>
     </div>
   );

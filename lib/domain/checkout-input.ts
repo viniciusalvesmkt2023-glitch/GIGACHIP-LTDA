@@ -66,6 +66,8 @@ export function checkoutInputSchema(today: Date = new Date()) {
       simType: z.enum(["esim", "physical"], { message: "Escolha eSIM ou chip físico." }),
       billingType: z.enum(["pix", "credit_card"], { message: "Escolha PIX ou cartão." }),
       whatsappOptIn: checked,
+      /** Watch TV junto (D44): só se o cliente marcou. */
+      watchTv: checked,
     })
     .strict();
 }

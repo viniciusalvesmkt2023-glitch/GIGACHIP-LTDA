@@ -2286,3 +2286,120 @@
     width: 100%;
   }
 }
+
+/* Watch TV junto (D44): caixinha opcional no passo de pagamento, sempre desmarcada de início */
+.gc-site .ck-bump {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 64px 1fr;
+  gap: 14px;
+  align-items: center;
+  margin-top: 22px;
+  padding: 20px 18px 16px;
+  border: 2px dashed #ff5a1f;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff7f2, #fff);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.gc-site .ck-bump.is-on {
+  border-style: solid;
+  background: #fff3ec;
+  box-shadow: 0 10px 24px -16px #ff5a1f;
+}
+.gc-site .ck-bump input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.gc-site .ck-bump-flag {
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: #ff5a1f;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.gc-site .ck-bump-box {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2.5px solid #ff5a1f;
+  border-radius: 8px;
+  background: #fff;
+  color: #fff;
+}
+.gc-site .ck-bump-box svg {
+  opacity: 0;
+}
+.gc-site .ck-bump.is-on .ck-bump-box {
+  background: #ff5a1f;
+}
+.gc-site .ck-bump.is-on .ck-bump-box svg {
+  opacity: 1;
+}
+.gc-site .ck-bump input:focus-visible + .ck-bump-box {
+  outline: 3px solid rgba(255, 90, 31, 0.35);
+  outline-offset: 2px;
+}
+.gc-site .ck-bump-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+}
+.gc-site .ck-bump-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #475569;
+}
+.gc-site .ck-bump-body strong {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.gc-site .ck-bump-ok {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  font-size: 12.5px;
+  color: #334155;
+}
+.gc-site .ck-bump-price {
+  font-size: 19px;
+  font-weight: 800;
+  color: #e2440d;
+}
+.gc-site .ck-bump-body small {
+  font-size: 12px;
+  color: #9a3412;
+}
+.gc-site .ck-summary-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 14px;
+  font-size: 14px;
+}
+.gc-site .ck-summary-total b {
+  font-size: 22px;
+  font-weight: 800;
+}
+@media (max-width: 640px) {
+  .gc-site .ck-bump {
+    grid-template-columns: auto 1fr;
+    padding: 20px 14px 14px;
+  }
+  .gc-site .ck-bump-logo {
+    display: none;
+  }
+}

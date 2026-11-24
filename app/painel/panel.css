@@ -2165,3 +2165,35 @@ a.in-kpi:hover {
   min-width: 0;
   text-overflow: ellipsis;
 }
+
+/* Watch TV para liberar (D44) */
+.pd-watch {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1.5px solid #ffb48f;
+  border-radius: 14px;
+  background: #fff5ef;
+  color: #7c2d12;
+  font-size: 14px;
+}
+.pd-watch p {
+  margin: 4px 0 8px;
+  font-size: 13px;
+  color: #9a3412;
+}
+.pd-watch ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pd-watch a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #ffd2bb;
+  font-weight: 600;
+  color: #c2410c;
+}

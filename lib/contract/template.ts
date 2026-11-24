@@ -30,6 +30,8 @@ export type ContractData = {
   simType: "esim" | "physical";
   billingType: "pix" | "credit_card";
   dueDay: number;
+  /** Watch TV contratada junto (D44): preço mensal. Ausente = não levou. */
+  watchTvCents?: number | null;
 };
 
 export type Block =
@@ -94,6 +96,14 @@ export function buildContract(data: ContractData, s: ContractSettings): Block[] 
       type: "para",
       text: `2.1. Mensalidade de **${formatBRL(data.plan.monthlyPriceCents)}**, cobrada pela CONTRATADA por meio da plataforma Asaas, por **${pay}**. A primeira mensalidade é paga na contratação e cobre os primeiros 30 dias; as seguintes vencem todo dia **${data.dueDay}** (mesmo dia da contratação). Nos meses que não tiverem esse dia, o vencimento será no último dia do mês.`,
     },
+    ...(data.watchTvCents
+      ? [
+          {
+            type: "para" as const,
+            text: `2.1.1. O CLIENTE contratou junto o serviço opcional **Watch TV** (canais ao vivo, filmes e séries por IPTV legalizado, em até 4 telas ao mesmo tempo), por **${formatBRL(data.watchTvCents)}** por mês, cobrado na mesma mensalidade (total de **${formatBRL(data.plan.monthlyPriceCents + data.watchTvCents)}**). O acesso é enviado ao e-mail do CLIENTE após a confirmação do pagamento. A Watch TV pode ser cancelada separadamente a qualquer momento, sem multa, mantendo a linha; a partir daí, a mensalidade volta a ser só a da linha.`,
+          },
+        ]
+      : []),
     { type: "para", text: "2.2. A CONTRATADA enviará lembretes de pagamento 3 (três) dias antes e no dia do vencimento." },
     {
       type: "para",

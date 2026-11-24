@@ -5,6 +5,7 @@ import { ChevronRight, FileSignature, IdCard, Search, Smartphone } from "lucide-
 import { shortOrderNumber } from "@/lib/domain/money";
 import { listOrders, orderStatusCounts, STATUS_LABEL } from "@/lib/server/admin";
 import { requireStaff } from "@/lib/server/staff-auth";
+import { pendingWatchTv } from "@/lib/server/watch-tv";
 import { PanelShell, PanelLoading } from "../shell";
 import { StatusBadge } from "../status-badge";
 
@@ -38,7 +39,11 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/pedi
   const status = typeof sp.status === "string" && STATUS_LABEL[sp.status] ? sp.status : undefined;
   const q = typeof sp.q === "string" ? sp.q : undefined;
   const identidade = sp.identidade === "1";
-  const [orders, counts] = await Promise.all([listOrders(staff, { status, q, identityReview: identidade }), orderStatusCounts(staff)]);
+  const [orders, counts, tvs] = await Promise.all([
+    listOrders(staff, { status, q, identityReview: identidade }),
+    orderStatusCounts(staff),
+    pendingWatchTv().catch(() => []), // antes da migração 0016 a lista só fica vazia
+  ]);
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   const href = (s?: string) => {
     const u = new URLSearchParams();
@@ -54,6 +59,22 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/pedi
         <h1>Pedidos</h1>
         <p>{total} pedidos no total{identidade ? " · mostrando só identidades para analisar" : ""}</p>
       </div>
+
+      {tvs.length > 0 && (
+        <div className="pd-watch">
+          <strong>📺 Watch TV para liberar ({tvs.length})</strong>
+          <p>Gere o acesso no sistema da Watch com o e-mail do cliente e marque &quot;Já liberei&quot; no pedido.</p>
+          <ul>
+            {tvs.map((t) => (
+              <li key={t.id}>
+                <Link href={`/painel/pedidos/${t.id}`}>
+                  {shortOrderNumber(t.code)} · {t.full_name} <ChevronRight size={14} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <form className="pd-search">
         <Search size={18} aria-hidden="true" />
@@ -97,6 +118,9 @@ async function Content({ searchParams }: { searchParams: PageProps<"/painel/pedi
                 <strong>{o.customerName}</strong>
                 <small>
                   {o.planName} · {o.simType === "esim" ? "eSIM" : "Chip físico"}
+                  {o.watchTvStatus && o.watchTvStatus !== "cancelado" && (
+                    <> · 📺 Watch TV{o.watchTvStatus === "pendente" ? " (falta liberar)" : ""}</>
+                  )}
                 </small>
               </span>
               <span>

@@ -100,6 +100,14 @@ export const asaas = {
     return request<AsaasSubscription>("POST", "/subscriptions", input);
   },
 
+  /**
+   * Muda o valor da assinatura (ex.: cliente cancelou só a Watch TV). Com updatePendingPayments,
+   * o Asaas também corrige as cobranças já geradas e ainda pendentes.
+   */
+  updateSubscriptionValue(id: string, value: number, updatePendingPayments = true) {
+    return request<AsaasSubscription>("POST", `/subscriptions/${encodeURIComponent(id)}`, { value, updatePendingPayments });
+  },
+
   deleteSubscription(id: string) {
     return request<{ deleted: boolean; id: string }>("DELETE", `/subscriptions/${encodeURIComponent(id)}`);
   },

@@ -14,7 +14,9 @@ async function menuBadges(): Promise<Record<string, number>> {
     // Uma consulta só (cada consulta a mais é uma ida e volta ao banco)
     const [r] = await sql()<{ pedidos: number; inadimplencia: number }[]>`
       select
-        (select count(*)::int from public.orders where status = 'pronto_para_ativacao') as pedidos,
+        (select count(*)::int from public.orders
+          where status = 'pronto_para_ativacao'
+             or (watch_tv_status = 'pendente' and payment_status in ('confirmed', 'received'))) as pedidos,
         (select count(distinct p.provider_customer_id)::int from public.overdue_payments p
           where p.status = 'em_aberto' and p.value_cents >= coalesce((select (s.value #>> '{}')::int from public.app_settings s where s.key = 'inadimplencia_valor_minimo_cents'), 10000)
             and not exists (select 1 from public.line_blocks b where b.provider_customer_id = p.provider_customer_id and b.unblocked_at is null))

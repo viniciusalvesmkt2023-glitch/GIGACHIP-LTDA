@@ -48,6 +48,15 @@ createServer(async (req, res) => {
     payments.set(p.id, p);
     return send(res, 200, s);
   }
+  if (req.method === "POST" && (m = path.match(/^\/subscriptions\/([^/]+)$/))) {
+    const s = subscriptions.get(m[1]);
+    if (!s) return send(res, 404, { errors: [{ code: "not_found" }] });
+    if (body.value !== undefined) s.value = body.value;
+    if (body.updatePendingPayments) {
+      for (const p of payments.values()) if (p.subscription === s.id && p.status === "PENDING") p.value = s.value;
+    }
+    return send(res, 200, s);
+  }
   if (req.method === "DELETE" && (m = path.match(/^\/subscriptions\/([^/]+)$/))) {
     subscriptions.delete(m[1]);
     return send(res, 200, { deleted: true, id: m[1] });

@@ -20,6 +20,7 @@ import { describeSheet, importFromSheet, pushPendingToSheet, setColumnNames, set
 import { parseRules } from "@/lib/domain/planilha-regras";
 import { parseColumnNames, SHEET_FIELDS, spreadsheetIdFromUrl, WRITABLE_FIELDS } from "@/lib/domain/planilha";
 import { parseTemplates } from "@/lib/domain/planilha-modelos";
+import { cancelWatchTv, markWatchTvActive } from "@/lib/server/watch-tv";
 
 export type FormState = { message?: string; ok?: boolean; value?: string; email?: string };
 
@@ -146,6 +147,21 @@ export async function activateLineAction(_p: FormState, fd: FormData): Promise<F
   if (r.ok) after(() => processEmails(3).then(() => undefined).catch((e) => console.error(`[e-mails] ${e instanceof Error ? e.message : e}`)));
   after(() => pushPendingToSheet().catch((e) => console.error(`[planilha] ${e instanceof Error ? e.message : e}`)));
   return { ok: r.ok, message: r.message };
+}
+
+export async function markWatchTvAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner", "admin", "ativador"]);
+  const r = await markWatchTvActive(me, str(fd, "orderId"));
+  refresh();
+  return r;
+}
+
+export async function cancelWatchTvAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner", "admin"]);
+  if (str(fd, "confirmo") !== "sim") return { message: "Marque que confirmou com o cliente." };
+  const r = await cancelWatchTv(me, str(fd, "orderId"));
+  refresh();
+  return r;
 }
 
 export async function addNumbersAction(_p: FormState, fd: FormData): Promise<FormState> {

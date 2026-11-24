@@ -115,6 +115,8 @@ export type PaymentView = {
   paymentStatus: string;
   planName: string;
   amountCents: number;
+  /** Watch TV junto (D44), já somada em amountCents. */
+  watchTvCents: number | null;
   billingType: "pix" | "credit_card" | "boleto" | "undefined";
   providerPaymentId: string | null;
   invoiceUrl: string | null;
@@ -134,6 +136,8 @@ export async function getPaymentView(orderId: string): Promise<PaymentView | nul
       payment_status: string;
       plan_name: string;
       monthly_price_cents: number;
+      watch_tv_cents: number | null;
+      first_amount_cents: number | null;
       billing_type: PaymentView["billingType"] | null;
       provider_payment_id: string | null;
       invoice_url: string | null;
@@ -142,7 +146,7 @@ export async function getPaymentView(orderId: string): Promise<PaymentView | nul
     }[]
   >`
     select o.code, o.status, o.payment_status, o.plan_snapshot->>'name' as plan_name, o.sim_type::text as sim_type,
-           o.monthly_price_cents, p.billing_type, p.provider_payment_id, p.invoice_url, o.expires_at
+           o.monthly_price_cents, o.watch_tv_cents, p.amount_cents as first_amount_cents, p.billing_type, p.provider_payment_id, p.invoice_url, o.expires_at
     from public.orders o
     left join public.payments p on p.order_id = o.id and p.is_first_payment
     where o.id = ${orderId}
@@ -154,7 +158,9 @@ export async function getPaymentView(orderId: string): Promise<PaymentView | nul
     status: row.status,
     paymentStatus: row.payment_status,
     planName: row.plan_name,
-    amountCents: row.monthly_price_cents,
+    // Valor da 1ª cobrança (linha + Watch TV, se levou)
+    amountCents: row.first_amount_cents ?? row.monthly_price_cents + (row.watch_tv_cents ?? 0),
+    watchTvCents: row.watch_tv_cents,
     billingType: row.billing_type ?? "pix",
     providerPaymentId: row.provider_payment_id,
     invoiceUrl: row.invoice_url,

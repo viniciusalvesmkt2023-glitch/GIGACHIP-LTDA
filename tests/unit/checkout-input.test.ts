@@ -22,6 +22,12 @@ describe("formulário de contratação", () => {
     expect(r.value.email).toBe("maria@exemplo.com");
     expect(r.value.phone).toBe("+5588999991556");
     expect(r.value.whatsappOptIn).toBe(false);
+    expect(r.value.watchTv).toBe(false); // Watch TV (D44): desmarcada se o cliente não marcou
+  });
+
+  it("Watch TV entra só quando o cliente marca", () => {
+    const r = parseCheckoutForm({ ...valid, watchTv: "on" }, today);
+    expect(r.ok && r.value.watchTv).toBe(true);
   });
 
   it("aponta cada campo inválido com mensagem em português", () => {

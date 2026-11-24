@@ -10,7 +10,7 @@ export type CheckoutFormState = { errors: FieldErrors; values: Record<string, st
 
 const FIELDS = [
   "planSlug", "fullName", "cpf", "birthDate", "email", "phone",
-  "simType", "billingType", "whatsappOptIn",
+  "simType", "billingType", "whatsappOptIn", "watchTv",
 ] as const;
 
 const MESSAGES = {

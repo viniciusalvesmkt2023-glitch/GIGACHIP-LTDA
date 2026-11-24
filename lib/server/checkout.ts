@@ -10,6 +10,7 @@ import { issueAccessToken } from "./customer-access";
 import { env } from "./env";
 import { getActivePlanBySlug } from "./catalog";
 import { shortOrderNumber } from "@/lib/domain/money";
+import { WATCH_TV } from "@/lib/domain/watch-tv";
 
 /** Prazo para pagar a 1ª mensalidade antes de o pedido expirar. */
 const PAYMENT_WINDOW_HOURS = 48;
@@ -25,6 +26,10 @@ export async function createCheckout(
   const plan = await getActivePlanBySlug(input.planSlug);
   if (!plan) return { ok: false, code: "plano_indisponivel" };
   if (!plan.simTypesAllowed.includes(input.simType)) return { ok: false, code: "tipo_chip_indisponivel" };
+
+  // Watch TV junto (D44): uma cobrança só com linha + TV
+  const watchCents = input.watchTv ? WATCH_TV.precoCents : null;
+  const totalCents = plan.monthlyPriceCents + (watchCents ?? 0);
 
   const keys = env();
   const hash = cpfHash(input.cpf, keys.CPF_HASH_KEY);
@@ -79,14 +84,16 @@ export async function createCheckout(
       select id from public.orders
       where customer_id = ${customerId} and plan_id = ${plan.id} and sim_type = ${input.simType}
         and status = 'aguardando_pagamento' and expires_at > now()
+        and watch_tv_cents is not distinct from ${watchCents}
       order by created_at desc limit 1`;
     if (open) {
       return { kind: "existente" as const, orderId: open.id, accessToken: await issueAccessToken(tx, open.id, "checkout") };
     }
 
     const [order] = await tx<{ id: string; code: string }[]>`
-      insert into public.orders (customer_id, plan_id, plan_snapshot, monthly_price_cents, sim_type)
-      values (${customerId}, ${plan.id}, ${tx.json(plan)}, ${plan.monthlyPriceCents}, ${input.simType})
+      insert into public.orders (customer_id, plan_id, plan_snapshot, monthly_price_cents, sim_type, watch_tv_cents, watch_tv_status)
+      values (${customerId}, ${plan.id}, ${tx.json(plan)}, ${plan.monthlyPriceCents}, ${input.simType},
+              ${watchCents}, ${watchCents ? "pendente" : null})
       returning id, code`;
     const [sub] = await tx<{ provider_customer_id: string }[]>`
       select s.provider_customer_id from public.subscriptions s
@@ -124,10 +131,12 @@ export async function createCheckout(
     const subscription = await asaas.createSubscription({
       customer: asaasCustomerId,
       billingType: input.billingType === "pix" ? "PIX" : "CREDIT_CARD",
-      value: centsToReais(plan.monthlyPriceCents),
+      value: centsToReais(totalCents),
       nextDueDate: formatDate(today),
       cycle: "MONTHLY",
-      description: `Gigachip — ${plan.name} (${formatBRL(plan.monthlyPriceCents)}/mês) — pedido ${step1.orderCode}`,
+      description: watchCents
+        ? `Gigachip — ${plan.name} (${formatBRL(plan.monthlyPriceCents)}) + ${WATCH_TV.nome} (${formatBRL(watchCents)}) = ${formatBRL(totalCents)}/mês — pedido ${step1.orderCode}`
+        : `Gigachip — ${plan.name} (${formatBRL(plan.monthlyPriceCents)}/mês) — pedido ${step1.orderCode}`,
       externalReference: step1.orderId,
     });
     subscriptionId = subscription.id;
@@ -142,12 +151,12 @@ export async function createCheckout(
         insert into public.subscriptions
           (order_id, provider_customer_id, provider_subscription_id, billing_type, monthly_price_cents, due_day, next_due_date)
         values (${step1.orderId}, ${asaasCustomerId}, ${subscription.id}, ${input.billingType},
-                ${plan.monthlyPriceCents}, ${today.day}, ${formatDate(dueDateForCycle(today, 1))})
+                ${totalCents}, ${today.day}, ${formatDate(dueDateForCycle(today, 1))})
         returning id`;
       await tx`
         insert into public.payments
           (order_id, subscription_id, provider_payment_id, billing_type, amount_cents, due_date, status, invoice_url, is_first_payment)
-        values (${step1.orderId}, ${sub.id}, ${first.id}, ${input.billingType}, ${plan.monthlyPriceCents},
+        values (${step1.orderId}, ${sub.id}, ${first.id}, ${input.billingType}, ${totalCents},
                 ${first.dueDate}, ${mapAsaasPaymentStatus(first.status) ?? "pending"}, ${first.invoiceUrl}, true)`;
       await tx`
         update public.orders

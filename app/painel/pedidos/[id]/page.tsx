@@ -12,11 +12,12 @@ import { AutoRefresh } from "@/components/auto-refresh";
 import { identityMode } from "@/lib/server/identity-mode";
 import { sheetEnabled } from "@/lib/server/planilha";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { activateLineAction, changeEmailAction, decideIdentityAction, importSheetAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
-import { ActionButton, ActivateLineForm, ChangeEmailForm, IdentityDecisionForm, RevealButton } from "../../forms";
+import { activateLineAction, cancelWatchTvAction, changeEmailAction, markWatchTvAction, decideIdentityAction, importSheetAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
+import { ActionButton, ActivateLineForm, CancelWatchTvForm, ChangeEmailForm, IdentityDecisionForm, RevealButton } from "../../forms";
 import { SheetStatus } from "../../sheet-status";
 import { Card, PanelShell, PanelLoading } from "../../shell";
 import { StatusBadge } from "../../status-badge";
+import { WATCH_TV_STATUS, totalMensalCents } from "@/lib/domain/watch-tv";
 
 export const metadata: Metadata = { title: "Pedido" };
 
@@ -25,7 +26,7 @@ const SUB: Record<string, string> = {
   not_started: "Não iniciado", pending_documents: "Aguardando fotos", in_review: "Em análise", approved: "Aprovado", rejected: "Recusado", retry_required: "Novas fotos pedidas",
   not_created: "Não criado", queued: "Na fila", sent: "Enviado", signed: "Assinado", refused: "Recusado", error: "Erro", submitted: "Enviado", invalid: "Inválido",
 };
-const CAMPO: Record<string, string> = { status: "Pedido", payment_status: "Pagamento", identity_status: "Identidade", contract_status: "Contrato", device_status: "Aparelho/chip" };
+const CAMPO: Record<string, string> = { watch_tv_status: "Watch TV", status: "Pedido", payment_status: "Pagamento", identity_status: "Identidade", contract_status: "Contrato", device_status: "Aparelho/chip" };
 const KIND: Record<string, string> = { doc_front: "Documento (frente)", doc_back: "Documento (verso)", selfie: "Selfie" };
 const fmtTime = (d: Date) => d.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 const fmt = (d: Date | null) => (d ? d.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—");
@@ -62,6 +63,7 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
         {/* (a situação "escrevendo" da planilha já atualiza a página sozinha — ver SheetStatus) */}
         {["aguardando_pagamento", "em_andamento"].includes(o.status) ? <AutoRefresh seconds={15} /> : null}
         {o.problem_reason && <span className="pd-badge is-red">{o.problem_reason}</span>}
+        {o.watch_tv_status && <span className={`pd-badge is-${WATCH_TV_STATUS[o.watch_tv_status].tone}`}>📺 Watch TV · {WATCH_TV_STATUS[o.watch_tv_status].label}</span>}
         <span className="od-sub">
           {o.full_name} · {o.plan_name} · {o.sim_type === "esim" ? "eSIM" : "Chip físico"}
         </span>
@@ -137,6 +139,36 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
         </Card>
       )}
 
+      {o.watch_tv_status && (
+        <Card title={`📺 Watch TV — ${WATCH_TV_STATUS[o.watch_tv_status].label}`} className="mt-6">
+          {o.watch_tv_status === "pendente" ? (
+            ["confirmed", "received"].includes(o.payment_status) ? (
+              <div className="space-y-3 text-sm">
+                <p>
+                  O cliente levou a Watch TV ({formatBRL(o.watch_tv_cents ?? 0)}/mês). Gere o acesso no sistema da Watch com o e-mail
+                  abaixo e mande para ele. Depois, marque aqui.
+                </p>
+                <p className="rounded-lg bg-surface p-3">
+                  E-mail do cliente: <strong className="select-all font-mono">{o.email}</strong>
+                </p>
+                {canSee && <ActionButton action={markWatchTvAction} orderId={o.id} label="Já liberei a Watch TV" variant="primary" />}
+              </div>
+            ) : (
+              <p className="text-sm text-muted">O cliente levou a Watch TV. Libere depois que o pagamento for confirmado.</p>
+            )
+          ) : o.watch_tv_status === "ativo" ? (
+            <p className="text-sm">Liberada em {fmt(o.watch_tv_activated_at)} para <strong className="font-mono">{o.email}</strong>.</p>
+          ) : (
+            <p className="text-sm text-muted">Cancelada em {fmt(o.watch_tv_cancelled_at)}. A assinatura cobra só a linha.</p>
+          )}
+          {o.watch_tv_status !== "cancelado" && ["owner", "admin"].includes(staff.role) && (
+            <div className="mt-4">
+              <CancelWatchTvForm action={cancelWatchTvAction} orderId={o.id} novoValor={formatBRL(o.monthly_price_cents)} />
+            </div>
+          )}
+        </Card>
+      )}
+
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <Card title="Cliente">
           <dl className="space-y-1 text-sm">
@@ -151,7 +183,9 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
         <Card title="Plano e pagamento">
           <dl className="space-y-1 text-sm">
             <div><dt className="inline text-muted">Plano: </dt><dd className="inline">{o.plan_name} · {o.sim_type === "esim" ? "eSIM" : "Chip físico lacrado"}</dd></div>
-            <div><dt className="inline text-muted">Mensalidade: </dt><dd className="inline">{formatBRL(o.monthly_price_cents)}</dd></div>
+            <div><dt className="inline text-muted">Mensalidade: </dt><dd className="inline">{o.watch_tv_status && o.watch_tv_status !== "cancelado"
+              ? `${formatBRL(totalMensalCents(o.monthly_price_cents, o.watch_tv_cents, o.watch_tv_status))} (linha ${formatBRL(o.monthly_price_cents)} + Watch TV ${formatBRL(o.watch_tv_cents ?? 0)})`
+              : formatBRL(o.monthly_price_cents)}</dd></div>
             <div><dt className="inline text-muted">Pagamento: </dt><dd className="inline">{SUB[o.payment_status]} ({fmt(o.paid_at)})</dd></div>
             <div><dt className="inline text-muted">Criado: </dt><dd className="inline">{fmt(o.created_at)}</dd></div>
             <div><dt className="inline text-muted">Pronto em: </dt><dd className="inline">{fmt(o.ready_at)}</dd></div>

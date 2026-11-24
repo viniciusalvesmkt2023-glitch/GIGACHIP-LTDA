@@ -1,4 +1,5 @@
 import "server-only";
+import { totalMensalCents, type WatchTvStatus } from "@/lib/domain/watch-tv";
 import type { DeviceInput } from "@/lib/domain/device-input";
 import { createHash } from "node:crypto";
 import { sniffImage } from "@/lib/domain/image-check";
@@ -164,10 +165,11 @@ export async function getClientDashboard(orderId: string) {
     {
       customer_id: string; plan: { name?: string; dataTotalGb?: number; dataBaseGb?: number; dataBonusGb?: number } | null;
       monthly_price_cents: number; next_due_date: string | null; billing_type: string | null; sub_status: string | null;
+      watch_tv_cents: number | null; watch_tv_status: WatchTvStatus | null;
       msisdn: string | null; line_status: string | null; activated_at: Date | null;
     }[]
   >`
-    select o.customer_id, o.plan_snapshot as plan, o.monthly_price_cents,
+    select o.customer_id, o.plan_snapshot as plan, o.monthly_price_cents, o.watch_tv_cents, o.watch_tv_status,
            s.next_due_date::text as next_due_date, s.billing_type::text as billing_type, s.status::text as sub_status,
            l.msisdn, l.status::text as line_status, l.activated_at
     from public.orders o
@@ -190,7 +192,11 @@ export async function getClientDashboard(orderId: string) {
     gb: o.plan?.dataTotalGb ?? null,
     baseGb: o.plan?.dataBaseGb ?? null,
     bonusGb: o.plan?.dataBonusGb ?? null,
-    monthlyCents: o.monthly_price_cents,
+    /** Só a linha. */
+    lineCents: o.monthly_price_cents,
+    /** Total do mês (linha + Watch TV, se não cancelou). */
+    monthlyCents: totalMensalCents(o.monthly_price_cents, o.watch_tv_cents, o.watch_tv_status),
+    watchTv: o.watch_tv_status ? { status: o.watch_tv_status, cents: o.watch_tv_cents ?? 0 } : null,
     nextDueDate: o.next_due_date,
     billingType: o.billing_type,
     subscriptionStatus: o.sub_status,

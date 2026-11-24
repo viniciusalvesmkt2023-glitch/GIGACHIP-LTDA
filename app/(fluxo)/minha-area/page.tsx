@@ -17,6 +17,7 @@ import {
   LogOut,
   MessageCircle,
   Smartphone,
+  Tv,
   type LucideIcon,
 } from "lucide-react";
 import { whatsappLink } from "@/components/whatsapp";
@@ -191,6 +192,20 @@ async function Area() {
             <dt>Chip</dt>
             <dd>{v.simType === "esim" ? "eSIM" : "Chip físico"}</dd>
           </div>
+          {d?.watchTv && (
+            <div>
+              <dt>Watch TV</dt>
+              <dd>
+                {d.watchTv.status === "ativo"
+                  ? "Liberada · o acesso foi para o seu e-mail"
+                  : d.watchTv.status === "cancelado"
+                    ? "Cancelada"
+                    : paid
+                      ? "Liberando · o acesso chega no seu e-mail"
+                      : "Liberada depois do pagamento"}
+              </dd>
+            </div>
+          )}
         </dl>
         <ul className="cl-plano-inclui">
           <li>
@@ -202,6 +217,11 @@ async function Area() {
           <li>
             <Unlock size={15} /> Sem fidelidade
           </li>
+          {d?.watchTv && d.watchTv.status !== "cancelado" && (
+            <li>
+              <Tv size={15} /> Watch TV em até 4 TVs (+ {formatBRL(d.watchTv.cents)})
+            </li>
+          )}
         </ul>
       </section>
 

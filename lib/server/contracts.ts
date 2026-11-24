@@ -58,12 +58,13 @@ type ContractRow = {
   phone_e164: string;
   due_day: number | null;
   billing_type: string | null;
+  watch_tv_cents: number | null;
 };
 
 async function loadContract(contractId: string): Promise<ContractRow | null> {
   const [row] = await sql()<ContractRow[]>`
     select ct.id, ct.order_id, ct.step, ct.attempts, ct.provider_document_uuid, ct.docs_to_cancel,
-           o.code, o.sim_type::text as sim_type, o.plan_snapshot as plan,
+           o.code, o.sim_type::text as sim_type, o.plan_snapshot as plan, o.watch_tv_cents,
            c.full_name, c.cpf_encrypted, c.birth_date::text as birth_date, c.email::text as email, c.phone_e164,
            s.due_day, s.billing_type::text as billing_type
     from public.contracts ct
@@ -94,6 +95,7 @@ function contractData(r: ContractRow): ContractData {
     simType: r.sim_type,
     billingType: r.billing_type === "credit_card" ? "credit_card" : "pix",
     dueDay: r.due_day ?? new Date().getDate(),
+    watchTvCents: r.watch_tv_cents,
   };
 }
 

@@ -197,7 +197,7 @@ async function Payment({ params }: { params: PageProps<"/pedido/[id]/pagamento">
     <div className="ck-page">
       <div className="container-site ck-grid is-single">
         <div className="ck-card">
-          <LinhaPedido texto={`Pedido ${view.orderCode} · ${gb ? `Plano ${gb} GB` : view.planName} · Total hoje ${formatBRL(view.amountCents)}`} />
+          <LinhaPedido texto={`Pedido ${view.orderCode} · ${gb ? `Plano ${gb} GB` : view.planName}${view.watchTvCents ? " + Watch TV" : ""} · Total hoje ${formatBRL(view.amountCents)}`} />
 
           {expired && (
             <>

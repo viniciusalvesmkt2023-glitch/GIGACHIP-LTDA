@@ -599,3 +599,24 @@ mudanças na planilha demoravam ou não apareciam.
 - **Ativar linha:** além dos números disponíveis, aparecem primeiro as linhas que já estão na
   planilha com o nome do cliente (ex.: ativou na Vivo e preencheu à mão). Ao confirmar, o pedido é
   ligado a essa linha.
+
+## D44 — Watch TV junto com a linha (24/11/2026)
+
+A Gigachip é revendedora oficial da Watch TV (canais ao vivo, filmes e séries; IPTV legalizado; até
+4 TVs ao mesmo tempo). Preço: **R$ 50/mês**, o mesmo vendida sozinha — por isso o site **não** usa
+"de R$ 100 por R$ 50" (seria preço de referência falso, CDC art. 37).
+- **Onde aparece:** caixinha "Adicionar Watch TV" nos cartões de plano do site e "Leve junto" no
+  passo de Pagamento. **Sempre começa desmarcada** (marcada de fábrica seria venda casada). Marcando
+  no cartão, a mensalidade soma na hora e o formulário abre com a TV marcada (`?tv=1`); dá para
+  desmarcar no pagamento.
+- **Cobrança:** uma só. A assinatura do Asaas leva linha + TV (ex.: R$ 149,99 + R$ 50 = R$ 199,99).
+  `orders.monthly_price_cents` continua sendo só a linha (planilha e "Valor de venda");
+  `orders.watch_tv_cents` guarda o preço da TV.
+- **Liberação MANUAL:** o dono gera o acesso no sistema da Watch com o e-mail do cliente e marca
+  "Já liberei a Watch TV" no pedido. Pedidos pagos com TV para liberar aparecem no topo de Pedidos e
+  contam no número do menu.
+- **Cancelar só a TV** (dono/administrador, no pedido): a assinatura passa a cobrar só a linha,
+  inclusive as cobranças já geradas e ainda não pagas. Depois, cancelar o acesso no sistema da Watch.
+- **Contrato:** quem leva a TV recebe o item 2.1.1 (serviço opcional, valor, total, cancelamento
+  separado sem multa). ⚠️ Mostrar ao advogado.
+- Migração `20261124000016_watch_tv.sql` (rodar no Supabase **antes** de publicar).

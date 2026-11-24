@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- logo pequena e estática */
-import Link from "next/link";
-import { ArrowRight, Crown, PhoneCall, ShieldCheck, Smartphone, Wifi } from "lucide-react";
+import { Crown, PhoneCall, ShieldCheck, Smartphone, Wifi } from "lucide-react";
 import type { PublicPlan } from "@/lib/server/catalog";
+import { PlanWatchFoot } from "./plan-watch";
 
 /**
  * Cartões de plano (desenhados no Lovable, no layout dos cartões da Vivo). Os números vêm do
@@ -19,8 +19,6 @@ export function PlanCards({ plans }: { plans: PublicPlan[] }) {
 }
 
 function PlanCard({ plan: p, destaque }: { plan: PublicPlan; destaque: boolean }) {
-  const reais = Math.floor(p.monthlyPriceCents / 100).toLocaleString("pt-BR");
-  const centavos = String(p.monthlyPriceCents % 100).padStart(2, "0");
   const porGb = (p.monthlyPriceCents / 100 / p.dataTotalGb).toFixed(2).replace(".", ",");
   const esim = p.simTypesAllowed.includes("esim");
   const fisico = p.simTypesAllowed.some((t) => t !== "esim");
@@ -68,21 +66,7 @@ function PlanCard({ plan: p, destaque }: { plan: PublicPlan; destaque: boolean }
         </li>
       </ul>
 
-      <div className="gc-plan-foot">
-        <p className="gc-plan-label">Mensalidade</p>
-        <div className="gc-plan-price">
-          R$ {reais},{centavos}
-          <span>/mês</span>
-        </div>
-        <p className="gc-plan-pergb">
-          Sai a <b>R$ {porGb}</b> por GB
-        </p>
-        <Link href={`/contratar/${p.slug}`} className="gc-plan-cta">
-          <span className="gc-plan-cta-text">
-            Quero este plano <ArrowRight size={18} />
-          </span>
-        </Link>
-      </div>
+      <PlanWatchFoot slug={p.slug} priceCents={p.monthlyPriceCents} porGb={porGb} />
     </article>
   );
 }

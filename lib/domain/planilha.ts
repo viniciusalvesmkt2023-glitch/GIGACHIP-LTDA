@@ -385,6 +385,7 @@ export const EXPECTED_SCHEMA: { file: string; objects: string[] }[] = [
   { file: "20261121000013_redefinir_senha_equipe.sql", objects: ["staff_password_resets"] },
   { file: "20261121000014_editar_linha.sql", objects: ["lines.sheet_overwrite"] },
   { file: "20261122000015_chip_fisico_sem_imei.sql", objects: ["device_info.image_kind"] },
+  { file: "20261124000016_watch_tv.sql", objects: ["orders.watch_tv_cents", "orders.watch_tv_status"] },
 ];
 
 /**

@@ -147,6 +147,14 @@ Quem faz: **[Claude]** = eu, no código · **[Sócios]** = vocês (contas, pagam
 | Se o gestor mudar a planilha | Ajustar nomes das colunas, o que escrever e as regras | Painel → Configurações |
 | Se algo travar | Me chamar com print da tela (sem dados de clientes) e dos Logs da Vercel | — |
 
+## Watch TV junto com a linha (D44)
+
+- [ ] ⚠️ Supabase → SQL Editor → rodar **`supabase/migrations/20261124000016_watch_tv.sql`** ANTES de publicar.
+- [ ] Publicar a versão nova e conferir em Integrações que não há "Migração pendente".
+- [ ] Mostrar ao advogado o item **2.1.1** do contrato (só aparece para quem leva a Watch TV).
+- [ ] Rotina: Pedidos → "Watch TV para liberar" → gerar o acesso no sistema da Watch com o e-mail do
+  cliente → "Já liberei a Watch TV".
+
 ## Depois (2ª fase)
 
 - Área do Cliente com **faturas** (2ª via, histórico de pagamentos).

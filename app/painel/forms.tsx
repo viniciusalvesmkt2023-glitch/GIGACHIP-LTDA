@@ -307,3 +307,26 @@ export function LineEditForm({ action, line, legacy }: {
     </form>
   );
 }
+
+/** Cancelar só a Watch TV (pede confirmação: muda o valor da assinatura no Asaas). */
+export function CancelWatchTvForm({ action, orderId, novoValor }: { action: Action; orderId: string; novoValor: string }) {
+  const [s, a, pending] = useActionState(action, {});
+  if (s.ok) return <Msg s={s} />;
+  return (
+    <details className="rounded-xl border border-border p-3 text-sm">
+      <summary className="cursor-pointer font-medium text-danger">Cancelar só a Watch TV</summary>
+      <form action={a} className="mt-3 space-y-2">
+        <input type="hidden" name="orderId" value={orderId} />
+        <p className="text-xs text-muted">
+          A linha continua. A assinatura no Asaas passa a cobrar só a linha ({novoValor}/mês), inclusive as cobranças já geradas
+          e ainda não pagas. Depois, cancele o acesso no sistema da Watch.
+        </p>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="confirmo" value="sim" required /> Confirmei com o cliente
+        </label>
+        <button disabled={pending} className={`${buttonStyles.secondary} py-2`}>{pending ? "Cancelando..." : "Cancelar a Watch TV"}</button>
+        <Msg s={s} />
+      </form>
+    </details>
+  );
+}
