@@ -232,8 +232,7 @@ function Resumo({ plan, plans, onTrocar, tv }: { plan: CheckoutPlan; plans: Chec
               <strong>+ {formatBRL(WATCH_TV.precoCents)}/mês</strong>
             </span>
             <small>
-              Canais ao vivo, filmes e séries em até {WATCH_TV.telas} TVs ao mesmo tempo · IPTV legalizado. O acesso chega no seu e-mail
-              depois do pagamento.
+              Canais ao vivo, filmes e séries em até {WATCH_TV.telas} TVs ao mesmo tempo · IPTV legalizado.
             </small>
           </span>
         </div>
