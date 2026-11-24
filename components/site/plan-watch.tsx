@@ -40,7 +40,7 @@ export function PlanWatchFoot({ slug, priceCents, porGb }: { slug: string; price
         </div>
         {tv ? (
           <p className="gc-watch-conta">
-            Linha {reais(priceCents)} + <b>Watch TV {reais(WATCH_TV.precoCents)}</b>
+            Combo com <b>{WATCH_TV.nome}</b> incluída
           </p>
         ) : (
           <p className="gc-plan-pergb">

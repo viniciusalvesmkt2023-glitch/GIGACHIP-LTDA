@@ -2900,11 +2900,19 @@ html:has(.gc-site) {
   color: #9a3412;
   font-size: 11.5px;
 }
+/* marcada: no lugar do selo verde "Sai a R$ x por GB", o selo laranja do combo */
 .gc-site .gc-watch-conta {
+  display: inline-block;
+  align-self: flex-start;
   margin-top: 8px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: #fff1e8;
+  color: #9a3412;
   font-size: 12.5px;
-  color: #64748b;
+  font-weight: 500;
 }
 .gc-site .gc-watch-conta b {
+  font-weight: 800;
   color: #e2440d;
 }
