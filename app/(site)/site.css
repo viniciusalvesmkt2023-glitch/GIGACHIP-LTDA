@@ -2894,6 +2894,12 @@ html:has(.gc-site) {
 .gc-site .gc-watch-price {
   white-space: nowrap;
 }
+.gc-site .gc-watch .wt-info {
+  display: inline-flex;
+}
+.gc-site .gc-watch-text {
+  min-width: 0;
+}
 .gc-site .gc-watch small {
   display: block;
   margin-top: 2px;

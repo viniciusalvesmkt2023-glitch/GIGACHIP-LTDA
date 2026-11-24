@@ -30,8 +30,8 @@ export function PlanWatchFoot({ slug, priceCents, porGb }: { slug: string; price
         <span className="gc-watch-text">
           Adicionar <b>{WATCH_TV.nome}</b> <b className="gc-watch-price">+ {reais(WATCH_TV.precoCents)}/mês</b>
           <small>Canais ao vivo, filmes e séries em até {WATCH_TV.telas} TVs · IPTV legalizado</small>
+          <WatchCanaisInfo />
         </span>
-        <WatchCanaisInfo />
       </label>
 
       <div className="gc-plan-foot">

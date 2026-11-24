@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
-import { Info, X } from "lucide-react";
+import { ChevronRight, Tv, X } from "lucide-react";
 import { WATCH_TV, WATCH_TV_CANAIS, WATCH_TV_PACOTE } from "@/lib/domain/watch-tv";
 import "./watch-canais.css";
 
 const semInscricao = () => () => {};
 
 /**
- * Bolinha de informação (ⓘ) que abre a grade de canais da Watch TV (D44). Fica dentro das
+ * Botão "Ver os +100 canais" que abre a grade de canais da Watch TV (D44). Fica dentro das
  * caixinhas de marcar: o clique NÃO marca/desmarca a Watch, só abre a lista.
  */
 export function WatchCanaisInfo({ tone = "orange" }: { tone?: "orange" | "white" }) {
@@ -33,8 +33,10 @@ export function WatchCanaisInfo({ tone = "orange" }: { tone?: "orange" | "white"
 
   return (
     <>
-      <button type="button" className={`wt-info is-${tone}`} onClick={abrir} aria-label="Ver os canais da Watch TV" title="Ver os canais">
-        <Info size={16} strokeWidth={2.4} />
+      <button type="button" className={`wt-info is-${tone}`} onClick={abrir} aria-label={`Ver os ${WATCH_TV_PACOTE.canais} canais da Watch TV`}>
+        <Tv size={14} strokeWidth={2.4} aria-hidden="true" />
+        Ver os +100 canais
+        <ChevronRight size={14} strokeWidth={2.6} aria-hidden="true" />
       </button>
       {montado &&
         createPortal(

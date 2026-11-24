@@ -230,13 +230,14 @@ function Resumo({ plan, plans, onTrocar, tv }: { plan: CheckoutPlan; plans: Chec
           <span>
             <span className="ck-summary-watch-top">
               <b>
-                + {WATCH_TV.nome} <WatchCanaisInfo tone="white" />
+                + {WATCH_TV.nome}
               </b>
               <strong>+ {formatBRL(WATCH_TV.precoCents)}/mês</strong>
             </span>
             <small>
               Canais ao vivo, filmes e séries em até {WATCH_TV.telas} TVs ao mesmo tempo · IPTV legalizado.
             </small>
+            <WatchCanaisInfo tone="white" />
           </span>
         </div>
       )}
@@ -271,7 +272,6 @@ function WatchBump({ ativo, onChange }: { ativo: boolean; onChange: (v: boolean)
       <span className="ck-bump-body">
         <span className="ck-bump-title">
           <strong>Sim! Quero a {WATCH_TV.nome} junto com a minha linha</strong>
-          <WatchCanaisInfo />
         </span>
         <span>
           Canais ao vivo, filmes e séries para assistir em até <b>{WATCH_TV.telas} TVs ao mesmo tempo</b>.
@@ -281,6 +281,7 @@ function WatchBump({ ativo, onChange }: { ativo: boolean; onChange: (v: boolean)
           <span>✔ Smart TV, celular e PC</span>
           <span>✔ Cancela quando quiser</span>
         </span>
+        <WatchCanaisInfo />
         <span className="ck-bump-price">+ {formatBRL(WATCH_TV.precoCents)}/mês</span>
         <small>Na mesma cobrança da linha. O acesso chega no seu e-mail depois do pagamento.</small>
       </span>
