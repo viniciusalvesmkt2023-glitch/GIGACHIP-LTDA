@@ -2403,3 +2403,42 @@
     display: none;
   }
 }
+/* resumo azul: Watch TV que o cliente está levando junto (D44) */
+.gc-site .ck-summary-watch {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  align-items: start;
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.14);
+  border: 1px solid rgb(255 255 255 / 0.22);
+}
+.gc-site .ck-summary-watch img {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+.gc-site .ck-summary-watch-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.gc-site .ck-summary-watch b {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+.gc-site .ck-summary-watch small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.88;
+}
+.gc-site .ck-summary-watch strong {
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+}

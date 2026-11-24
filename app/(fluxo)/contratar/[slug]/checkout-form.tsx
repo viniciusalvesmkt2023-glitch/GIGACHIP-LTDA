@@ -15,7 +15,6 @@ import {
   QrCode,
   ShieldCheck,
   Smartphone,
-  Tv,
   Unlock,
   Wifi,
 } from "lucide-react";
@@ -223,12 +222,22 @@ function Resumo({ plan, plans, onTrocar, tv }: { plan: CheckoutPlan; plans: Chec
         <li>
           <Smartphone size={16} /> {plan.allowEsim && plan.allowPhysical ? "eSIM ou chip físico" : plan.allowEsim ? "eSIM" : "Chip físico"}
         </li>
-        {tv && (
-          <li>
-            <Tv size={16} /> {WATCH_TV.nome} em até {WATCH_TV.telas} TVs
-          </li>
-        )}
       </ul>
+      {tv && (
+        <div className="ck-summary-watch">
+          <img src="/watch-tv.png" alt="Watch TV" width={44} height={44} />
+          <span>
+            <span className="ck-summary-watch-top">
+              <b>+ {WATCH_TV.nome}</b>
+              <strong>+ {formatBRL(WATCH_TV.precoCents)}/mês</strong>
+            </span>
+            <small>
+              Canais ao vivo, filmes e séries em até {WATCH_TV.telas} TVs ao mesmo tempo · IPTV legalizado. O acesso chega no seu e-mail
+              depois do pagamento.
+            </small>
+          </span>
+        </div>
+      )}
       {tv && (
         <p className="ck-summary-total">
           Total por mês <b>{formatBRL(plan.priceCents + WATCH_TV.precoCents)}</b>
