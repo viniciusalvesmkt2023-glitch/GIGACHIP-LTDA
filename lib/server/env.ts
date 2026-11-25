@@ -5,6 +5,10 @@ import { z } from "zod";
  * Variáveis de ambiente do servidor, validadas na primeira leitura.
  * Nunca importe este arquivo em componentes de cliente.
  */
+/** Variável opcional: vazia ou só com espaços conta como "não configurada" (nunca derruba o site). */
+const optional = <T extends z.ZodTypeAny>(inner: T) =>
+  z.preprocess((v) => (typeof v === "string" ? v.trim() || undefined : v), inner.optional());
+
 const schema = z.object({
   DATABASE_URL: z.string().min(1),
   FIELD_ENCRYPTION_KEY: z.string().min(1),
@@ -29,6 +33,13 @@ const schema = z.object({
   /** Senha que vai na URL do aviso da D4Sign (o sistema só aceita avisos com ela). 32+ caracteres. */
   D4SIGN_WEBHOOK_SECRET: z.string().min(32).regex(/^[A-Za-z0-9_-]+$/).optional(),
   D4SIGN_RATE_LIMIT_PER_HOUR: z.coerce.number().int().positive().default(10),
+  // Clicksign (D45): contratos NOVOS vão por ela quando o token existe; os antigos terminam na D4Sign
+  /** Produção: https://app.clicksign.com/api/v3 · Teste (sandbox): https://sandbox.clicksign.com/api/v3 */
+  CLICKSIGN_API_URL: z.string().url().default("https://app.clicksign.com/api/v3"),
+  /** Clicksign → Configurações → API → access token. */
+  CLICKSIGN_ACCESS_TOKEN: optional(z.string().min(10)),
+  /** "HMAC SHA256 Secret" que a Clicksign mostra ao cadastrar o webhook (confere os avisos). */
+  CLICKSIGN_WEBHOOK_SECRET: optional(z.string().min(8)),
   // Google Planilhas (opcional): conteúdo do arquivo JSON da conta de serviço ("usuário robô")
   GOOGLE_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
   GOOGLE_OAUTH_TOKEN_URL: z.string().url().default("https://oauth2.googleapis.com/token"),

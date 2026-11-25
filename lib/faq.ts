@@ -38,7 +38,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Por que preciso enviar documento e selfie?",
-    a: "Para confirmar que é você mesmo quem está contratando e evitar fraudes. A D4Sign, nossa plataforma de assinatura digital, pede a foto do documento e uma selfie na hora de assinar o contrato. Nunca pedimos documentos por e-mail ou WhatsApp.",
+    a: "Para confirmar que é você mesmo quem está contratando e evitar fraudes. A Clicksign, nossa plataforma de assinatura digital, pede a foto do documento e do seu rosto (selfie) na hora de assinar o contrato. Nunca pedimos documentos por e-mail ou WhatsApp.",
   },
   {
     q: "Posso usar o número da linha no WhatsApp ou no banco?",

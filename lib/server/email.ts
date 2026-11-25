@@ -1,4 +1,5 @@
 import "server-only";
+import { newContractProvider, PLATAFORMA } from "./signature-platform";
 import { formatMsisdn } from "@/lib/domain/lines";
 import { issueAccessToken } from "./customer-access";
 import { sql, type Tx } from "./db";
@@ -56,13 +57,13 @@ export function renderActivationEmail(p: { firstName: string; code: string; plan
 <p style="line-height:1.6">Para ativarmos sua linha, abra o <strong>formulário de ativação</strong> e siga os passos:</p>
 <ol style="line-height:1.8;padding-left:20px">
 <li>${step1Html}</li>
-<li>Assine o <strong>contrato</strong> que chega no seu e-mail pela <strong>D4Sign</strong> (ela pede uma foto do documento e uma selfie);</li>
+<li>Assine o <strong>contrato</strong> que chega no seu e-mail pela <strong>${PLATAFORMA[newContractProvider()]}</strong> (ela pede uma foto do documento e uma selfie);</li>
 <li>Toque em <strong>falar no WhatsApp</strong> para pedir a ativação.</li>
 </ol>
 ${button(p.link, "Abrir formulário de ativação")}
 <p style="font-size:13px;color:#64748b;line-height:1.6">O link é pessoal — não compartilhe. Se o botão não funcionar, copie e cole no navegador:<br>${p.link}</p>`,
   );
-  const text = `Pagamento confirmado, ${p.firstName}!\n\nPedido ${p.code} (${p.planName}).\nPreencha o formulário de ativação: ${p.link}\n\n1) ${step1Text}\n2) Assine o contrato que chega pela D4Sign (com foto do documento e selfie)\n3) Fale com a gente no WhatsApp pelo formulário para ativar\n\nGigachip Ltda.`;
+  const text = `Pagamento confirmado, ${p.firstName}!\n\nPedido ${p.code} (${p.planName}).\nPreencha o formulário de ativação: ${p.link}\n\n1) ${step1Text}\n2) Assine o contrato que chega pela ${PLATAFORMA[newContractProvider()]} (com foto do documento e selfie)\n3) Fale com a gente no WhatsApp pelo formulário para ativar\n\nGigachip Ltda.`;
   return { subject, html, text };
 }
 

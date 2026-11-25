@@ -36,7 +36,10 @@ describe("contrato", () => {
   });
 
   it("é feito para assinatura eletrônica (sem linha de assinatura nem 'local e data')", () => {
-    expect(text).toContain("assinado **eletronicamente** pelo CLIENTE na plataforma D4Sign");
+    expect(text).toContain("assinado **eletronicamente** pelo CLIENTE na plataforma Clicksign");
+    // contratos antigos (D4Sign) citam a D4Sign
+    const antigo = buildContract(data, { ...settings, platform: "D4Sign" }).map((b) => b.text).join("\n");
+    expect(antigo).toContain("na plataforma D4Sign");
     expect(text).not.toMatch(/_{5,}/);
     expect(text).not.toMatch(/local e data/i);
   });

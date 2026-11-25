@@ -2,13 +2,14 @@
  * Modelo do contrato (docs/contrato/modelo-contrato-v2.md) em forma de dados.
  * Cada contrato gerado grava a versão usada (contracts.template_version).
  *
- * Feito para ASSINATURA ELETRÔNICA (D4Sign): não tem linhas para assinar nem "local e data" —
- * a D4Sign anexa ao final o relatório de assinaturas (nome, CPF, e-mail, data, hora, IP).
+ * Feito para ASSINATURA ELETRÔNICA (Clicksign; antes D4Sign): não tem linhas para assinar nem
+ * "local e data" — a plataforma anexa ao final o relatório de assinaturas (nome, CPF, e-mail, data, hora, IP).
  * Texto em **negrito** usa a marcação **assim**.
  */
 import { formatBRL } from "@/lib/domain/money";
 
-export const CONTRACT_TEMPLATE_VERSION = "v5-2026-11"; // v5: aprovado pelo advogado; sem a cláusula de dados pessoais
+// v5: aprovado pelo advogado; sem a cláusula de dados pessoais · v6: item 2.1.1 (Watch TV) e plataforma Clicksign
+export const CONTRACT_TEMPLATE_VERSION = "v6-2026-11";
 
 export type ContractSettings = {
   version: string;
@@ -21,6 +22,8 @@ export type ContractSettings = {
   unblockTime: string;
   /** Dias com a linha bloqueada até o cancelamento definitivo (D10). */
   blockedDaysBeforeCancel: number;
+  /** Plataforma de assinatura citada na cláusula 8.1 (padrão: Clicksign — D45). */
+  platform?: string;
 };
 
 export type ContractData = {
@@ -165,7 +168,7 @@ export function buildContract(data: ContractData, s: ContractSettings): Block[] 
     { type: "heading", text: "8. Assinatura eletrônica e disposições finais" },
     {
       type: "para",
-      text: "8.1. Este contrato é assinado **eletronicamente** pelo CLIENTE na plataforma D4Sign, nos termos da MP 2.200-2/2001 (art. 10, §2º) e da Lei 14.063/2020. Os dados de identificação de quem assinou, a data, a hora e o endereço IP constam do **relatório de assinaturas** que a plataforma anexa ao final deste documento, dispensando assinatura à mão.",
+      text: `8.1. Este contrato é assinado **eletronicamente** pelo CLIENTE na plataforma ${s.platform ?? "Clicksign"}, nos termos da MP 2.200-2/2001 (art. 10, §2º) e da Lei 14.063/2020. Os dados de identificação de quem assinou, a data, a hora e o endereço IP constam do **relatório de assinaturas** que a plataforma anexa ao final deste documento, dispensando assinatura à mão.`,
     },
     { type: "para", text: "8.2. Fica eleito o foro do domicílio do CLIENTE." },
   ];

@@ -155,6 +155,17 @@ Quem faz: **[Claude]** = eu, no código · **[Sócios]** = vocês (contas, pagam
 - [ ] Rotina: Pedidos → "Watch TV para liberar" → gerar o acesso no sistema da Watch com o e-mail do
   cliente → "Já liberei a Watch TV".
 
+## Clicksign no lugar da D4Sign (D45)
+
+- [ ] ⚠️ Supabase → SQL Editor → rodar **`supabase/migrations/20261125000017_contratos_clicksign.sql`** ANTES de publicar.
+- [ ] Clicksign → Configurações → API → gerar o **access token de Produção** → Vercel: `CLICKSIGN_ACCESS_TOKEN` (não mandar no chat).
+- [ ] Clicksign → Configurações → API → **Adicionar Webhook**: `https://www.gigachip.com.br/api/webhooks/clicksign`,
+  eventos `sign`, `auto_close`, `document_closed`, `cancel`, `refusal` → copiar o "HMAC SHA256 Secret" → Vercel: `CLICKSIGN_WEBHOOK_SECRET`.
+- [ ] Vercel → Redeploy. Painel → Integrações → **Testar Clicksign** ("a chave está certa") e modo **Produção**.
+- [ ] Painel → Configurações → escolher a identificação (biometria facial é o padrão).
+- [ ] Mostrar ao advogado: cláusula 8.1 (Clicksign) e item 2.1.1 (Watch TV).
+- [ ] Manter as chaves da D4Sign na Vercel até os contratos antigos serem assinados.
+
 ## Depois (2ª fase)
 
 - Área do Cliente com **faturas** (2ª via, histórico de pagamentos).

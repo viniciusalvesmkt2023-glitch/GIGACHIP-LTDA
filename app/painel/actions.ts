@@ -3,12 +3,14 @@
 import { refresh } from "next/cache";
 import { after } from "next/server";
 import { headers } from "next/headers";
-import { processQueuedContracts, retryContract, syncContractByDocument } from "@/lib/server/contracts";
+import { processQueuedContracts, retryContract, setClicksignAuth, syncContractByDocument } from "@/lib/server/contracts";
+import { parseClicksignAuth } from "@/lib/integrations/clicksign/mapping";
 import { changeCustomerEmail } from "@/lib/server/customer-admin";
 import { sql } from "@/lib/server/db";
 import { parseMoneyToCents, parseNumbersPaste } from "@/lib/domain/lines";
 import { activateOrder, addAvailableNumbers, setLineCostCents, updateLine } from "@/lib/server/lines";
 import { d4sign } from "@/lib/integrations/d4sign/client";
+import { clicksign } from "@/lib/integrations/clicksign/client";
 import { redirect } from "next/navigation";
 import { revealSensitive, type SensitiveField } from "@/lib/server/admin";
 import { decideIdentity } from "@/lib/server/identity";
@@ -99,15 +101,27 @@ export async function retryContractAction(_p: FormState, fd: FormData): Promise<
 
 export async function syncContractAction(_p: FormState, fd: FormData): Promise<FormState> {
   const me = await requireStaff(["owner", "admin", "ativador"]);
-  const [c] = await sql()<{ uuid: string | null }[]>`
-    select provider_document_uuid as uuid from public.contracts where order_id = ${str(fd, "orderId")}`;
+  const [c] = await sql()<{ uuid: string | null; provider: string }[]>`
+    select provider_document_uuid as uuid, provider from public.contracts where order_id = ${str(fd, "orderId")}`;
   if (!c?.uuid) return { message: "O contrato ainda não foi enviado." };
+  const nome = c.provider === "clicksign" ? "Clicksign" : "D4Sign";
+  const SITUACAO: Record<string, string> = { signed: "assinado", sent: "aguardando a assinatura do cliente", refused: "cancelado/recusado" };
   try {
     const r = await syncContractByDocument(c.uuid, "staff", me.id);
     refresh();
-    return { ok: true, message: `Status na D4Sign: ${r.ok ? r.status : r.reason}.` };
+    return { ok: true, message: `Situação na ${nome}: ${r.ok ? (SITUACAO[r.status] ?? r.status) : r.reason}.` };
   } catch (e) {
-    return { message: `Não foi possível consultar a D4Sign: ${e instanceof Error ? e.message : String(e)}` };
+    return { message: `Não foi possível consultar a ${nome}: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+export async function testClicksignAction(): Promise<FormState> {
+  await requireStaff(["owner"]);
+  try {
+    await clicksign.ping();
+    return { ok: true, message: "A Clicksign respondeu: a chave está certa." };
+  } catch (e) {
+    return { message: `A Clicksign não aceitou: ${e instanceof Error ? e.message : String(e)}` };
   }
 }
 
@@ -183,6 +197,15 @@ export async function setCostAction(_p: FormState, fd: FormData): Promise<FormSt
   await setLineCostCents(me, cents);
   refresh();
   return { ok: true, message: "Valor do gestor atualizado. Vale para as próximas ativações." };
+}
+
+export async function setClicksignAuthAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner"]);
+  const v = str(fd, "auth");
+  if (v !== "facial_biometrics" && v !== "selfie_documento") return { message: "Escolha uma das opções." };
+  await setClicksignAuth(me.id, parseClicksignAuth(v));
+  refresh();
+  return { ok: true, message: "Salvo. Vale para os próximos contratos enviados." };
 }
 
 export async function setMinOverdueAction(_p: FormState, fd: FormData): Promise<FormState> {

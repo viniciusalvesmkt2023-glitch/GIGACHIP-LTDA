@@ -219,7 +219,20 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
       </div>
 
       <Card title={`Identidade — ${SUB[o.identity_status] ?? o.identity_status}`} className="mt-4">
-        {identity?.provider === "d4sign" ? (
+        {identity?.provider === "clicksign" ? (
+          <p className="text-sm">
+            ✅ Validada automaticamente na assinatura do contrato: a Clicksign fez a <strong>biometria facial</strong> (foto do
+            documento + rosto comparados). As imagens e o resultado ficam no relatório do documento, na Clicksign.
+          </p>
+        ) : identity?.provider === "clicksign_selfie" ? (
+          <div className="space-y-3 text-sm">
+            <p>
+              ⚠️ O cliente assinou com <strong>selfie + foto do documento</strong> na Clicksign, sem comparação automática do rosto.
+              Abra o documento na Clicksign, confira se a selfie é da mesma pessoa do documento e, se estiver certo, aprove.
+            </p>
+            {o.identity_status === "in_review" && canSee && <IdentityDecisionForm action={decideIdentityAction} orderId={o.id} />}
+          </div>
+        ) : identity?.provider === "d4sign" ? (
           <p className="text-sm">
             ✅ Validada automaticamente na assinatura do contrato: a D4Sign exigiu <strong>foto do documento + selfie com
             reconhecimento facial</strong>. As imagens e o resultado ficam no relatório do documento, na D4Sign.
@@ -254,7 +267,7 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
         ) : (
           <p className="text-sm text-muted">
             {identityModeLabel === "d4sign"
-              ? "Será validada automaticamente quando o cliente assinar o contrato (documento + selfie na D4Sign)."
+              ? "Será validada na assinatura do contrato (documento + rosto na plataforma de assinatura)."
               : "O cliente ainda não enviou as fotos."}
           </p>
         )}
@@ -264,14 +277,14 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
         {contract ? (
           <div className="space-y-3 text-sm">
             <p>
-              Enviado: {fmt(contract.sent_at)} · Assinado: {fmt(contract.signed_at)}
+              Plataforma: <strong>{contract.provider === "clicksign" ? "Clicksign" : "D4Sign"}</strong> · Enviado: {fmt(contract.sent_at)} · Assinado: {fmt(contract.signed_at)}
               {contract.status === "queued" && <> · Etapa: {contract.step} · tentativas: {contract.attempts}</>}
             </p>
             {contract.d4sign && (
               <p className="rounded-lg bg-surface p-2 text-xs text-muted">
                 Chamadas livres na D4Sign agora: {contract.d4sign.free} de {contract.d4sign.limit} por hora · este envio precisa de {contract.d4sign.needed}.
                 {contract.d4sign.freesAt
-                  ? <> Aguardando o limite: libera por volta de {fmtTime(contract.d4sign.freesAt)} e a rotina (a cada 10 min) envia sozinha.</>
+                  ? <> Aguardando o limite: libera por volta de {fmtTime(contract.d4sign.freesAt)} e a rotina envia sozinha.</>
                   : <> Próxima tentativa automática: {contract.next_attempt_at && contract.next_attempt_at > new Date() ? fmtTime(contract.next_attempt_at) : "na próxima rodada da rotina"}.</>}
               </p>
             )}
@@ -285,7 +298,7 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
               {canSee && ["queued", "error", "refused", "cancelled"].includes(contract.status) && (
                 <ActionButton action={retryContractAction} orderId={o.id} label={contract.status === "queued" ? "Enviar agora" : "Enviar de novo"} />
               )}
-              {canSee && contract.status === "sent" && <ActionButton action={syncContractAction} orderId={o.id} label="Conferir assinatura na D4Sign" />}
+              {canSee && contract.status === "sent" && <ActionButton action={syncContractAction} orderId={o.id} label={`Conferir assinatura na ${contract.provider === "clicksign" ? "Clicksign" : "D4Sign"}`} />}
             </div>
           </div>
         ) : (

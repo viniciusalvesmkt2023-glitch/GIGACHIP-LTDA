@@ -3,8 +3,10 @@ import { Suspense } from "react";
 import { configPageSettings } from "@/lib/server/planilha";
 import { effectiveTemplates } from "@/lib/domain/planilha-modelos";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { setColumnNamesAction, setCostAction, setMinOverdueAction, setSheetConfigAction, setSheetRulesAction, setTemplatesAction } from "../actions";
-import { CostForm, MinOverdueForm, SheetConfigForm } from "../forms";
+import { getClicksignAuth } from "@/lib/server/contracts";
+import { CLICKSIGN_AUTH_LABEL } from "@/lib/integrations/clicksign/mapping";
+import { setClicksignAuthAction, setColumnNamesAction, setCostAction, setMinOverdueAction, setSheetConfigAction, setSheetRulesAction, setTemplatesAction } from "../actions";
+import { ClicksignAuthForm, CostForm, MinOverdueForm, SheetConfigForm } from "../forms";
 import { Card, PanelShell, PanelLoading } from "../shell";
 import { SheetRulesEditor } from "./regras-planilha";
 import { ColumnNamesForm } from "./nomes-colunas";
@@ -14,7 +16,7 @@ export const metadata: Metadata = { title: "Configurações" };
 
 async function Content() {
   const staff = await requireStaff(["owner"]);
-  const { costCents: cost, minOverdueCents, sheet, rules, names, templates } = await configPageSettings();
+  const [{ costCents: cost, minOverdueCents, sheet, rules, names, templates }, clickAuth] = await Promise.all([configPageSettings(), getClicksignAuth()]);
   return (
     <PanelShell staff={staff}>
       <div className="pn-head">
@@ -34,6 +36,18 @@ async function Content() {
           partir deste valor, que são as de linha. Use 0,00 para considerar todas.
         </p>
         <MinOverdueForm action={setMinOverdueAction} current={(minOverdueCents / 100).toFixed(2).replace(".", ",")} />
+      </Card>
+      <Card title="Contrato: como o cliente se identifica (Clicksign)" className="mt-4">
+        <p className="mb-3 text-sm text-muted">
+          Na hora de assinar, a Clicksign pede um código no e-mail e mais a identificação abaixo. Com a biometria facial, contrato
+          assinado = identidade aprovada sozinha. Com selfie + documento, a equipe confere e aprova no pedido. Vale para os próximos
+          contratos.
+        </p>
+        <ClicksignAuthForm
+          action={setClicksignAuthAction}
+          current={clickAuth}
+          options={Object.entries(CLICKSIGN_AUTH_LABEL).map(([value, label]) => ({ value, label }))}
+        />
       </Card>
       <Card title="Planilha do gestor (Google Planilhas)" className="mt-4">
         <p className="mb-3 text-sm text-muted">

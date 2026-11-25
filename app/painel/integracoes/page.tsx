@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CircleCheck, CircleX, CreditCard, Database, FileSignature, FileSpreadsheet, Mail, MessageCircle, TriangleAlert, type LucideIcon } from "lucide-react";
 import { d4signBudget, d4signConfigured } from "@/lib/integrations/d4sign/client";
+import { clicksignConfigured, clicksignMode } from "@/lib/integrations/clicksign/client";
+import { CLICKSIGN_AUTH_LABEL } from "@/lib/integrations/clicksign/mapping";
+import { getClicksignAuth } from "@/lib/server/contracts";
 import { env } from "@/lib/server/env";
 import { WHATSAPP_NUMBER } from "@/components/whatsapp";
 import { formatWhatsapp } from "@/lib/contract/settings";
@@ -9,7 +12,7 @@ import { serviceAccountEmail, sheetsConfigured } from "@/lib/integrations/google
 import { getSheetConfig } from "@/lib/server/planilha";
 import { pendingMigrations } from "@/lib/server/schema-check";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { listSafesAction, testSheetAction } from "../actions";
+import { listSafesAction, testClicksignAction, testSheetAction } from "../actions";
 import { ActionButton } from "../forms";
 import { PanelShell, PanelLoading } from "../shell";
 
@@ -56,7 +59,9 @@ async function Content() {
   const configured = d4signConfigured();
   const budget = configured ? await d4signBudget() : null;
   const robot = serviceAccountEmail();
-  const [sheet, migrations] = await Promise.all([getSheetConfig(), pendingMigrations()]);
+  const [sheet, migrations, clickAuth] = await Promise.all([getSheetConfig(), pendingMigrations(), getClicksignAuth().catch(() => null)]);
+  const clickOn = clicksignConfigured();
+  const webhookClicksign = `${e.APP_URL.replace(/\/$/, "")}/api/webhooks/clicksign`;
   const asaasHost = (() => {
     try {
       return new URL(e.ASAAS_API_URL).hostname;
@@ -121,8 +126,37 @@ async function Content() {
 
         <Servico
           icon={FileSignature}
-          nome="D4Sign"
-          para="Contrato no e-mail, com documento e selfie"
+          nome="Clicksign"
+          para="Contratos novos: assinatura no e-mail, com documento e rosto"
+          modo={
+            !clickOn ? undefined
+            : clicksignMode() === "producao" ? { label: "Produção — contratos válidos", tone: "green" }
+            : clicksignMode() === "sandbox" ? { label: "Modo de teste (sandbox) — contratos sem valor jurídico", tone: "amber" }
+            : { label: "Servidor de teste — contratos sem valor jurídico", tone: "amber" }
+          }
+          itens={[
+            { label: "Chave da API (access token)", ok: clickOn, hint: "CLICKSIGN_ACCESS_TOKEN" },
+            { label: "Senha do aviso de assinatura (HMAC do webhook)", ok: Boolean(e.CLICKSIGN_WEBHOOK_SECRET), hint: "CLICKSIGN_WEBHOOK_SECRET" },
+          ]}
+          extra={
+            <div className="ig-robot">
+              <span>
+                Na Clicksign: <b>Configurações → API → Adicionar Webhook</b> com este endereço e os eventos <b>sign</b>,{" "}
+                <b>auto_close</b>, <b>document_closed</b>, <b>cancel</b> e <b>refusal</b>. Depois copie o “HMAC SHA256 Secret” para a
+                Vercel na variável CLICKSIGN_WEBHOOK_SECRET. Endereço do webhook:
+              </span>
+              <code className="select-all">{webhookClicksign}</code>
+              {clickAuth && <span>Identificação do cliente: <b>{CLICKSIGN_AUTH_LABEL[clickAuth]}</b> (muda em Configurações).</span>}
+            </div>
+          }
+        >
+          {clickOn && <ActionButton action={testClicksignAction} label="Testar Clicksign" />}
+        </Servico>
+
+        <Servico
+          icon={FileSignature}
+          nome="D4Sign (contratos antigos)"
+          para={clickOn ? "Só termina os contratos que já foram enviados por ela" : "Contrato no e-mail, com documento e selfie"}
           itens={[
             { label: "Chaves", ok: configured, hint: "D4SIGN_TOKEN_API e D4SIGN_CRYPT_KEY" },
             { label: "Cofre dos contratos", ok: Boolean(e.D4SIGN_SAFE_UUID), hint: "D4SIGN_SAFE_UUID" },

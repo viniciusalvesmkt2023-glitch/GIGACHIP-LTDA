@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Formulário de ativação", robots: 
 /*
  * Formulário de ativação (D28, desenho do Lovable):
  *   1. Registro do chip — eSIM: print do registro do eSIM (*#06#); chip físico: foto do verso da embalagem
- *   2. Contrato no e-mail (D4Sign, documento + selfie)
+ *   2. Contrato no e-mail (Clicksign; antes D4Sign — documento + rosto)
  *   3. Ativação pelo WhatsApp (mensagem com os dados do pedido, sem CPF nem documentos)
  * A etapa mostrada vem do estado do pedido no servidor; a página se atualiza enquanto espera a assinatura.
  */
@@ -75,11 +75,11 @@ function Contrato({ v }: { v: AreaView }) {
       <p className="ck-sub">
         {enviado ? (
           <>
-            Enviamos o contrato para <b>{v.emailMasked}</b> pela D4Sign, plataforma de assinatura digital. Leva uns 3 minutos.
+            Enviamos o contrato para <b>{v.emailMasked}</b> pela {v.plataforma}, plataforma de assinatura digital. Leva uns 3 minutos.
           </>
         ) : (
           <>
-            Estamos preparando o seu contrato. Ele chega em <b>{v.emailMasked}</b> pela D4Sign em instantes.
+            Estamos preparando o seu contrato. Ele chega em <b>{v.emailMasked}</b> pela {v.plataforma} em instantes.
           </>
         )}
       </p>
@@ -88,12 +88,17 @@ function Contrato({ v }: { v: AreaView }) {
           <p className="ac-how-title">Como assinar</p>
           <ol>
             <Passo n={1}>
-              Abra o e-mail da <b>D4Sign</b> (se não achar, olhe o spam ou Promoções).
+              Abra o e-mail da <b>{v.plataforma}</b> (se não achar, olhe o spam ou Promoções).
             </Passo>
             <Passo n={2}>
-              Clique em <b>Assinar</b> e leia o contrato.
+              Clique em <b>{v.plataforma === "Clicksign" ? "Visualizar para assinar" : "Assinar"}</b> e leia o contrato.
             </Passo>
-            <Passo n={3}>
+            {v.plataforma === "Clicksign" && (
+              <Passo n={3}>
+                Digite o <b>código</b> que a Clicksign manda no seu e-mail.
+              </Passo>
+            )}
+            <Passo n={v.plataforma === "Clicksign" ? 4 : 3}>
               Tire uma <b>foto do seu documento</b> (RG ou CNH) e uma <b>selfie</b> quando pedir.
             </Passo>
           </ol>

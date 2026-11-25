@@ -105,7 +105,7 @@ export function ChangeEmailForm({ action, orderId, current }: { action: Action; 
         <input type="hidden" name="orderId" value={orderId} />
         <p className="text-xs text-muted">
           Antes de trocar, confirme com o cliente pelo celular cadastrado. Se o contrato ainda não foi assinado, o antigo é
-          cancelado e um novo vai para o e-mail correto (usa 1 envio da D4Sign).
+          cancelado e um novo vai para o e-mail correto (usa 1 documento a mais do plano de assinatura).
         </p>
         <input name="email" type="email" required defaultValue={current} className={input} />
         <button disabled={pending} className={`${buttonStyles.primary} py-2`}>{pending ? "Corrigindo..." : "Salvar e reenviar"}</button>
@@ -328,5 +328,22 @@ export function CancelWatchTvForm({ action, orderId, novoValor }: { action: Acti
         <Msg s={s} />
       </form>
     </details>
+  );
+}
+
+/** Como o cliente se identifica ao assinar o contrato na Clicksign (D45). */
+export function ClicksignAuthForm({ action, current, options }: { action: Action; current: string; options: { value: string; label: string }[] }) {
+  const [s, a, pending] = useActionState(action, {});
+  return (
+    <form action={a} className="space-y-3">
+      {options.map((o) => (
+        <label key={o.value} className="flex items-start gap-2 text-sm">
+          <input type="radio" name="auth" value={o.value} defaultChecked={current === o.value} className="mt-1" />
+          <span>{o.label}</span>
+        </label>
+      ))}
+      <button disabled={pending} className={`${buttonStyles.primary} py-3`}>{pending ? "Salvando..." : "Salvar"}</button>
+      <Msg s={s} />
+    </form>
   );
 }

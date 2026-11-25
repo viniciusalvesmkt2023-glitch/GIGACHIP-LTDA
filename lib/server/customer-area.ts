@@ -1,5 +1,6 @@
 import "server-only";
 import { totalMensalCents, type WatchTvStatus } from "@/lib/domain/watch-tv";
+import { plataformaDoContrato } from "./signature-platform";
 import type { DeviceInput } from "@/lib/domain/device-input";
 import { createHash } from "node:crypto";
 import { sniffImage } from "@/lib/domain/image-check";
@@ -25,6 +26,8 @@ export type AreaView = {
   fullName: string;
   /** E-mail com o meio escondido (ex.: "ma•••@gmail.com"), para a tela mostrar para onde foi o contrato. */
   emailMasked: string;
+  /** Plataforma de assinatura do contrato (Clicksign; D4Sign nos contratos antigos). */
+  plataforma: string;
 };
 
 function maskEmail(email: string): string {
@@ -37,14 +40,16 @@ export async function getAreaView(orderId: string): Promise<AreaView | null> {
     {
       id: string; code: string; plan_name: string; sim_type: AreaView["simType"]; status: string;
       payment_status: string; identity_status: string; contract_status: string; device_status: string;
-      imei_last4: string | null; full_name: string; email: string;
+      imei_last4: string | null; full_name: string; email: string; contract_provider: string | null; contract_doc: string | null;
     }[]
   >`
     select o.id, o.code, o.plan_snapshot->>'name' as plan_name, o.sim_type, o.status, o.payment_status,
-           o.identity_status, o.contract_status, o.device_status, d.imei_last4, c.full_name, c.email::text as email
+           o.identity_status, o.contract_status, o.device_status, d.imei_last4, c.full_name, c.email::text as email,
+           ct.provider as contract_provider, ct.provider_document_uuid as contract_doc
     from public.orders o
     join public.customers c on c.id = o.customer_id
     left join public.device_info d on d.order_id = o.id
+    left join public.contracts ct on ct.order_id = o.id
     where o.id = ${orderId}`;
   if (!r) return null;
   return {
@@ -61,6 +66,7 @@ export async function getAreaView(orderId: string): Promise<AreaView | null> {
     firstName: r.full_name.split(/\s+/)[0] ?? "",
     fullName: r.full_name,
     emailMasked: maskEmail(r.email),
+    plataforma: plataformaDoContrato(r.contract_provider, Boolean(r.contract_doc)),
   };
 }
 

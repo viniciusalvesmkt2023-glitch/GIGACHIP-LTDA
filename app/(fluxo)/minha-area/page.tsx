@@ -76,7 +76,7 @@ function Passos({ v }: { v: AreaView }) {
           signed
             ? "Contrato assinado."
             : v.contractStatus === "sent"
-              ? `Enviado para ${v.emailMasked} pela D4Sign. Assine com documento e selfie.`
+              ? `Enviado para ${v.emailMasked} pela ${v.plataforma}. Assine com documento e rosto (selfie).`
               : "Chega no seu e-mail depois do registro do chip."
         }
         estado={signed ? "feito" : device && v.contractStatus === "sent" ? "agora" : device ? "espera" : "depois"}

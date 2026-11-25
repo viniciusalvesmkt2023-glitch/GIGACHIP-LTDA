@@ -620,3 +620,26 @@ A Gigachip é revendedora oficial da Watch TV (canais ao vivo, filmes e séries;
 - **Contrato:** quem leva a TV recebe o item 2.1.1 (serviço opcional, valor, total, cancelamento
   separado sem multa). ⚠️ Mostrar ao advogado.
 - Migração `20261124000016_watch_tv.sql` (rodar no Supabase **antes** de publicar).
+
+## D45 — Contratos pela Clicksign no lugar da D4Sign (25/11/2026)
+
+Os sócios trocaram a D4Sign pela Clicksign (plano Plus: 50 documentos por mês, API, biometria ou
+selfie). Limite da API: **50 chamadas a cada 10 segundos** (a D4Sign era 10 por hora).
+- **Só os contratos novos** vão pela Clicksign (quando `CLICKSIGN_ACCESS_TOKEN` existe). Os que já
+  foram enviados pela D4Sign terminam por lá (conferência e download continuam). Contrato na fila que
+  ainda não foi criado em nenhuma plataforma vai para a Clicksign.
+- **API v3:** envelope → documento (PDF em base64) → signatário (nome, e-mail, CPF e nascimento, sem
+  poder recusar) → requisitos (assinar como parte + código no e-mail + identificação) → ativar →
+  e-mail de assinatura com o link de volta para o formulário. Cada etapa é gravada; uma falha continua
+  dali, sem duplicar (os requisitos já criados são conferidos antes).
+- **Identificação** (Configurações, só o dono): **biometria facial** (padrão; R$ 1,50 por assinatura;
+  contrato assinado = identidade aprovada sozinha) ou **selfie + foto do documento** (sem custo; a
+  equipe confere e aprova no pedido).
+- **Aviso de assinatura (webhook):** `/api/webhooks/clicksign`, conferido pelo `Content-Hmac`
+  (HMAC SHA256 do corpo com `CLICKSIGN_WEBHOOK_SECRET`). O aviso só "cutuca": o status é conferido na
+  API e o PDF assinado é baixado e guardado cifrado. Sem aviso, a rotina confere de 12 em 12 horas (a
+  Clicksign não permite consultas frequentes); o botão "Conferir assinatura" continua no pedido.
+- E-mail do cliente corrigido: o documento antigo é cancelado na Clicksign e um novo é enviado.
+- Contrato modelo **v6**: cláusula 8.1 cita a plataforma usada (Clicksign; D4Sign nos antigos) e o
+  item 2.1.1 da Watch TV (D44). ⚠️ Mostrar ao advogado.
+- Migração `20261125000017_contratos_clicksign.sql` (rodar no Supabase **antes** de publicar).

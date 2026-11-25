@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { newContractProvider, PLATAFORMA } from "@/lib/server/signature-platform";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -162,7 +163,7 @@ function Pago({ view }: { view: PaymentView }) {
           </span>
           <span>
             <b>Contrato no e-mail</b>
-            <small>Documento e selfie, pela D4Sign</small>
+            <small>Documento e selfie, pela {PLATAFORMA[newContractProvider()]}</small>
           </span>
         </li>
         <li>

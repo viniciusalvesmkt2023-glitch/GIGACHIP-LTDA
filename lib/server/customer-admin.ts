@@ -2,7 +2,7 @@ import "server-only";
 import { after } from "next/server";
 import { asaas } from "@/lib/integrations/asaas/client";
 import { d4signBudget, d4signConfigured } from "@/lib/integrations/d4sign/client";
-import { processQueuedContracts } from "./contracts";
+import { newContractProvider, processQueuedContracts } from "./contracts";
 import { sql, withActor } from "./db";
 import type { Staff } from "./staff-auth";
 
@@ -19,7 +19,7 @@ export type ChangeEmailResult = { ok: boolean; messages: string[] };
  * Corrige o e-mail de um cliente que digitou errado (D23).
  * - Atualiza o cadastro e invalida os links de acesso enviados ao e-mail errado.
  * - O e-mail aparece DENTRO do contrato: se ainda não foi assinado, o contrato antigo é cancelado
- *   na D4Sign e um novo é gerado e enviado para o e-mail certo (gasta 1 envio a mais).
+ *   na plataforma (Clicksign ou D4Sign) e um novo é gerado e enviado para o e-mail certo (gasta 1 envio a mais).
  * - Atualiza o e-mail no Asaas (avisos de cobrança).
  */
 export async function changeCustomerEmail(staff: Staff, orderId: string, rawEmail: string): Promise<ChangeEmailResult> {
@@ -56,9 +56,13 @@ export async function changeCustomerEmail(staff: Staff, orderId: string, rawEmai
       await tx`
         update public.contracts
         set status = 'queued', step = 'gerar_pdf',
-            docs_to_cancel = case when provider_document_uuid is null then docs_to_cancel
-                                  else array_append(docs_to_cancel, provider_document_uuid) end,
-            provider_document_uuid = null, pdf_sha256 = null,
+            docs_to_cancel = case
+              when provider_document_uuid is null then docs_to_cancel
+              when provider = 'clicksign' and provider_envelope_id is not null
+                then array_append(docs_to_cancel, 'clicksign:' || provider_envelope_id || ':' || provider_document_uuid)
+              when provider = 'clicksign' then docs_to_cancel
+              else array_append(docs_to_cancel, provider_document_uuid) end,
+            provider_document_uuid = null, provider_envelope_id = null, provider_signer_id = null, pdf_sha256 = null,
             attempts = 0, last_error = null, next_attempt_at = now(), sent_at = null
         where order_id = ${orderId}`;
       await tx`update public.orders set contract_status = 'queued' where id = ${orderId}`;
@@ -86,7 +90,10 @@ export async function changeCustomerEmail(staff: Staff, orderId: string, rawEmai
   if (plan.contractStatus === "signed") {
     messages.push("⚠️ O contrato já estava assinado com o e-mail antigo; ele não foi refeito.");
   }
-  if (plan.resendContract && d4signConfigured()) {
+  if (plan.resendContract && newContractProvider() === "clicksign") {
+    after(() => processQueuedContracts(1).then(() => undefined).catch((e) => console.error(`[corrigir e-mail] ${e}`)));
+    messages.push("O contrato antigo será cancelado e o novo enviado pela Clicksign para o e-mail correto em instantes. Atualize a página em 1 minuto.");
+  } else if (plan.resendContract && d4signConfigured()) {
     const budget = await d4signBudget();
     // Cancelar o antigo + enviar o novo usa até 5 chamadas da D4Sign
     if (budget >= 5) {
