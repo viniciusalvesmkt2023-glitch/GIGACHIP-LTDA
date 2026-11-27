@@ -43,7 +43,7 @@ export default function Home() {
           <div className="hero-copy">
             <div className="hero-eyebrow">
               <span className="status-dot" aria-hidden="true" />
-              <strong>+100 linhas ativas</strong> na rede Vivo
+              <strong>+800 linhas vendidas</strong> na rede Vivo
             </div>
             <h1 className="hero-title">
               Use sem medo.
