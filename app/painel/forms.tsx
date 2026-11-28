@@ -347,3 +347,36 @@ export function ClicksignAuthForm({ action, current, options }: { action: Action
     </form>
   );
 }
+
+/** "Assinou fora do sistema? Avançar etapa" (D46): contrato + identidade concluídos à mão. */
+export function ManualSignForm({ action, orderId }: { action: Action; orderId: string }) {
+  const [s, a, pending] = useActionState(action, {});
+  if (s.ok) return <Msg s={s} />;
+  return (
+    <details className="rounded-xl border border-border p-3 text-sm">
+      <summary className="cursor-pointer font-medium text-brand">Assinou fora do sistema? Avançar etapa</summary>
+      <form action={a} className="mt-3 space-y-3">
+        <input type="hidden" name="orderId" value={orderId} />
+        <p className="text-xs text-muted">
+          Use quando o cliente assinou por outro caminho (ex.: contrato mandado à mão pela D4Sign). O contrato e a identidade ficam
+          como concluídos e o pedido vai para “Pronto para ativar”. O envio pendente na Clicksign é cancelado. Fica registrado na
+          auditoria com o seu nome.
+        </p>
+        <label className="block font-medium">
+          Motivo
+          <textarea name="motivo" required rows={2} className={input} placeholder="Ex.: biometria da Clicksign falhou; assinou pela D4Sign enviada à mão em 27/11" />
+        </label>
+        <label className="block font-medium">
+          PDF do contrato assinado (opcional)
+          <input name="pdf" type="file" accept="application/pdf" className="mt-1 block w-full text-sm" />
+        </label>
+        <label className="flex items-start gap-2">
+          <input type="checkbox" name="conferi" value="sim" required className="mt-1" />
+          <span>Conferi o contrato assinado, o documento e o rosto do cliente.</span>
+        </label>
+        <button disabled={pending} className={`${buttonStyles.primary} py-2`}>{pending ? "Salvando..." : "Marcar como assinado e avançar"}</button>
+        <Msg s={s} />
+      </form>
+    </details>
+  );
+}

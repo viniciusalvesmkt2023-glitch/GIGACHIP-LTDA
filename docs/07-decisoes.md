@@ -643,3 +643,13 @@ selfie). Limite da API: **50 chamadas a cada 10 segundos** (a D4Sign era 10 por 
 - Contrato modelo **v6**: cláusula 8.1 cita a plataforma usada (Clicksign; D4Sign nos antigos) e o
   item 2.1.1 da Watch TV (D44). ⚠️ Mostrar ao advogado.
 - Migração `20261125000017_contratos_clicksign.sql` (rodar no Supabase **antes** de publicar).
+
+## D46 — "Assinou fora do sistema? Avançar etapa" (28/11/2026)
+
+Uma cliente não conseguiu concluir a identificação na Clicksign; o contrato foi mandado à mão pela
+D4Sign e ela assinou lá. No pedido (só **dono e administrador**), com pagamento confirmado e contrato
+ainda não assinado: escrever o **motivo**, anexar o **PDF assinado** (opcional, guardado cifrado) e
+marcar "Conferi o contrato, o documento e o rosto". O sistema marca contrato **assinado** e identidade
+**aprovada** (registro "manual_fora_do_sistema"), cancela o envio pendente na Clicksign (para os
+lembretes) e o pedido vai para "Pronto para ativar" se o registro do chip já foi feito. Tudo fica no
+histórico do pedido e na auditoria com o nome de quem fez.

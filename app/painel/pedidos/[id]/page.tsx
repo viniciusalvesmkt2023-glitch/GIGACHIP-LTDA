@@ -12,8 +12,8 @@ import { AutoRefresh } from "@/components/auto-refresh";
 import { identityMode } from "@/lib/server/identity-mode";
 import { sheetEnabled } from "@/lib/server/planilha";
 import { requireStaff } from "@/lib/server/staff-auth";
-import { activateLineAction, cancelWatchTvAction, changeEmailAction, markWatchTvAction, decideIdentityAction, importSheetAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
-import { ActionButton, ActivateLineForm, CancelWatchTvForm, ChangeEmailForm, IdentityDecisionForm, RevealButton } from "../../forms";
+import { activateLineAction, cancelWatchTvAction, changeEmailAction, manualSignAction, markWatchTvAction, decideIdentityAction, importSheetAction, retryContractAction, revealAction, syncContractAction } from "../../actions";
+import { ActionButton, ActivateLineForm, CancelWatchTvForm, ChangeEmailForm, ManualSignForm, IdentityDecisionForm, RevealButton } from "../../forms";
 import { SheetStatus } from "../../sheet-status";
 import { Card, PanelShell, PanelLoading } from "../../shell";
 import { StatusBadge } from "../../status-badge";
@@ -50,6 +50,12 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
   ];
   const brMoney = (c: number) => (c / 100).toFixed(2).replace(".", ",");
   const canSee = ["owner", "admin", "ativador"].includes(staff.role);
+  // "Assinou fora do sistema" (D46): só dono/administrador, com pagamento confirmado e contrato ainda não assinado
+  const canManualSign =
+    ["owner", "admin"].includes(staff.role) &&
+    ["confirmed", "received"].includes(o.payment_status) &&
+    o.contract_status !== "signed" &&
+    ["em_andamento", "pendencia"].includes(o.status);
   const line = ["ativado", "pronto_para_ativacao", "em_ativacao"].includes(o.status) ? await lineForOrder(id) : null;
   const sheetOn = canActivate || line ? await sheetEnabled() : false;
 
@@ -219,7 +225,12 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
       </div>
 
       <Card title={`Identidade — ${SUB[o.identity_status] ?? o.identity_status}`} className="mt-4">
-        {identity?.provider === "clicksign" ? (
+        {identity?.provider === "manual_fora_do_sistema" ? (
+          <p className="text-sm">
+            ✅ Aprovada pela equipe: o cliente assinou <strong>fora do sistema</strong> (ex.: contrato mandado à mão). O motivo e quem
+            aprovou ficam na auditoria.
+          </p>
+        ) : identity?.provider === "clicksign" ? (
           <p className="text-sm">
             ✅ Validada automaticamente na assinatura do contrato: a Clicksign fez a <strong>biometria facial</strong> (foto do
             documento + rosto comparados). As imagens e o resultado ficam no relatório do documento, na Clicksign.
@@ -300,9 +311,13 @@ async function Content({ params }: { params: PageProps<"/painel/pedidos/[id]">["
               )}
               {canSee && contract.status === "sent" && <ActionButton action={syncContractAction} orderId={o.id} label={`Conferir assinatura na ${contract.provider === "clicksign" ? "Clicksign" : "D4Sign"}`} />}
             </div>
+            {canManualSign && <ManualSignForm action={manualSignAction} orderId={o.id} />}
           </div>
         ) : (
-          <p className="text-sm text-muted">O contrato é gerado e enviado automaticamente quando a identidade é aprovada.</p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted">O contrato é gerado e enviado automaticamente depois do registro do chip.</p>
+            {canManualSign && <ManualSignForm action={manualSignAction} orderId={o.id} />}
+          </div>
         )}
       </Card>
 

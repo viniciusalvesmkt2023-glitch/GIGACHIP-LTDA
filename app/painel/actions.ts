@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { after } from "next/server";
 import { headers } from "next/headers";
-import { processQueuedContracts, retryContract, setClicksignAuth, syncContractByDocument } from "@/lib/server/contracts";
+import { markContractSignedManually, processQueuedContracts, retryContract, setClicksignAuth, syncContractByDocument } from "@/lib/server/contracts";
 import { parseClicksignAuth } from "@/lib/integrations/clicksign/mapping";
 import { changeCustomerEmail } from "@/lib/server/customer-admin";
 import { sql } from "@/lib/server/db";
@@ -113,6 +113,21 @@ export async function syncContractAction(_p: FormState, fd: FormData): Promise<F
   } catch (e) {
     return { message: `Não foi possível consultar a ${nome}: ${e instanceof Error ? e.message : String(e)}` };
   }
+}
+
+/** "Assinou fora do sistema": avança contrato + identidade (D46). Só dono/administrador. */
+export async function manualSignAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireStaff(["owner", "admin"]);
+  if (str(fd, "conferi") !== "sim") return { message: "Marque que conferiu o documento e o rosto do cliente." };
+  const file = fd.get("pdf");
+  let pdf: Uint8Array | null = null;
+  if (file instanceof File && file.size > 0) {
+    if (file.size > 15 * 1024 * 1024) return { message: "O PDF passa de 15 MB." };
+    pdf = new Uint8Array(await file.arrayBuffer());
+  }
+  const r = await markContractSignedManually(me.id, str(fd, "orderId"), { reason: str(fd, "motivo"), pdf });
+  refresh();
+  return r;
 }
 
 export async function testClicksignAction(): Promise<FormState> {

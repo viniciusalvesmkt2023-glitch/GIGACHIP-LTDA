@@ -563,3 +563,80 @@ export async function getContractInfo(orderId: string) {
   }
   return { ...c, provider, d4sign: { free: Math.max(free, 0), limit: env().D4SIGN_RATE_LIMIT_PER_HOUR, needed, freesAt } };
 }
+
+export type ManualSignResult = { ok: boolean; message: string };
+
+/**
+ * "Assinou fora do sistema" (D46): o cliente assinou por outro caminho (ex.: contrato mandado à mão
+ * pela D4Sign porque a biometria da Clicksign falhou). Só dono/administrador, com motivo e
+ * auditoria. Marca o contrato como assinado e a identidade como aprovada (a pessoa da equipe declara
+ * que conferiu documento e rosto). O PDF assinado é opcional e fica guardado cifrado. O envio
+ * pendente na Clicksign é cancelado para parar os lembretes ao cliente.
+ */
+export async function markContractSignedManually(
+  staffId: string,
+  orderId: string,
+  input: { reason: string; pdf: Uint8Array | null },
+): Promise<ManualSignResult> {
+  const reason = input.reason.trim().slice(0, 500);
+  if (reason.length < 5) return { ok: false, message: "Escreva o motivo (ex.: assinou pela D4Sign enviada à mão)." };
+  if (input.pdf && Buffer.from(input.pdf.subarray(0, 5)).toString() !== "%PDF-") {
+    return { ok: false, message: "O arquivo enviado não é um PDF." };
+  }
+
+  const [o] = await sql()<{ status: string; device_status: string; payment_status: string; contract_id: string | null; contract_status: string | null; provider: string | null; envelope: string | null; doc: string | null }[]>`
+    select o.status::text, o.device_status::text, o.payment_status::text,
+           c.id as contract_id, c.status::text as contract_status, c.provider, c.provider_envelope_id as envelope, c.provider_document_uuid as doc
+    from public.orders o left join public.contracts c on c.order_id = o.id
+    where o.id = ${orderId}`;
+  if (!o) return { ok: false, message: "Pedido não encontrado." };
+  if (!["confirmed", "received"].includes(o.payment_status)) return { ok: false, message: "O pagamento deste pedido ainda não foi confirmado." };
+  if (o.contract_status === "signed") return { ok: false, message: "O contrato deste pedido já está assinado." };
+  if (["ativado", "cancelado", "cancelado_reembolso", "expirado"].includes(o.status)) {
+    return { ok: false, message: "Este pedido não está mais em andamento." };
+  }
+
+  // Para os lembretes do envio que ficou pendente na Clicksign (se der erro, segue mesmo assim)
+  if (o.provider === "clicksign" && o.envelope && o.doc && clicksignConfigured()) {
+    await clicksign.cancelDocument(o.envelope, o.doc).catch((e) => console.error(`[contrato manual] cancelar na Clicksign: ${e instanceof Error ? e.message : e}`));
+  }
+
+  await withActor({ type: "staff", id: staffId, reason: `contrato assinado fora do sistema: ${reason}` }, async (tx) => {
+    let contractId = o.contract_id;
+    if (!contractId) {
+      const [c] = await tx<{ id: string }[]>`
+        insert into public.contracts (order_id, provider, template_version, status, step)
+        values (${orderId}, 'manual', ${CONTRACT_TEMPLATE_VERSION}, 'signed', 'concluido') returning id`;
+      contractId = c.id;
+    }
+    await tx`
+      update public.contracts
+      set status = 'signed', signed_at = now(), step = 'concluido', last_error = null, docs_to_cancel = '{}',
+          signed_file_path = case when ${input.pdf !== null} then 'db:contract_files' else signed_file_path end
+      where id = ${contractId}`;
+    if (input.pdf) {
+      await tx`
+        insert into public.contract_files (contract_id, content_encrypted, sha256)
+        values (${contractId}, ${encryptBytes(input.pdf, env().FIELD_ENCRYPTION_KEY)}, ${createHash("sha256").update(input.pdf).digest("hex")})
+        on conflict (contract_id) do update set content_encrypted = excluded.content_encrypted, sha256 = excluded.sha256`;
+    }
+    await tx`
+      insert into public.identity_checks (order_id, provider, provider_reference, status, attempts, reviewed_by, decided_at)
+      values (${orderId}, 'manual_fora_do_sistema', null, 'approved', 1, ${staffId}, now())
+      on conflict (order_id) do update
+        set provider = 'manual_fora_do_sistema', status = 'approved', reviewed_by = ${staffId}, decided_at = now()`;
+    // O banco passa o pedido para "pronto para ativação" quando pagamento, aparelho, contrato e identidade estão ok
+    await tx`
+      update public.orders
+      set contract_status = 'signed', identity_status = 'approved',
+          status = case when status = 'pendencia' and problem_reason in ('contrato_erro', 'contrato_recusado') then 'em_andamento' else status end,
+          problem_reason = case when status = 'pendencia' and problem_reason in ('contrato_erro', 'contrato_recusado') then null else problem_reason end
+      where id = ${orderId}`;
+    await tx`
+      insert into public.audit_log (actor_id, action, entity, entity_id, metadata)
+      values (${staffId}, 'contrato_assinado_fora_do_sistema', 'orders', ${orderId}, ${tx.json({ motivo: reason, pdf: input.pdf !== null })})`;
+  });
+
+  const falta = o.device_status !== "confirmed" ? " Falta o registro do chip/eSIM do cliente para ficar pronto para ativar." : "";
+  return { ok: true, message: `Contrato e identidade marcados como concluídos.${falta || " O pedido está pronto para ativar."}` };
+}
